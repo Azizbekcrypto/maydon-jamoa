@@ -377,6 +377,14 @@ Tekshiruv — real odamlar qo'shilmagan o'yinda (namuna o'yin «Shanba, 18:00»)
 - **Yangi funksiya to'xtatildi** (inglizchasi: feature freeze) — teg `m14-demo`: demo o'tishi tekshirilgan versiya. Shundan keyin demo kunigacha faqat tuzatish (7-dars), yangi funksiya yo'q.
   Teg alohida yuboriladi: `git tag m14-demo` → `git push origin m14-demo` → `git ls-remote --tags origin` (qatorda `refs/tags/m14-demo`) → `git rev-parse HEAD m14-demo` (ikki qator bir xil).
 
+### Demo tekshiruvi (7-dars) — `XATOLAR.md`
+
+Demo investor ko'zi bilan ataylab buzib tekshiriladi — uch usul (demo-risklar): **tarmoq uzilishi** (telefonda uchish rejimi; laptop internetini uzish dars sahifasini ham uzadi) ·
+**bo'sh ma'lumot** (tekshiruv akkauntidan yangi o'yin «Juma, 18:00 · Mahalla maydoni», hali hech kim yo'q — haqiqiy ro'yxatga tegilmaydi) · **ikki marta bosish** («Qo'shilaman»).
+Har urinish — buzish yozuvi (nima qildim · nima kutdim · nima bo'ldi); buzilsa — faqat tuzatish (yangi funksiya yo'q), `git diff`, qayta tekshiruv o'sha usul bilan.
+Natija — `XATOLAR.md` «## Demo tekshiruvi»: `m14-demo` holatida uchala usul buzilmadi, kod o'zgarmagan.
+Tekshiruv akkaunti `namuna = true` (sanoqqa kirmaydi), login va paroli hech qayerga yozilmaydi; tekshiruvdan keyin u yaratgan yozuvlar `id` bo'yicha o'chiriladi.
+
 ## Backend yo'llari
 
 Yopiq yo'llar (`/oyinlar` va `/hisob`) — faqat token bilan (`Authorization: Bearer <token>`), tokensiz `401`.
@@ -671,16 +679,19 @@ Repo'ga yozmaydigan darslarda (1, 2 · 6 · 9 · 11 — PM) `-done` = `-start`. 
 
 ### 14-Modul
 
-Teglar: `m14-dars-NN-start` — dars boshidagi holat, `m14-dars-NN-done` — dars oxiridagi holat. Repo'ga yoziladigan darslar — 4 (sayqal), 6 (demo tayyorgarligi), 7 (demo tekshiruvi);
-qolganlari (pitch, video-portfolio, xatlar) repo'ga yozmaydi.
+Teglar: `m14-dars-NN-start` — dars boshidagi holat, `m14-dars-NN-done` — dars oxiridagi holat. Repo'ga yoziladigan darslar — 4 (sayqal), 6 (demo tayyorgarligi), 7 (demo tekshiruvi).
+3-dars (tezlik) — Mentor misolida tegi yo'q: Lighthouse o'lchovi va `TEZLIK.md` — o'z repo'ngizda.
 `m14-dars-04-start` — `m13-dars-12-done` ustiga «O'yinlar» kutish yozuvi (11-Modul 15-dars Mentor qadami); `m14-dars-06-start` = `m14-dars-04-done`.
-`m14-demo` — demo uchun tekshirilgan versiya (6-dars oxiri, `m14-dars-06-done` bilan bir commit).
+`m14-demo` — demo uchun tekshirilgan versiya (6-dars oxiri, `m14-dars-06-done` bilan bir commit); `m14-dars-07-done` — undan keyin faqat `XATOLAR.md` va README.
+7-darsdan keyingi darslar (pitch, video-portfolio, xatlar, reja) repo'ga yozmaydi — `m14-dars-09-done` = `m14-dars-07-done`; bu repo'ning oxirgi holati — shu.
 
 | Teg | Dars | Nima bor |
 |---|---|---|
 | `m14-dars-04-start` | 4 · boshlanish | `m13-dars-12-done` + «O'yinlar» yuklanayotganda kutish belgisi va kutish yozuvi «O'yinlar yuklanmoqda — bu bir daqiqagacha cho'zilishi mumkin.»; «Qo'shilaman» — sayqalsiz |
 | `m14-dars-04-done` | 4 · loyiha kuni: demo uchun sayqal | demo yo'lidagi uch joy (`mobil/`, Backend o'zgarmagan): bosish javobi — «Qo'shilmoqda…» va kutish belgisi, tugma o'chiq, ikkinchi so'rov yo'q · joy egallovchi — ikkita kulrang karta, ostida kutish yozuvi · muvaffaqiyat — o'z qo'shilishida son bir marta kattalashib qaytadi, jonli son — animatsiyasiz; harakatni kamaytirish — son kattalashmaydi, kutish belgisi yashirinadi. Yangi versiya — brauzer ko'rinishi (`npx expo export -p web` → `netlify deploy --prod --dir dist`); APK bu tegda qayta tayyorlanmagan (demo — brauzerda). README «Demo (14-Modul)» |
 | `m14-dars-06-done` · `m14-demo` | 6 · demoga tayyorgarlik: risklar va B reja | `DEMO.md` — «## Ssenariy» (Tayyorlov `[ ]`, besh qadam, «Keyin»), «## Risklar» (besh qator «risk — B yo'l»), «## B reja» (video laptopda, 60 soniya, repo'da emas · gap · uyg'otish · namuna akkaunt); teg `m14-demo` — «yangi funksiya to'xtatildi» nuqtasi (shu commit). Kod o'zgarmagan; namuna akkauntlar va demo o'yini — Database'da, demo videosi — laptopda (repo'da yo'q). README «Demo (14-Modul)» |
+| `m14-dars-07-done` | 7 · investor ko'zi bilan: demo buzilmaydimi? | `XATOLAR.md` «## Demo tekshiruvi» — `m14-demo` holatida uch usul (tarmoq uzilishi · bo'sh ma'lumot · ikki marta bosish): buzilmadi, tekshirilmagan usul yo'q; kod o'zgarmagan (tuzatish kerak bo'lmadi), yangi versiya chiqarilmaydi. README «Demo tekshiruvi» |
+| `m14-dars-09-done` | 9 · video-portfolio | = `m14-dars-07-done`: video, ssenariy va havola repo'ga yozilmaydi |
 
 ## Ortda qoldingizmi
 
@@ -696,4 +707,4 @@ Mentor misolini o'z repo'ngizdan tashqarida, alohida yangi papkada ochib, qanday
 (5-darsda — `m13-dars-05-start`: agent «to'lov ishlaydi» deganidan keyingi kod; 12-darsda — `m13-dars-12-start`). `backend/.env` va `mobil/.env` ga o'z qiymatlaringizni yozasiz
 (`.env.example` dan nusxa); `mobil/src/lending.ts`, `mobil/eas.json`, `lending/index.html`, `lending/sanoq.html` va `backend/src/telegram/manzil.ts` dagi manzillar — namuna;
 `TOLOV_KALITI`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_SIR` — o'zingizniki (Telegram — o'z yangi botingiz).
-14-Modul teglari — `git checkout -f m14-dars-NN-done` (repo'ga yoziladigan darslar: 4, 6, 7).
+14-Modul teglari — `git checkout -f m14-dars-NN-done` (4, 6, 7 va 9; 4-dars boshi — `m14-dars-04-start`, demo versiyasi — `m14-demo`).
