@@ -3,7 +3,7 @@
 «Maydon Jamoa» — mahalladagi mini-futbol uchun jamoa yig'adigan mahsulot: tashkilotchi o'yin e'lon qiladi
 (kun, soat, maydon, nechta odam kerak), boshqa o'yinchilar «Qo'shilaman» ni bosadi; e'londa «8 / 10» — qo'shilganlar / kerak.
 
-Bu repo — 11 va 12-Modul Mentor misoli: prototip, ilova va Backend'ni 11-Modulda qurasiz, 12-Modulda — lending, real vaqt, eslatma va birinchi foydalanuvchilar.
+Bu repo — 11, 12 va 13-Modul Mentor misoli: prototip, ilova va Backend'ni 11-Modulda qurasiz, 12-Modulda — lending, real vaqt, eslatma va birinchi foydalanuvchilar, 13-Modulda — pul: Pro va test rejimdagi to'lov.
 
 ## Talab (7-dars)
 
@@ -186,6 +186,41 @@ yangi odamlar keladi, chunki tashkilotchi o'z jamoasini o'zi chaqiradi»; ish �
 Havola — lending manzili `?kanal=ilova` belgisi bilan (`mobil/src/lending.ts`): Umami'da `tashrif` hodisasi kanal bo'yicha ko'rinadi — gipoteza shu bilan tekshiriladi.
 APK o'zi yangilanmaydi: tugma odamlarga yangi o'rnatish fayli va lendingdagi yangi havola bilan yetadi.
 
+## To'lov (13-Modul)
+
+Test rejim: pul yechilmaydi. Karta ma'lumoti hech qayerda so'ralmaydi va yozilmaydi; maxfiy kalit (`TOLOV_KALITI`) — faqat `backend/.env` va Render'da.
+
+### Reja: to'lov oqimi
+
+| Kim | Nima qiladi | Kimga |
+|---|---|---|
+| Ilova | «To'lovga o'tish» bosilganda to'lov sahifasini ochadi | Brauzer |
+| Tashkilotchi | to'lov sahifasida to'laydi yoki rad etadi; karta ma'lumoti faqat xizmatda | To'lov xizmati |
+| To'lov xizmati | to'lov xabarini yuboradi: POST /tolov/webhook | Backend |
+| Backend | imzoni tekshiradi, to'lovni bir marta yozadi, Pro muddatini uzaytiradi, 200 qaytaradi | To'lov xizmati |
+| Ilova | Pro holatini qayta so'raydi: GET /men | Backend |
+
+Hozir ishlaydi: to'lov xabari `POST /tolov/webhook` da qabul qilinadi va `tolovlar` ga yoziladi; Pro va ilova hali o'zgarmaydi. Test rejim: pul yechilmaydi.
+
+**To'lov xabari** (webhook) — `POST /tolov/webhook`, tana `{ tolovRaqami, holat: 'tolandi' | 'rad', summa, oyinchiId }` (`summa` — so'mda),
+sarlavha `X-Imzo` = HMAC SHA-256 (so'rovning xom tanasi, `TOLOV_KALITI`), hex. Tartib: imzo → maydonlar → takror → yozuv:
+imzo yo'q, shakli noto'g'ri yoki mos emas — `401`, hech narsa yozilmaydi · maydon yetishmasa yoki `holat` boshqa — `400` ·
+shu to'lov raqami jadvalda bor — `200 { takror: true }` (bir vaqtda kelgan ikkinchi bir xil xabar ham) · yangi — `200 { ok: true }`, `rad` ham yoziladi.
+
+**«Mashq to'lov» sahifasi** — Backend'ning o'zi beradi: `{Backend manzili}/tolov-mashq?oyinchi={hisob raqami}&summa={summa}`
+(masalan `maydon-jamoa-….onrender.com/tolov-mashq?oyinchi=7&summa=10000`). Sarlavha «Mashq to'lov», «Bu sahifa — mashq. Karta so'ralmaydi, pul yechilmaydi.»,
+«Maydon Jamoa — Pro, 30 kun» va summa; tugmalar «To'lash (mashq)» · «Rad etish (mashq)» va tekshiruv tugmalari «Ikki marta yuborish» · «Imzosiz yuborish».
+Tugma bosilganda sahifa `POST /tolov-mashq/yubor { tur, oyinchi, summa }` ga yozadi; Backend yangi to'lov raqamini (`m-…`) beradi, xabarni bitta JSON satr qilib yasaydi,
+aynan shu satrni imzolaydi va o'zining ochiq manzilidagi `POST /tolov/webhook` ga yuboradi (Render'da `RENDER_EXTERNAL_URL`, laptopda `localhost:PORT`) —
+kalit brauzerga chiqmaydi. Sahifada har yuborishning javobi: holat kodi va tanasi. Hisob va summa manzildan — bu mashq yordamchisi; haqiqiy to'lovda ularni Backend o'zi biladi.
+Uch tekshiruv: «Imzosiz yuborish» → `401`, yangi qator yo'q · «Ikki marta yuborish» → `200 { ok: true }` va `200 { takror: true }`, `tolovlar` da bitta qator · «Rad etish (mashq)» → `200`, qator `rad`.
+
+```sql
+SELECT tolov_raqami, holat FROM tolovlar ORDER BY yaratilgan DESC;
+```
+
+`tolovlar` dagi qatorlar — mashq (`m-…`): real to'lov yo'q, sanoqqa kirmaydi.
+
 ## Backend yo'llari
 
 Yopiq yo'llar (`/oyinlar` va `/hisob`) — faqat token bilan (`Authorization: Bearer <token>`), tokensiz `401`.
@@ -206,6 +241,8 @@ Bitta istisno — mehmon ko'rinishi (12-Modul 8-dars): `GET /oyinlar` tokensiz h
 | `POST /oyinlar/:id/navbat` | `navbatda` — faqat to'lgan o'yinga | `201` · `409` |
 | `POST /oyinlar/:id/chiqish` | `chiqdi`; qo'shilgan chiqsa — navbatdagi birinchi `qoshildi` | `201` · `409` |
 | `POST /tolov/webhook` `{ tolovRaqami, holat, summa, oyinchiId }` · sarlavha `X-Imzo` | to'lov xabari (13-Modul 3-dars): imzo — HMAC SHA-256 (xom tana, `TOLOV_KALITI`) → maydonlar → takror → `tolovlar` ga yozuv (`rad` ham); token kerak emas | `200 { ok: true }` · `200 { takror: true }` · `400` · `401` imzo yo'q yoki mos emas |
+| `GET /tolov-mashq?oyinchi=…&summa=…` | «Mashq to'lov» sahifasi (HTML; test rejim) | `200` |
+| `POST /tolov-mashq/yubor` `{ tur: 'tolash' \| 'rad' \| 'ikki' \| 'imzosiz', oyinchi, summa }` | xabarni Backend'da yasaydi, imzolaydi va o'z `POST /tolov/webhook` iga yuboradi | `200 { tolovRaqami, javoblar: [{ holat, tana }] }` · `400` |
 
 ## Sanoq — Neon SQL Editor (12-Modul 7-dars)
 
@@ -440,6 +477,15 @@ Repo'ga yoziladigan darslar: 1–10; 11 va 12 (pitch) — repo'ga yozmaydi, tegi
 | `m12-dars-08-done` | 8 · qadamlar bo'yicha sanoq va tuzatish | `GET /hodisalar/sanoq` — faqat maxfiy kalit bilan (sarlavha `X-Sanoq-Kaliti` = `SANOQ_KALITI`, aks holda `401`): to'rt qadam — turli qurilmalar soni, ro'yxatdan o'tgan `namuna = false` akkauntlar, `?dan=`; `lending/sanoq.html` — kalit faqat sahifa holatida, o'zi yangilanadi (socket.io: kalit bilan faqat `sanoq` xonasiga, `POST /hodisalar` dan keyin `sanoq-ozgardi`); `oyin-ozgardi` — faqat ilova ulanishlariga; `WEB_ORIGIN` — bir nechta manzil (vergul). Tuzatish — mehmon ko'rinishi: `GET /oyinlar` tokensiz ham (faqat `id, kun, soat, maydon, kerak, qoshilgan`); ilova kirmagan odamga «O'yinlar»ni tepada «Kirish» bilan ko'rsatadi, «Qo'shilaman» → «Ro'yxatdan o'tish», real vaqt ulanishi — faqat kirganlarga |
 | `m12-dars-09-done` | 9 · loyiha kuni: qaytaradigan eslatma | jonli xabar «Shanba, 18:00 — 2 joy qoldi» (o'zi qo'shilmagan o'yinda bir yoki ikki joy, yangi hodisasiz, bir xil son uchun bir marta); uch kunlik eslatma (`mobil/src/eslatma.ts`: ilova ochilganda oldingisi bekor, uch kundan keyin 17:00 «Hafta oxiriga o'yin bormi? E'lonlarni ko'ring»; faqat kirganga; haftalik chegara — ikkita); `eslatmadan-ochdi` (istalgan eslatma bosilib ochilganda, bitta bosishga bitta) — `POST /hodisalar` qabul qiladi, `GET /hodisalar/sanoq` da `eslatmadanOchdi`, sanoq sahifasida yangi qator; «Eslatmalar» o'chirgichi (ruxsat yo'q bo'lsa — qator); maxfiylik: «Ilova eslatmadan ochilgani ham qurilma ID bilan sanaladi.» |
 | `m12-dars-10-done` | 10 · uyga vazifa (Mentor misoli): zaxira rejadagi ish | «O'yin» ekranida, o'yinni e'lon qilgan tashkilotchida — «Havolani ulashish»: telefonning ulashish oynasi, xabarda o'yin (kun, soat, maydon) va lending havolasi `?kanal=ilova` (`mobil/src/lending.ts`); README — zaxira reja va tugma. 12-dars jonli demosi shu tegdan. Metrika hisoboti, Mentor tekshiruvi va SQL so'rovlari — darsda (Neon SQL Editor), repo'ga yozilmaydi |
+
+### 13-Modul
+
+Teglar: `m13-dars-NN-start` — dars boshidagi holat, `m13-dars-NN-done` — dars oxiridagi holat.
+`m13-dars-01-start` = `m12-dars-10-done`; keyingi dars boshi — oldingi dars oxiri. Repo'ga yozmaydigan darslarda (1, 2 · 6 · 9 · 11 — PM) `-done` = `-start`.
+
+| Teg | Dars | Nima bor |
+|---|---|---|
+| `m13-dars-03-done` | 3 · webhook: to'lov Backend'ga qanday yetib keladi | `tolovlar` jadvali (`tolov_raqami` noyob · `oyinchi_id` · `summa` · `holat` · `yaratilgan`); `POST /tolov/webhook` — imzo `X-Imzo` (HMAC SHA-256, xom tana — `rawBody`, `timingSafeEqual`), takror — `200 { takror: true }`, rad ham yoziladi; `GET /tolov-mashq` — «Mashq to'lov» sahifasi («To'lash (mashq)», «Rad etish (mashq)», «Ikki marta yuborish», «Imzosiz yuborish»), xabarni Backend imzolaydi; `TOLOV_KALITI` (`.env.example` da qiymatsiz); README «To'lov» — «Reja: to'lov oqimi» va «Hozir ishlaydi». Pro va ilova o'zgarmagan |
 
 ## Ortda qoldingizmi
 

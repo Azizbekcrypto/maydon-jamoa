@@ -17,6 +17,7 @@ import { Oyinchi } from './oyinchi.entity.js';
 import { OyinlarController } from './oyinlar.controller.js';
 import { RoyxatController } from './royxat.controller.js';
 import { TokenGuard } from './token.guard.js';
+import { MashqTolovController } from './tolov/mashq.controller.js';
 import { TolovController } from './tolov/tolov.controller.js';
 import { Tolov } from './tolov/tolov.entity.js';
 
@@ -57,6 +58,7 @@ import { Tolov } from './tolov/tolov.entity.js';
     HisobController,
     HodisalarController,
     TolovController,
+    MashqTolovController,
   ],
   providers: [NamunaMalumot, TokenGuard, OyinlarGateway, HodisalarTozalash],
 })
