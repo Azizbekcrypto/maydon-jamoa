@@ -236,6 +236,8 @@ bitta qulaylik: **«Doimiy o'yin»** — har hafta shu kun va soatda o'yin o'zi 
 - `POST /oyinlar` `doimiy: true` ni faqat Pro'dagi tashkilotchidan qabul qiladi (aks holda `403`, o'yin yaratilmaydi).
 - Keyingi o'yin **`GET /oyinlar` so'ralganda** yaratiladi (`backend/src/doimiy.ts`): doimiy o'yinning vaqti o'tgan bo'lsa (Toshkent vaqti) — bir haftadan keyingi kunga,
   o'sha soat, maydon, kerakli odamlar soni va tashkilotchi bilan; `doimiy` belgisi yangisiga o'tadi. Backend uxlashi mumkin — vaqtga bog'langan ish (taymer) yo'q.
+- Bir marta (12-dars, `XATOLAR.md`): `oyinlar` da Database cheklovi — `doimiy = true` qatorlarda tashkilotchi, maydon, kun va soat birga noyob (qisman noyob indeks);
+  ikki so'rov bir vaqtda keyingi o'yinni yaratmoqchi bo'lsa — ikkinchisi jimgina o'tkaziladi, Telegram xabari ham bitta.
 - Pro muddati tugagach Pro o'zi to'xtaydi (`GET /men` da `pro: false`) — avtomatik to'lov yo'q. 5-darsdan: «Har hafta takrorlansin» yana to'lov taklifi ekranini ochadi,
   keyingi «Doimiy o'yin» faqat tashkilotchining Pro muddati ichida yaratiladi — Pro tugasa yangi o'yin o'zi e'lon qilinmaydi, e'lon qilingan o'yinlar qoladi.
 - **To'lov yo'li:** «To'lovga o'tish» → `POST /tolov/boshlash` (token bilan): Backend yangi to'lov raqamini yaratadi — `m-` va 12 ta tasodifiy harf-raqam
@@ -613,7 +615,8 @@ Repo'ga yoziladigan darslar: 1–10; 11 va 12 (pitch) — repo'ga yozmaydi, tegi
 ### 13-Modul
 
 Teglar: `m13-dars-NN-start` — dars boshidagi holat, `m13-dars-NN-done` — dars oxiridagi holat.
-`m13-dars-01-start` = `m12-dars-10-done`; keyingi dars boshi — oldingi dars oxiri. Repo'ga yozmaydigan darslarda (1, 2 · 6 · 9 · 11 — PM) `-done` = `-start`.
+`m13-dars-01-start` = `m12-dars-10-done`; keyingi dars boshi — oldingi dars oxiri, bitta istisno: `m13-dars-05-start` — `m13-dars-04-done` ustiga README eslatmasi.
+Repo'ga yozmaydigan darslarda (1, 2 · 6 · 9 · 11 — PM) `-done` = `-start`. `m13-dars-12-start` = `m13-dars-10-done` — README'da topilmalar aytilmaydi (12-darsda o'zingiz topasiz).
 
 | Teg | Dars | Nima bor |
 |---|---|---|
@@ -624,6 +627,7 @@ Teglar: `m13-dars-NN-start` — dars boshidagi holat, `m13-dars-NN-done` — dar
 | `m13-dars-07-done` | 7 · shartlarni ochiq aytish: oferta va maxfiylik | `lending/oferta.html` — «Pro shartlari» (mashq hujjati, olti band, «Bu hujjat yuridik maslahat emas.»; forma, to'lov tugmasi, Umami yo'q); `lending/maxfiylik.html` — «Qaysi ma'lumot?» va «Nima uchun?» ga to'lov bandi (boshqa gaplar o'zgarmagan); `lending/index.html` pastida «Pro shartlari»; to'lov taklifi ekranida «To'lovga o'tish» ostida «Pro shartlari» · «Maxfiylik siyosati» (telefon brauzerida). APK va brauzer ko'rinishi bu tegda qayta tayyorlanmagan |
 | `m13-dars-08-done` | 8 · loyiha kuni: ketayotgan foydalanuvchini qaytarish | Telegram bot (`backend/src/telegram/`): `oyinchilar.telegram_chat_id`, `telegram_kod`, `telegram_kod_gacha`; Render'da `setWebhook` (`TELEGRAM_SIR`) va `getMe`; `POST /telegram/kod` → `t.me/<bot>?start=<kod>`; `POST /telegram/webhook` (kalit sarlavhasi, faqat shaxsiy chat `/start <kod>`, `update_id` bir marta — `telegram_yangilanishlar`, faqat chat raqami); «yana e'lon qilindi» xabari keyingi «Doimiy o'yin» yaratilganda — `telegram_xabarlar`, haftasiga ≤2, bir o'yin haqida bir marta; `DELETE /telegram` — «Telegram xabarlarini o'chirish»; «Hisobni o'chirish»da Telegram yozuvlari ham; `telegramdan-ochdi` (brauzer ko'rinishi `?kanal=telegram`), sanoq sahifasida «Telegram'dan ochdi»; maxfiylik siyosatiga qator; `TELEGRAM_BOT_TOKEN`, `TELEGRAM_SIR` (`.env.example` da qiymatsiz). Yangi APK yo'q |
 | `m13-dars-10-done` | 10 · loyiha kuni: taklif havolasi va mukofot | `oyinchilar.taklif_kodi` (6 belgi, `A–Z` `0–9`, noyob; yangi hisobga va mavjudlarga bir marta), `GET /men` da `taklifKodi`; «Havolani ulashish» — `?taklif=<kod>&kanal=taklif`; lending «Taklif kodi: …»; formada «Taklif kodi (bo'lsa)» (bo'shliqsiz, katta harfga; topilmasa «Bunday taklif kodi topilmadi — …»), `taklif_qilgan_id`; `oyinchi_qurilmalari` (`POST /royxat` `qurilmaId`, `POST /men/qurilma` — kirish va ulashishda), `taklif_natijalari` (`berildi` · `bir-qurilma` · `namuna` · `nomalum` · `cheklov`); mukofot — Pro + 7 kun, haftasiga ≤2, birinchi asosiy harakatdan keyin alohida tranzaksiyada; qoida qatori ilovada, maxfiylik va ofertaga band. Yangi APK kerak (lending havolasi almashtiriladi) |
+| `m13-dars-12-done` | 12 · loyiha kuni: barqarorlashtirish | besh tekshiruv (kirish va ro'yxat · asosiy harakat · to'lov oqimi · taklif havolasi · Telegram xabari): 1–4 buzilmadi, 5 buzildi — ikki telefon bir vaqtda «O'yinlar»ni ochganda keyingi «Doimiy o'yin» ikki marta yaratilib, Telegram xabari ikki marta ketdi. Tuzatish (`backend/` — `oyin.entity.ts`, `doimiy.ts`, `migratsiya.ts`): Database cheklovi, ikkinchi urinish jimgina o'tkaziladi; qayta tekshiruvda takrorlanmadi. `XATOLAR.md` (usul · natija · holat; buzilmagan va tekshirilmagan yo'llar). Yangi versiya — `git push` bilan Render; `mobil/`, `lending/` o'zgarmagan — APK va brauzer ko'rinishi qayta chiqarilmaydi |
 
 ## Ortda qoldingizmi
 
