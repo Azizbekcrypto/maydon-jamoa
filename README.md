@@ -221,7 +221,8 @@ Sahifadagi `BACKEND` — namuna manzil, o'z Render manzilingizga almashtiring; B
 ## Ishga tushirish
 
 Ikki terminal kerak: Backend va ilova. Avval `.env` fayllari (`.env.example` dan nusxa oling, qiymatlarni o'zingiznikiga almashtiring):
-`backend/.env` — `DATABASE_URL` (Neon → Connect → connection string) va `JWT_SECRET` (uzun tasodifiy satr);
+`backend/.env` — `DATABASE_URL` (Neon → Connect → connection string), `JWT_SECRET` (uzun tasodifiy satr), `SANOQ_KALITI` (sanoq sahifasi kaliti, 12-Modul 8-dars)
+va brauzerdan ochiladigan sahifalar bo'lsa — `WEB_ORIGIN`;
 `mobil/.env` — `EXPO_PUBLIC_API_URL` (Render'dagi Backend manzili, oxirida `/` siz).
 
 1-terminal — Backend:
@@ -265,6 +266,12 @@ npm run dev
 ```
 
 `localhost:5173` → «Maydon Jamoa», O'yinlar — to'rt namuna o'yin kartasi (600 px dan tor oynada bitta ustunda).
+
+Ilovaning brauzer ko'rinishi (laptopda): `cd mobil` → `npx expo start --web` → `localhost:8081` (Backend `WEB_ORIGIN` ida shu manzil bo'lsin; token — `localStorage` da, eslatma yo'q).
+
+Lending (12-Modul) — yig'ish yo'q: `lending/index.html` ni brauzerda oching yoki `npx serve lending -l 5500` → `localhost:5500`.
+Sanoq sahifasi — `localhost:5500/sanoq.html`: sahifadagi `BACKEND` (namuna Render manzili) o'rniga sinash uchun `http://localhost:3000` yozing (repo'ga qaytarmang),
+Backend `WEB_ORIGIN` ida `http://localhost:5500` bo'lsin; kalit — `backend/.env` dagi `SANOQ_KALITI`.
 
 ## Maxfiy kalitlar (`.env`)
 
@@ -429,5 +436,7 @@ cd maydon-jamoa
 git checkout -f m11-dars-NN-done
 ```
 
-Mentor misolini alohida papkada ochib, qanday ishlashini ko'rasiz; o'z repo'ngizdagi qadamni shunga qarab qaytarasiz.
-`-f` shu papkadagi o'zgarishlarni o'chiradi.
+Mentor misolini o'z repo'ngizdan tashqarida, alohida yangi papkada ochib, qanday ishlashini ko'rasiz; o'z repo'ngizdagi qadamni shunga qarab qaytarasiz.
+`-f` shu papkadagi o'zgarishlarni o'chiradi — faqat shu yangi papkada ishlating. 12-Modul teglari ham shunday: `git checkout -f m12-dars-NN-done`
+(5-darsda — `m12-dars-05-start`: agent «bajardim» deganidan keyingi kod). `backend/.env` va `mobil/.env` ga o'z qiymatlaringizni yozasiz
+(`.env.example` dan nusxa); `mobil/src/lending.ts`, `mobil/eas.json`, `lending/index.html` va `lending/sanoq.html` dagi manzillar — namuna.
