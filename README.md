@@ -396,7 +396,8 @@ Sahifadagi `BACKEND` — namuna manzil, o'z Render manzilingizga almashtiring; B
 ## Ishga tushirish
 
 Ikki terminal kerak: Backend va ilova. Avval `.env` fayllari (`.env.example` dan nusxa oling, qiymatlarni o'zingiznikiga almashtiring):
-`backend/.env` — `DATABASE_URL` (Neon → Connect → connection string), `JWT_SECRET` (uzun tasodifiy satr), `SANOQ_KALITI` (sanoq sahifasi kaliti, 12-Modul 8-dars)
+`backend/.env` — `DATABASE_URL` (Neon → Connect → connection string), `JWT_SECRET` (uzun tasodifiy satr), `SANOQ_KALITI` (sanoq sahifasi kaliti, 12-Modul 8-dars),
+`TOLOV_KALITI` (to'lov xabari imzosi, 13-Modul 3-dars; `.env.example` da bo'sh — tasodifiy kalitni o'zingiz yarating), `TELEGRAM_BOT_TOKEN` va `TELEGRAM_SIR` (13-Modul 8-dars; bo'sh bo'lsa Telegram qismi o'chiq)
 va brauzerdan ochiladigan sahifalar bo'lsa — `WEB_ORIGIN`;
 `mobil/.env` — `EXPO_PUBLIC_API_URL` (Render'dagi Backend manzili, oxirida `/` siz).
 
@@ -410,6 +411,8 @@ npm run start:dev
 
 `localhost:3000` → «Maydon Jamoa Backend ishlayapti»; `localhost:3000/oyinlar` → mehmon javobi (tokensiz: `id, kun, soat, maydon, kerak, qoshilgan`);
 `localhost:3000/hodisalar/sanoq` → `401` (kalitsiz yopiq).
+13-Modul: mashq to'lov — ilovada «E'lon berish» → «Har hafta takrorlansin» → «To'lovga o'tish» (sahifa `localhost:3000/tolov-mashq?raqam=…` da ochiladi; telefonda — Backend manzili bilan);
+`localhost:3000/tolov-mashq` → «To'lov topilmadi.». Laptopda Telegram webhook o'rnatilmaydi (faqat Render'da, `RENDER_EXTERNAL_URL` bo'lsa).
 Birinchi ishga tushganda jadvallar o'zi yaratiladi va namuna qo'shiladi (bor bo'lsa — qayta qo'shilmaydi):
 namuna tashkilotchi (login `namunatashkilotchi`) va to'rt o'yin — keyingi shanba va yakshanba (Toshkent vaqti):
 Shanba 18:00 · Mahalla maydoni · 10 kishi · Shanba 20:00 · Maktab maydoni · 10 · Yakshanba 10:00 · Park maydoni · 8 · Yakshanba 17:00 · Mahalla maydoni · 10.
@@ -639,5 +642,7 @@ git checkout -f m11-dars-NN-done
 
 Mentor misolini o'z repo'ngizdan tashqarida, alohida yangi papkada ochib, qanday ishlashini ko'rasiz; o'z repo'ngizdagi qadamni shunga qarab qaytarasiz.
 `-f` shu papkadagi o'zgarishlarni o'chiradi — faqat shu yangi papkada ishlating. 12-Modul teglari ham shunday: `git checkout -f m12-dars-NN-done`
-(5-darsda — `m12-dars-05-start`: agent «bajardim» deganidan keyingi kod). `backend/.env` va `mobil/.env` ga o'z qiymatlaringizni yozasiz
-(`.env.example` dan nusxa); `mobil/src/lending.ts`, `mobil/eas.json`, `lending/index.html` va `lending/sanoq.html` dagi manzillar — namuna.
+(5-darsda — `m12-dars-05-start`: agent «bajardim» deganidan keyingi kod). 13-Modul teglari — `git checkout -f m13-dars-NN-done`
+(5-darsda — `m13-dars-05-start`: agent «to'lov ishlaydi» deganidan keyingi kod; 12-darsda — `m13-dars-12-start`). `backend/.env` va `mobil/.env` ga o'z qiymatlaringizni yozasiz
+(`.env.example` dan nusxa); `mobil/src/lending.ts`, `mobil/eas.json`, `lending/index.html`, `lending/sanoq.html` va `backend/src/telegram/manzil.ts` dagi manzillar — namuna;
+`TOLOV_KALITI`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_SIR` — o'zingizniki (Telegram — o'z yangi botingiz).
