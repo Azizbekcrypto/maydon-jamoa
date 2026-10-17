@@ -88,6 +88,16 @@ Saqlanadigan ma'lumotlar: o'yinchilar · o'yinlar · kim qaysi o'yinga qo'shilga
 | `holat` | `tolandi` · `rad` (rad etilgan to'lov ham yoziladi) |
 | `yaratilgan` | xabar qachon yozilgani (Database o'zi to'ldiradi) |
 
+**`boshlangan_tolovlar`** — «To'lovga o'tish» bosilganda Backend bergan to'lov raqamlari (13-Modul 4-dars); mashq sahifasi va to'lov xabari hisob va summani shundan oladi
+
+| Ustun | Nima saqlaydi |
+|---|---|
+| `id` | yozuv raqami |
+| `tolov_raqami` | `m-` va 12 ta tasodifiy harf-raqam — noyob |
+| `oyinchi_id` | to'lovni boshlagan tashkilotchi → `oyinchilar.id` |
+| `summa` | so'mda (`PRO_NARX`) |
+| `yaratilgan` | qachon boshlangan |
+
 Bog'lovchi ustunlar — boshqa jadvaldagi qatorni ko'rsatadigan ustun: `oyinlar.tashkilotchi_id` → `oyinchilar` ·
 `ishtirokchilar.oyin_id` → `oyinlar` · `ishtirokchilar.oyinchi_id` → `oyinchilar`.
 
@@ -202,7 +212,7 @@ Test rejim: pul yechilmaydi. Karta ma'lumoti hech qayerda so'ralmaydi va yozilma
 | Backend | imzoni tekshiradi, to'lovni bir marta yozadi, Pro muddatini uzaytiradi, 200 qaytaradi | To'lov xizmati |
 | Ilova | Pro holatini qayta so'raydi: GET /men | Backend |
 
-Hozir ishlaydi: to'lov xabari `POST /tolov/webhook` da qabul qilinadi va `tolovlar` ga yoziladi; Pro va ilova hali o'zgarmaydi. Test rejim: pul yechilmaydi.
+Hozircha: «To'lovga o'tish» Backend'dan to'lov raqamini oladi va mashq to'lov sahifasini ochadi; «To'lash (mashq)» dan keyin to'lov xabari Pro'ni 30 kunga uzaytiradi, ilova uni `GET /men` dan o'qiydi. Test rejim: pul yechilmaydi.
 
 ### Pro va «Doimiy o'yin» (4-dars)
 
@@ -216,6 +226,10 @@ bitta qulaylik: **«Doimiy o'yin»** — har hafta shu kun va soatda o'yin o'zi 
 - Keyingi o'yin **`GET /oyinlar` so'ralganda** yaratiladi (`backend/src/doimiy.ts`): doimiy o'yinning vaqti o'tgan bo'lsa (Toshkent vaqti) — bir haftadan keyingi kunga,
   o'sha soat, maydon, kerakli odamlar soni va tashkilotchi bilan; `doimiy` belgisi yangisiga o'tadi. Backend uxlashi mumkin — vaqtga bog'langan ish (taymer) yo'q.
 - Pro muddati tugagach Pro o'zi to'xtaydi (`GET /men` da `pro: false`) — avtomatik to'lov yo'q.
+- **To'lov yo'li:** «To'lovga o'tish» → `POST /tolov/boshlash` (token bilan): Backend yangi to'lov raqamini yaratadi — `m-` va 12 ta tasodifiy harf-raqam
+  (ketma-ket emas: raqam manzilda turadi), `boshlangan_tolovlar` ga hisob va summa bilan yozadi → `{ tolovRaqami, havola }` → ilova havolani telefon brauzerida ochadi
+  (brauzer ko'rinishida — yangi oynada) → «Mashq to'lov» sahifasi → «To'lash (mashq)» → to'lov xabari → `pro_gacha` 30 kunga uzayadi
+  (Pro bo'lmasa hozirdan, bo'lsa muddat oxiridan) → ilovaga qaytganda `GET /men`. Narx va muddat — Backend'da bitta joyda: `backend/src/tolov/narx.ts` (`PRO_NARX = 15000`, `PRO_KUN = 30`).
 
 Tekshiruv uchun (faqat o'z hisobingiz, `WHERE id` bilan): `UPDATE oyinchilar SET pro_gacha = now() + interval '1 day' WHERE id = {hisob raqami};` ·
 tekshiruv o'yinini o'tgan haftaga: `UPDATE oyinlar SET kun = kun - 7 WHERE id = {o'yin raqami};` → ro'yxatni yangilang — keyingi haftaning o'yini chiqadi ·
@@ -226,12 +240,14 @@ sarlavha `X-Imzo` = HMAC SHA-256 (so'rovning xom tanasi, `TOLOV_KALITI`), hex. T
 imzo yo'q, shakli noto'g'ri yoki mos emas — `401`, hech narsa yozilmaydi · maydon yetishmasa yoki `holat` boshqa — `400` ·
 shu to'lov raqami jadvalda bor — `200 { takror: true }` (bir vaqtda kelgan ikkinchi bir xil xabar ham) · yangi — `200 { ok: true }`, `rad` ham yoziladi.
 
-**«Mashq to'lov» sahifasi** — Backend'ning o'zi beradi: `{Backend manzili}/tolov-mashq?oyinchi={hisob raqami}&summa={summa}`
-(masalan `maydon-jamoa-….onrender.com/tolov-mashq?oyinchi=7&summa=10000`). Sarlavha «Mashq to'lov», «Bu sahifa — mashq. Karta so'ralmaydi, pul yechilmaydi.»,
+**«Mashq to'lov» sahifasi** — Backend'ning o'zi beradi: `{Backend manzili}/tolov-mashq?raqam={to'lov raqami}` (4-darsdan; 3-darsda — `?oyinchi=…&summa=…`).
+Raqam `POST /tolov/boshlash` dan; raqamsiz yoki noma'lum raqam bilan — «To'lov topilmadi.», tugmalar yo'q. Hisob va summa raqamdan olinadi; to'rt tugma shu raqam bilan ishlaydi. Sarlavha «Mashq to'lov», «Bu sahifa — mashq. Karta so'ralmaydi, pul yechilmaydi.»,
 «Maydon Jamoa — Pro, 30 kun» va summa; tugmalar «To'lash (mashq)» · «Rad etish (mashq)» va tekshiruv tugmalari «Ikki marta yuborish» · «Imzosiz yuborish».
-Tugma bosilganda sahifa `POST /tolov-mashq/yubor { tur, oyinchi, summa }` ga yozadi; Backend yangi to'lov raqamini (`m-…`) beradi, xabarni bitta JSON satr qilib yasaydi,
+Tugma bosilganda sahifa `POST /tolov-mashq/yubor { tur, raqam }` ga yozadi; Backend xabarni bitta JSON satr qilib yasaydi,
 aynan shu satrni imzolaydi va o'zining ochiq manzilidagi `POST /tolov/webhook` ga yuboradi (Render'da `RENDER_EXTERNAL_URL`, laptopda `localhost:PORT`) —
-kalit brauzerga chiqmaydi. Sahifada har yuborishning javobi: holat kodi va tanasi. Hisob va summa manzildan — bu mashq yordamchisi; haqiqiy to'lovda ularni Backend o'zi biladi.
+kalit brauzerga chiqmaydi. Sahifada har yuborishning javobi: holat kodi va tanasi; «To'lash (mashq)» dan keyin — «To'lov o'tdi (mashq) — ilovaga qayting.», rad — «To'lov o'tmadi.».
+Bitta raqam — bitta natija: shu raqam bilan keyingi xabar (rad etilgandan keyingi «To'lash» ham) — takror; qayta to'lash — ilovada yana «To'lovga o'tish» (yangi raqam).
+Sahifa ostida: «Real ishga tushirish — ota-onaning yozma roziligi va yuridik shaxs yoki YaTT (yakka tartibdagi tadbirkor) bilan; bu kursda emas.»
 Uch tekshiruv: «Imzosiz yuborish» → `401`, yangi qator yo'q · «Ikki marta yuborish» → `200 { ok: true }` va `200 { takror: true }`, `tolovlar` da bitta qator · «Rad etish (mashq)» → `200`, qator `rad`.
 
 ```sql
@@ -260,9 +276,10 @@ Bitta istisno — mehmon ko'rinishi (12-Modul 8-dars): `GET /oyinlar` tokensiz h
 | `POST /oyinlar/:id/tasdiq` | `keladi` — faqat o'yin kuni (Toshkent vaqti) va qo'shilgan o'yinchiga | `201` · `403` «Tasdiq faqat o'yin kuni» / «Siz bu o'yinga qo'shilmagansiz» |
 | `POST /oyinlar/:id/navbat` | `navbatda` — faqat to'lgan o'yinga | `201` · `409` |
 | `POST /oyinlar/:id/chiqish` | `chiqdi`; qo'shilgan chiqsa — navbatdagi birinchi `qoshildi` | `201` · `409` |
-| `POST /tolov/webhook` `{ tolovRaqami, holat, summa, oyinchiId }` · sarlavha `X-Imzo` | to'lov xabari (13-Modul 3-dars): imzo — HMAC SHA-256 (xom tana, `TOLOV_KALITI`) → maydonlar → takror → `tolovlar` ga yozuv (`rad` ham); token kerak emas | `200 { ok: true }` · `200 { takror: true }` · `400` · `401` imzo yo'q yoki mos emas |
-| `GET /tolov-mashq?oyinchi=…&summa=…` | «Mashq to'lov» sahifasi (HTML; test rejim) | `200` |
-| `POST /tolov-mashq/yubor` `{ tur: 'tolash' \| 'rad' \| 'ikki' \| 'imzosiz', oyinchi, summa }` | xabarni Backend'da yasaydi, imzolaydi va o'z `POST /tolov/webhook` iga yuboradi | `200 { tolovRaqami, javoblar: [{ holat, tana }] }` · `400` |
+| `POST /tolov/webhook` `{ tolovRaqami, holat, summa, oyinchiId }` · sarlavha `X-Imzo` | to'lov xabari (13-Modul 3-dars): imzo — HMAC SHA-256 (xom tana, `TOLOV_KALITI`) → maydonlar (4-darsdan hisob va summa `boshlangan_tolovlar` dagi raqam yozuviga mos) → takror → `tolovlar` ga yozuv (`rad` ham); `tolandi` — `pro_gacha` + 30 kun; token kerak emas | `200 { ok: true }` · `200 { takror: true }` · `400` · `401` imzo yo'q yoki mos emas |
+| `POST /tolov/boshlash` | (token bilan, 4-dars) yangi to'lov raqami — `boshlangan_tolovlar` ga; summa — `PRO_NARX` | `201 { tolovRaqami, havola }` · `401` |
+| `GET /tolov-mashq?raqam=…` | «Mashq to'lov» sahifasi (HTML; test rejim); raqamsiz yoki noma'lum — «To'lov topilmadi.» | `200` |
+| `POST /tolov-mashq/yubor` `{ tur: 'tolash' \| 'rad' \| 'ikki' \| 'imzosiz', raqam }` | xabarni Backend'da yasaydi (hisob va summa — raqamdan), imzolaydi va o'z `POST /tolov/webhook` iga yuboradi | `200 { tolovRaqami, javoblar: [{ holat, tana }] }` · `400` |
 
 ## Sanoq — Neon SQL Editor (12-Modul 7-dars)
 
@@ -506,6 +523,7 @@ Teglar: `m13-dars-NN-start` — dars boshidagi holat, `m13-dars-NN-done` — dar
 | Teg | Dars | Nima bor |
 |---|---|---|
 | `m13-dars-03-done` | 3 · webhook: to'lov Backend'ga qanday yetib keladi | `tolovlar` jadvali (`tolov_raqami` noyob · `oyinchi_id` · `summa` · `holat` · `yaratilgan`); `POST /tolov/webhook` — imzo `X-Imzo` (HMAC SHA-256, xom tana — `rawBody`, `timingSafeEqual`), takror — `200 { takror: true }`, rad ham yoziladi; `GET /tolov-mashq` — «Mashq to'lov» sahifasi («To'lash (mashq)», «Rad etish (mashq)», «Ikki marta yuborish», «Imzosiz yuborish»), xabarni Backend imzolaydi; `TOLOV_KALITI` (`.env.example` da qiymatsiz); README «To'lov» — «Reja: to'lov oqimi» va «Hozir ishlaydi». Pro va ilova o'zgarmagan |
+| `m13-dars-04-done` | 4 · narx va to'lov taklifi ekrani | `oyinchilar.pro_gacha`; `GET /men` — `pro`, `proGacha`; `oyinlar.doimiy`, `POST /oyinlar` `doimiy: true` faqat Pro'da (`403`), keyingi «Doimiy o'yin» `GET /oyinlar` da (`backend/src/doimiy.ts`, taymer yo'q); ilovada «E'lon berish» — «Har hafta takrorlansin», to'lov taklifi ekrani (`mobil/src/app/pro.tsx`: «Doimiy o'yin — Pro'da» · «30 kun — 15 000 so'm» · «To'lovga o'tish» · «Test rejim: pul yechilmaydi»), «Pro: {sana}gacha». To'lov yo'li: `POST /tolov/boshlash` (`boshlangan_tolovlar`, `m-` + 12 tasodifiy belgi; `PRO_NARX`, `PRO_KUN` — `backend/src/tolov/narx.ts`), mashq sahifasi `?raqam=` bilan («To'lov topilmadi.»), webhook hisob va summani raqam yozuvidan oladi va Pro'ni 30 kun uzaytiradi; ilova qaytganda `GET /men`. README «Hozircha» qatori. Agent «to'lov ishlaydi» degan — to'rt usul bilan tekshirish 5-darsda |
 
 ## Ortda qoldingizmi
 

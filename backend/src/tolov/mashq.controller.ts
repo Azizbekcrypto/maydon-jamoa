@@ -1,67 +1,72 @@
 import { BadRequestException, Body, Controller, Get, Header, HttpCode, Post, Query } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { BoshlanganTolov } from './boshlangan-tolov.entity.js';
 import { imzola } from './imzo.js';
+import { ozManzil } from './manzil.js';
 
 // «Mashq to'lov» (13-Modul 3-dars) — Backend'ning o'zi beradigan oddiy HTML sahifa: to'lov xizmatining o'rnida, test rejimda.
 // Karta yoki boshqa to'lov ma'lumoti so'ralmaydi, pul yechilmaydi; Payme yoki Click nomi va ko'rinishi ishlatilmaydi.
 // Sahifa faqat qaysi tugma bosilganini aytadi — xabarni Backend yasaydi va imzolaydi: kalit (TOLOV_KALITI) brauzerga chiqmaydi.
-// Mashq yordamchisi: hisob va summa manzildan olinadi (haqiqiy to'lovda ularni Backend o'zi biladi).
+// 4-darsdan sahifa faqat Backend bergan to'lov raqami bilan ishlaydi (POST /tolov/boshlash): hisob va summa raqamdan olinadi,
+// to'rt tugma yangi raqam yaratmaydi — shu raqam bilan ishlaydi. Raqam yo'q yoki noma'lum — «To'lov topilmadi.»
 
 const TURLAR = ['tolash', 'rad', 'ikki', 'imzosiz'] as const;
 type Tur = (typeof TURLAR)[number];
 
-// Xabar yuboriladigan manzil — Backend'ning o'z ochiq manzili: Render'da RENDER_EXTERNAL_URL (Render o'zi beradi), laptopda — localhost
-function ozManzil(): string {
-  return (process.env.RENDER_EXTERNAL_URL ?? `http://localhost:${process.env.PORT ?? 3000}`).replace(/\/+$/, '');
-}
-
-function musbatSon(q: unknown): number | null {
-  const n = Number(q);
-  return Number.isInteger(n) && n > 0 ? n : null;
-}
-
-// 10000 → «10 000»
+// 15000 → «15 000»
 const somda = (n: number) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 
 @Controller('tolov-mashq')
 export class MashqTolovController {
-  // GET /tolov-mashq?oyinchi=7&summa=10000 — sahifa
+  constructor(@InjectRepository(BoshlanganTolov) private readonly boshlanganlar: Repository<BoshlanganTolov>) {}
+
+  private async topish(raqam: unknown): Promise<BoshlanganTolov | null> {
+    if (typeof raqam !== 'string' || !/^m-[a-z0-9]{1,38}$/.test(raqam)) return null;
+    return this.boshlanganlar.findOneBy({ tolov_raqami: raqam });
+  }
+
+  // GET /tolov-mashq?raqam=m-… — sahifa
   @Get()
   @Header('Content-Type', 'text/html; charset=utf-8')
-  sahifa(@Query('oyinchi') oyinchiQ?: string, @Query('summa') summaQ?: string): string {
-    const oyinchi = musbatSon(oyinchiQ);
-    const summa = musbatSon(summaQ);
-    if (!oyinchi || !summa) {
-      return qolip(`<p class="xato">Manzilda hisob va summa bo'lsin: /tolov-mashq?oyinchi=7&amp;summa=10000</p>`, '');
-    }
+  async sahifa(@Query('raqam') raqam?: string): Promise<string> {
+    const tolov = await this.topish(raqam);
+    if (!tolov) return qolip(`<p class="xato">To'lov topilmadi.</p>`, '');
     const tugmalar = `
-      <p class="nima"><b>Maydon Jamoa</b> — Pro, 30 kun · ${somda(summa)} so'm</p>
+      <p class="nima"><b>Maydon Jamoa</b> — Pro, 30 kun · ${somda(tolov.summa)} so'm</p>
       <div class="tugmalar">
         <button data-tur="tolash">To'lash (mashq)</button>
         <button data-tur="rad" class="ikkinchi">Rad etish (mashq)</button>
       </div>
+      <p id="natija"></p>
       <p class="kulrang">Tekshiruv tugmalari</p>
       <div class="tugmalar">
         <button data-tur="ikki" class="ikkinchi">Ikki marta yuborish</button>
         <button data-tur="imzosiz" class="ikkinchi">Imzosiz yuborish</button>
       </div>
-      <ol id="javoblar"></ol>`;
-    return qolip(tugmalar, `const MASHQ = ${JSON.stringify({ oyinchi, summa })};`);
+      <ol id="javoblar"></ol>
+      <p class="kulrang">Real ishga tushirish — ota-onaning yozma roziligi va yuridik shaxs yoki YaTT (yakka tartibdagi tadbirkor) bilan; bu kursda emas.</p>`;
+    return qolip(tugmalar, `const MASHQ = ${JSON.stringify({ raqam: tolov.tolov_raqami })};`);
   }
 
-  // POST /tolov-mashq/yubor { tur, oyinchi, summa } → { tolovRaqami, javoblar: [{ holat, tana }] }
-  // Har bosishda yangi to'lov raqami (m- va navbatdagi raqam). Xabar — bitta JSON satr; aynan shu satr TOLOV_KALITI bilan
-  // imzolanadi va aynan shu satr tana bo'lib Backend'ning o'z POST /tolov/webhook manziliga haqiqiy so'rov bilan yuboriladi.
+  // POST /tolov-mashq/yubor { tur, raqam } → { tolovRaqami, javoblar: [{ holat, tana }] }
+  // Xabar — bitta JSON satr { tolovRaqami, holat, summa, oyinchiId } (hisob va summa — boshlangan to'lovdan); aynan shu satr
+  // TOLOV_KALITI bilan imzolanadi va aynan shu satr tana bo'lib Backend'ning o'z POST /tolov/webhook manziliga yuboriladi.
   // ikki — bir xil tana va imzo bilan ketma-ket ikki marta · imzosiz — X-Imzo sarlavhasisiz.
   @Post('yubor')
   @HttpCode(200)
   async yubor(@Body() body: Record<string, unknown>) {
     const tur = body?.tur as Tur;
-    const oyinchi = musbatSon(body?.oyinchi);
-    const summa = musbatSon(body?.summa);
-    if (!TURLAR.includes(tur) || !oyinchi || !summa) throw new BadRequestException('tur, oyinchi va summa kerak');
+    if (!TURLAR.includes(tur)) throw new BadRequestException('tur — tolash, rad, ikki yoki imzosiz');
+    const tolov = await this.topish(body?.raqam);
+    if (!tolov) throw new BadRequestException("To'lov topilmadi.");
 
-    const tolovRaqami = `m-${Date.now()}`;
-    const xabar = JSON.stringify({ tolovRaqami, holat: tur === 'rad' ? 'rad' : 'tolandi', summa, oyinchiId: oyinchi });
+    const xabar = JSON.stringify({
+      tolovRaqami: tolov.tolov_raqami,
+      holat: tur === 'rad' ? 'rad' : 'tolandi',
+      summa: tolov.summa,
+      oyinchiId: tolov.oyinchi_id,
+    });
     const sarlavhalar: Record<string, string> = { 'Content-Type': 'application/json' };
     if (tur !== 'imzosiz') sarlavhalar['X-Imzo'] = imzola(xabar, process.env.TOLOV_KALITI ?? '');
 
@@ -77,11 +82,13 @@ export class MashqTolovController {
       }
       javoblar.push({ holat: javob.status, tana });
     }
-    return { tolovRaqami, javoblar };
+    return { tolovRaqami: tolov.tolov_raqami, javoblar };
   }
 }
 
-// Sahifa qolipi: sarlavha, test rejim qatori, ichi va tugmalar skripti (har yuborishning javobi — holat kodi va tanasi)
+// Sahifa qolipi: sarlavha, test rejim qatori, ichi va tugmalar skripti (har yuborishning javobi — holat kodi va tanasi).
+// «To'lash (mashq)» javobi kelgach: { ok: true } — «To'lov o'tdi (mashq) — ilovaga qayting.», aks holda — «To'lov o'tmadi.»;
+// «Rad etish (mashq)» — «To'lov o'tmadi.». Javob 10 soniyada kelmasa — so'rov to'xtatiladi.
 function qolip(ichi: string, malumot: string): string {
   return `<!doctype html>
 <html lang="uz">
@@ -100,9 +107,12 @@ function qolip(ichi: string, malumot: string): string {
     background: #2E9E4F; color: #fff; cursor: pointer; }
   button.ikkinchi { background: #fff; color: #2E9E4F; }
   button:disabled { opacity: .5; }
+  #natija { font-size: 18px; font-weight: 600; }
+  #natija.otdi { color: #2E9E4F; }
+  #natija.otmadi { color: #C0392B; }
   .kulrang { color: #6B7580; font-size: 14px; margin: 8px 0; }
   #javoblar { padding-left: 20px; font-family: ui-monospace, monospace; font-size: 14px; }
-  .xato { color: #C0392B; }
+  .xato { color: #C0392B; font-size: 18px; }
 </style>
 </head>
 <body>
@@ -111,8 +121,14 @@ function qolip(ichi: string, malumot: string): string {
 ${ichi}
 <script>
 ${malumot}
+function natija(matn, sinf) {
+  var n = document.getElementById('natija');
+  n.textContent = matn;
+  n.className = sinf;
+}
 document.querySelectorAll('button[data-tur]').forEach(function (t) {
   t.addEventListener('click', async function () {
+    var tur = t.dataset.tur;
     var tugmalar = document.querySelectorAll('button[data-tur]');
     tugmalar.forEach(function (b) { b.disabled = true; });
     var ro = document.getElementById('javoblar');
@@ -120,15 +136,24 @@ document.querySelectorAll('button[data-tur]').forEach(function (t) {
       var javob = await fetch('/tolov-mashq/yubor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tur: t.dataset.tur, oyinchi: MASHQ.oyinchi, summa: MASHQ.summa })
+        body: JSON.stringify({ tur: tur, raqam: MASHQ.raqam }),
+        signal: AbortSignal.timeout(10000)
       });
       var j = await javob.json();
-      (j.javoblar || [{ holat: javob.status, tana: j }]).forEach(function (x) {
+      var javoblar = j.javoblar || [{ holat: javob.status, tana: j }];
+      javoblar.forEach(function (x) {
         var li = document.createElement('li');
-        li.textContent = t.textContent + ' · ' + (j.tolovRaqami || '') + ' — ' + x.holat + ' ' + JSON.stringify(x.tana);
+        li.textContent = t.textContent + ' — ' + x.holat + ' ' + JSON.stringify(x.tana);
         ro.appendChild(li);
       });
+      var birinchi = javoblar[0] || {};
+      if (tur === 'tolash') {
+        if (birinchi.holat === 200 && birinchi.tana && birinchi.tana.ok) natija("To'lov o'tdi (mashq) — ilovaga qayting.", 'otdi');
+        else natija("To'lov o'tmadi.", 'otmadi');
+      }
+      if (tur === 'rad') natija("To'lov o'tmadi.", 'otmadi');
     } catch (e) {
+      if (tur === 'tolash' || tur === 'rad') natija("To'lov o'tmadi.", 'otmadi');
       var li = document.createElement('li');
       li.className = 'xato';
       li.textContent = t.textContent + ' — javob kelmadi';

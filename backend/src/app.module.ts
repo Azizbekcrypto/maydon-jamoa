@@ -18,6 +18,7 @@ import { Oyinchi } from './oyinchi.entity.js';
 import { OyinlarController } from './oyinlar.controller.js';
 import { RoyxatController } from './royxat.controller.js';
 import { TokenGuard } from './token.guard.js';
+import { BoshlanganTolov } from './tolov/boshlangan-tolov.entity.js';
 import { MashqTolovController } from './tolov/mashq.controller.js';
 import { TolovController } from './tolov/tolov.controller.js';
 import { Tolov } from './tolov/tolov.entity.js';
@@ -30,7 +31,7 @@ import { Tolov } from './tolov/tolov.entity.js';
       useFactory: () => ({
         type: 'postgres',
         url: process.env.DATABASE_URL,
-        entities: [Oyinchi, Oyin, Ishtirokchi, Hodisa, Tolov],
+        entities: [Oyinchi, Oyin, Ishtirokchi, Hodisa, Tolov, BoshlanganTolov],
         // Jadvallar entity'lardan o'zi yaratiladi (README'dagi arxitektura bo'yicha)
         synchronize: true,
       }),
@@ -40,7 +41,7 @@ import { Tolov } from './tolov/tolov.entity.js';
         return new DataSource(options!).initialize();
       },
     }),
-    TypeOrmModule.forFeature([Oyinchi, Oyin, Ishtirokchi, Hodisa, Tolov]),
+    TypeOrmModule.forFeature([Oyinchi, Oyin, Ishtirokchi, Hodisa, Tolov, BoshlanganTolov]),
     // Token backend/.env dagi JWT_SECRET bilan imzolanadi, 30 kun amal qiladi.
     // Kalit faqat .env dan: kodda zaxira qiymat yo'q, kalit bo'lmasa Backend ishga tushmaydi.
     JwtModule.registerAsync({
