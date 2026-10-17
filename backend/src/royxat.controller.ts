@@ -4,6 +4,7 @@ import { hash } from 'bcrypt';
 import { Repository } from 'typeorm';
 import { LOGIN_QOIDASI } from './login.js';
 import { Oyinchi } from './oyinchi.entity.js';
+import { taklifKodiToqnashdi, yangiTaklifKodi } from './taklif/kod.js';
 
 function matn(q: unknown): string {
   return typeof q === 'string' ? q.trim() : '';
@@ -32,15 +33,20 @@ export class RoyxatController {
     if (await this.oyinchilar.existsBy({ login })) {
       throw new ConflictException('Bu login band');
     }
-    try {
-      const oyinchi = await this.oyinchilar.save({ ism, login, parol_hash: await hash(parol, 10), namuna: false });
-      return { id: oyinchi.id, ism: oyinchi.ism };
-    } catch (e) {
-      // Ikki so'rov bir vaqtda kelsa — Database'dagi unique qoidasi ushlaydi
-      if ((e as { code?: string }).code === '23505') {
-        throw new ConflictException('Bu login band');
+    const parol_hash = await hash(parol, 10);
+    // Yangi hisobga taklif kodi (13-Modul 10-dars); kod to'qnashsa — yangi kod bilan qayta yoziladi
+    for (;;) {
+      try {
+        const oyinchi = await this.oyinchilar.save({ ism, login, parol_hash, namuna: false, taklif_kodi: yangiTaklifKodi() });
+        return { id: oyinchi.id, ism: oyinchi.ism };
+      } catch (e) {
+        if (taklifKodiToqnashdi(e)) continue;
+        // Ikki so'rov bir vaqtda kelsa — Database'dagi unique qoidasi ushlaydi
+        if ((e as { code?: string }).code === '23505') {
+          throw new ConflictException('Bu login band');
+        }
+        throw e;
       }
-      throw e;
     }
   }
 }

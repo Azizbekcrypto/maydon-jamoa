@@ -39,6 +39,10 @@ export class Oyinchi {
   @Column({ type: 'timestamptz', nullable: true })
   telegram_kod_gacha: Date | null;
 
+  // Taklif kodi (13-Modul 10-dars): 6 belgi, katta harf va raqam, noyob — taklif havolasi …/?taklif=<kod>&kanal=taklif
+  @Column({ type: 'varchar', length: 6, nullable: true, unique: true })
+  taklif_kodi: string | null;
+
   // Ro'yxatdan o'tgan vaqt (Database o'zi to'ldiradi)
   @CreateDateColumn({ type: 'timestamptz' })
   yaratilgan: Date;

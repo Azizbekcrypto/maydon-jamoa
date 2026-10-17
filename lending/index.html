@@ -71,6 +71,12 @@
       </div>
       <p class="kulrang">Android o'rnatishda ogohlantirish ko'rsatadi — ilova do'kondan emas, to'g'ridan-to'g'ri o'rnatiladi.</p>
       <p class="kulrang">iPhone'da eslatma hozircha yo'q.</p>
+      <!-- Taklif havolasi (13-Modul 10-dars): …/?taklif=AB12CD&kanal=taklif — kod shu yerda ko'rinadi.
+           APK o'rnatilganda havoladagi kod ilovaga o'tmaydi — odam uni ro'yxatdan o'tishda qo'lda yozadi. -->
+      <div class="taklif" id="taklif" hidden>
+        <p class="taklif-kod">Taklif kodi: <b id="taklif-kod"></b></p>
+        <p class="kulrang">Ro'yxatdan o'tishda shu taklif kodini yozing.</p>
+      </div>
     </section>
   </main>
 
@@ -85,7 +91,14 @@
        Umami yuklanmasa (masalan, reklama to'sgichi) — hech narsa yozilmaydi, sahifa ishlayveradi. -->
   <script>
     (function () {
-      var kanal = new URLSearchParams(location.search).get('kanal') || 'belgisiz';
+      var belgi = new URLSearchParams(location.search);
+      var kanal = belgi.get('kanal') || 'belgisiz';
+      // Taklif kodi (10-dars) — faqat ko'rsatiladi; Umami'ga yuborilmaydi (unga faqat kanal ketadi)
+      var taklif = (belgi.get('taklif') || '').trim().toUpperCase();
+      if (/^[A-Z0-9]{6}$/.test(taklif)) {
+        document.getElementById('taklif-kod').textContent = taklif;
+        document.getElementById('taklif').hidden = false;
+      }
       // Umami skripti defer bilan yuklanadi — sahifa to'liq yuklangach u tayyor bo'ladi
       window.addEventListener('load', function () {
         if (window.umami) window.umami.track('tashrif', { kanal: kanal });

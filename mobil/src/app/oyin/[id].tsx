@@ -9,7 +9,8 @@ import { Son } from '@/components/son';
 import { oyinEslatmasiniBekor, oyinEslatmasiniQoy, uchKunlikniQoy } from '@/eslatma';
 import { hodisaYoz } from '@/hodisa';
 import { kunNomi } from '@/kun';
-import { ULASHISH_HAVOLASI } from '@/lending';
+import { taklifHavolasi, ULASHISH_HAVOLASI } from '@/lending';
+import { menniOl } from '@/men';
 import { oyinlarniOl, useOyinlar, type Oyin } from '@/oyin';
 import { R } from '@/ranglar';
 import { tasdiqSora } from '@/tasdiq';
@@ -23,7 +24,8 @@ import { oyinniOch, oyinniYop, ulan, useKorayotganlar } from '@/ulanish';
 // kiradi va chiqadi; son korayotganlar-ozgardi bilan keladi (o'zim ham sanalaman, ism ko'rsatilmaydi).
 // Ochiq o'yin ulanish.ts da eslab qolinadi: qayta ulanganda ilova shu xonaga qayta kiradi.
 // «Havolani ulashish» (10-dars) — o'yinni e'lon qilgan tashkilotchida: telefonning ulashish oynasi ochiladi, tashkilotchi
-// o'zi tanlagan joyga (o'z jamoasiga) yuboradi — ilova hech kimga o'zi yubormaydi. Havola — lending, ?kanal=ilova belgisi bilan.
+// o'zi tanlagan joyga (o'z jamoasiga) yuboradi — ilova hech kimga o'zi yubormaydi. Havola — lending, ?kanal=ilova belgisi bilan;
+// 13-Modul 10-darsdan — taklif havolasi ?taklif=<kod>&kanal=taklif.
 // Mehmon ko'rinishi (kirmagan odam, 8-dars): o'yin ko'rinadi, «Qo'shilaman» (to'lgan o'yinda «Navbatga yozilish») — «Ro'yxatdan o'tish».
 export default function OyinEkrani() {
   const router = useRouter();
@@ -90,9 +92,12 @@ export default function OyinEkrani() {
     }
   }
 
+  // 13-Modul 10-dars: havola — shaxsiy, o'z taklif kodi bilan (GET /men dagi taklifKodi); tugma nomi va joyi o'zgarmagan
   async function ulash(o: Oyin) {
     try {
-      await Share.share({ message: `${kunNomi(o.kun)}, ${o.soat} · ${o.maydon} — Maydon Jamoa'da qo'shiling: ${ULASHISH_HAVOLASI}` });
+      const { taklifKodi } = await menniOl();
+      const havola = taklifKodi ? taklifHavolasi(taklifKodi) : ULASHISH_HAVOLASI;
+      await Share.share({ message: `${kunNomi(o.kun)}, ${o.soat} · ${o.maydon} — Maydon Jamoa'da qo'shiling: ${havola}` });
     } catch (e) {
       setXabar((e as Error).message);
     }

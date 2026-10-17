@@ -38,6 +38,8 @@ export class MenController {
       oxirgiTolov,
       // Telegram ulanganmi (8-dars) — chat raqamining o'zi ilovaga yuborilmaydi
       telegram: men.telegram_chat_id !== null,
+      // Taklif kodi (10-dars) — «Havolani ulashish» shaxsiy havolasi uchun
+      taklifKodi: men.taklif_kodi,
     };
   }
 }

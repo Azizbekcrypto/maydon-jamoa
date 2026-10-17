@@ -11,6 +11,8 @@ export type Men = {
   oxirgiTolov: { tolovRaqami: string; holat: 'tolandi' | 'rad' | 'kutilmoqda' } | null;
   // Telegram ulanganmi (8-dars) — chat raqamining o'zi ilovaga kelmaydi
   telegram: boolean;
+  // Taklif kodi (10-dars) — 6 belgi, katta harf va raqam
+  taklifKodi: string | null;
 };
 
 // Oxirgi javob — ilovada bitta: «E'lon berish» va to'lov taklifi ekrani shundan o'qiydi (oyin.ts dagidek)

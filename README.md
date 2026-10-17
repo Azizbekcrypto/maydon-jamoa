@@ -45,6 +45,7 @@ Saqlanadigan ma'lumotlar: o'yinchilar · o'yinlar · kim qaysi o'yinga qo'shilga
 | `namuna` | `true` — namuna va tekshiruv akkauntlari (sanoqqa kirmaydi); ro'yxatdan o'tish formasi har doim `false` yozadi |
 | `telegram_chat_id` | Telegram chat raqami (13-Modul 8-dars) — faqat xabar yuborish uchun; botda «Start» bosilganda yoziladi, «Telegram xabarlarini o'chirish»da o'chadi; ilovaga yuborilmaydi |
 | `telegram_kod` · `telegram_kod_gacha` | bir martalik kod (16 harf-raqam) va muddati (10 daqiqa) — `t.me/<bot>?start=<kod>`; ishlatilgach o'chadi |
+| `taklif_kodi` | taklif kodi (13-Modul 10-dars) — 6 belgi, katta harf va raqam, noyob; yangi hisobga ro'yxatdan o'tishda, mavjudlarga bir marta (Backend ishga tushganda) |
 | `pro_gacha` | Pro muddati (13-Modul 4-dars) — shu vaqtgacha Pro; bo'sh — Pro yo'q. Muddat tugagach Pro o'zi to'xtaydi, avtomatik to'lov yo'q |
 | `yaratilgan` | ro'yxatdan o'tgan vaqt (Database o'zi to'ldiradi) |
 
@@ -304,6 +305,15 @@ Bot — **yangi bot** (@BotFather: `/newbot`): botda bitta webhook, 7-Moduldagi 
 Tekshirish: Neon'da `SELECT id, telegram_chat_id IS NOT NULL AS ulangan FROM oyinchilar WHERE id = {hisob raqami};` (chat raqamining o'zi chiqmaydi) ·
 `git grep -n "TELEGRAM_"` — faqat nomlar.
 
+## Taklif havolasi (13-Modul 10-dars)
+
+12-Modulda «Havolani ulashish» lending manzilini `?kanal=ilova` bilan ulashardi — kim ulashgani bilinmasdi. Endi har hisobning o'z **taklif kodi** (`oyinchilar.taklif_kodi`)
+va shu kod yozilgan **taklif havolasi**: lending manzili `?taklif=<kod>&kanal=taklif` (`mobil/src/lending.ts`). «O'yin» ekranidagi «Havolani ulashish» (tashkilotchida) —
+nomi va joyi o'zgarmagan, shaxsiy havolani ulashadi. Lending «Qanday qo'shilaman» bo'limida ko'rsatadi: «Taklif kodi: AB12CD» va «Ro'yxatdan o'tishda shu taklif kodini yozing.»;
+Umami'ga `tashrif` — faqat `kanal` bilan (taklif kodi yuborilmaydi).
+
+Tekshirish: `SELECT COUNT(*) FROM oyinchilar WHERE taklif_kodi IS NULL;` → `0` · `SELECT taklif_kodi FROM oyinchilar WHERE login = '{login}';`.
+
 ## Backend yo'llari
 
 Yopiq yo'llar (`/oyinlar` va `/hisob`) — faqat token bilan (`Authorization: Bearer <token>`), tokensiz `401`.
@@ -318,7 +328,7 @@ Bitta istisno — mehmon ko'rinishi (12-Modul 8-dars): `GET /oyinlar` tokensiz h
 | `POST /hodisalar` `{ nom, qurilma_id }` | qadamlar sanog'i (va 9-darsdan sanoq yozuvi `eslatmadan-ochdi`, 13-Modul 8-darsdan `telegramdan-ochdi`); token kerak emas (yuborilmaydi); yozilgach sanoq sahifalariga `sanoq-ozgardi` | `201` · `400` nom ruxsat etilganlardan emas |
 | `GET /hodisalar/sanoq` (`?dan=` vaqt) | faqat maxfiy kalit bilan — sarlavha `X-Sanoq-Kaliti` (`SANOQ_KALITI`): `{ qadamlar: [{ nom, soni }], eslatmadanOchdi, telegramdanOchdi, royxatdanOtgan }` — har qadamda turli qurilmalar, ro'yxatdan o'tgan `namuna = false` akkauntlar; `?dan=` — shu vaqtdan keyingi yozuvlar | `200` · `401` kalitsiz yoki noto'g'ri |
 | `GET /oyinlar` | (13-Modul 4-dars: avval vaqti o'tgan «Doimiy o'yin»ning keyingi haftadagi o'yini yaratiladi) yagona ro'yxat yo'li, eng yangi e'lon tepada: `id, kun, soat, maydon, kerak, qoshilgan, menQoshilganman, tasdiqlagan, menTasdiqlaganman, menTasdiqlayOlaman, navbatda, menNavbatdaman, menTashkilotchiman` | `200` |
-| `GET /men` | kirgan o'yinchining holati (13-Modul 4-dars): `{ pro, proGacha, oxirgiTolov }` — `pro` = `pro_gacha` hozirdan keyin; `oxirgiTolov` (5-dars) — `{ tolovRaqami, holat: 'tolandi' \| 'rad' \| 'kutilmoqda' }` yoki `null`; `telegram` (8-dars) — Telegram ulanganmi (chat raqamisiz) | `200` · `401` tokensiz |
+| `GET /men` | kirgan o'yinchining holati (13-Modul 4-dars): `{ pro, proGacha, oxirgiTolov }` — `pro` = `pro_gacha` hozirdan keyin; `oxirgiTolov` (5-dars) — `{ tolovRaqami, holat: 'tolandi' \| 'rad' \| 'kutilmoqda' }` yoki `null`; `telegram` (8-dars) — Telegram ulanganmi (chat raqamisiz); `taklifKodi` (10-dars) | `200` · `401` tokensiz |
 | `POST /oyinlar` `{ kun, soat, maydon, kerak, doimiy? }` | e'lon; tashkilotchi — token egasi; `doimiy: true` («Har hafta takrorlansin») — faqat Pro'dagi tashkilotchidan | `201` · `400` «Yozilmagan: …» · `403` «Doimiy o'yin» — faqat Pro'da |
 | `POST /oyinlar/:id/qoshilish` | `qoshildi` | `201` · `409` «O'yin to'ldi» / «Siz bu o'yinga qo'shilgansiz» |
 | `POST /oyinlar/:id/tasdiq` | `keladi` — faqat o'yin kuni (Toshkent vaqti) va qo'shilgan o'yinchiga | `201` · `403` «Tasdiq faqat o'yin kuni» / «Siz bu o'yinga qo'shilmagansiz» |

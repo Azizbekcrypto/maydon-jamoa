@@ -7,6 +7,7 @@ import { Ishtirokchi } from './ishtirokchi.entity.js';
 import { Oyin } from './oyin.entity.js';
 import { Oyinchi } from './oyinchi.entity.js';
 import { keyingiShanbaYakshanba } from './sana.js';
+import { taklifKodisizlargaBer } from './taklif/kod.js';
 
 // Namuna akkauntlar loginlari — ismidan (login.ts dagi qoida bilan): 7-darsdagi migratsiya eski namunalarga ham shularni beradi.
 // Hammasi namuna = true — sanoqqa kirmaydi.
@@ -49,6 +50,9 @@ export class NamunaMalumot implements OnApplicationBootstrap {
       await this.oyinlarQosh(tashkilotchi.id);
     }
     await this.qoshilganlarQosh(tashkilotchi.id);
+    // Taklif kodi (13-Modul 10-dars) — mavjud hisoblarga bir marta (namunalar shu yerda yaratilgani uchun — ulardan keyin)
+    const berildi = await taklifKodisizlargaBer(this.oyinchilar);
+    if (berildi) this.log.log(`Taklif kodi berildi: ${berildi} ta hisob`);
   }
 
   private async oyinlarQosh(tashkilotchiId: number) {

@@ -172,6 +172,11 @@ h1 {
 
 .qanday .kulrang + .kulrang { margin-top: 4px; }
 
+/* Taklif kodi (13-Modul 10-dars) */
+.taklif { margin-top: 20px; padding: 16px; border: 2px dashed var(--yashil); border-radius: 12px; }
+.taklif-kod { margin: 0 0 4px; font-size: 20px; }
+.taklif-kod b { letter-spacing: 2px; color: var(--yashil); }
+
 .past {
   max-width: 1040px;
   margin: 0 auto;
