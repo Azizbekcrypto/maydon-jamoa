@@ -20,6 +20,8 @@ export type Oyin = {
   // navbatdagilar soni va kirgan o'yinchi navbatdami
   navbatda: number;
   menNavbatdaman: boolean;
+  // o'yinni kirgan o'yinchi e'lon qilganmi (tashkilotchi)
+  menTashkilotchiman: boolean;
 };
 
 // Oxirgi GET /oyinlar javobi — ilovada bitta: «O'yinlar» va «O'yin» shu javobdan o'qiydi.

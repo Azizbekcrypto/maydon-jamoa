@@ -1,13 +1,52 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { R } from '@/ranglar';
+import { useJonliXabarlar } from '@/ulanish';
 
 // Ekranlar Stack'da: yangi ekran ustiga suriladi, «‹ O'yinlar» uni olib tashlaydi.
 // Sarlavhani har ekran o'zi chizadi, shuning uchun Stack sarlavhasi yashirilgan.
+// Hamma ekranlar tepasida — jonli xabarlar (ulanish.ts): bir necha soniya turadi va o'zi yo'qoladi.
 export default function Layout() {
   return (
     <>
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false }} />
+      <JonliXabarlar />
     </>
   );
 }
+
+function JonliXabarlar() {
+  const xabarlar = useJonliXabarlar();
+  if (!xabarlar.length) return null;
+  return (
+    <SafeAreaView style={s.joy} pointerEvents="none" edges={['top']}>
+      {xabarlar.map((x) => (
+        <View key={x.id} style={s.xabar}>
+          <Text style={s.nom}>Maydon Jamoa</Text>
+          <Text style={s.matn}>{x.matn}</Text>
+        </View>
+      ))}
+    </SafeAreaView>
+  );
+}
+
+const s = StyleSheet.create({
+  joy: { position: 'absolute', top: 0, left: 0, right: 0, paddingHorizontal: 12, gap: 8 },
+  xabar: {
+    marginTop: 8,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: R.matn,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  },
+  nom: { color: '#9FE3B4', fontSize: 13, fontWeight: '700' },
+  matn: { color: '#fff', fontSize: 15, marginTop: 2 },
+});

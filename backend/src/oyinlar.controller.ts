@@ -42,7 +42,8 @@ export class OyinlarController {
   // GET /oyinlar — faqat token bilan (tokensiz 401). Yagona ro'yxat yo'li: «O'yin» ekrani ham shundan o'qiydi.
   // Eng yangi e'lon tepada: yaratilgan bo'yicha kamayib.
   // → [{ id, kun: '2026-10-11', soat: '17:00', maydon, kerak, qoshilgan, menQoshilganman,
-  //      tasdiqlagan, menTasdiqlaganman, menTasdiqlayOlaman, navbatda, menNavbatdaman }]
+  //      tasdiqlagan, menTasdiqlaganman, menTasdiqlayOlaman, navbatda, menNavbatdaman, menTashkilotchiman }]
+  // menTashkilotchiman — o'yinni kirgan o'yinchi e'lon qilganmi (jonli xabar «faqat o'ziga tegishli o'yin» qoidasi uchun).
   // navbatda — navbatdagilar soni; menNavbatdaman — kirgan o'yinchi navbatdami.
   // tasdiqlagan — kelishini tasdiqlaganlar (keladi) soni; faqat o'yinni e'lon qilgan o'yinchiga, boshqalarga — null.
   // menTasdiqlayOlaman — POST …/tasdiq dagi o'sha qoida (o'yin kuni, qo'shilgan) va hali tasdiqlamagan:
@@ -80,6 +81,7 @@ export class OyinlarController {
         menTasdiqlayOlaman: tasdiqRuxsati(o.kun, holat, bugun) && holat !== 'keladi',
         navbatda: Number(son?.navbatda ?? 0),
         menNavbatdaman: holat === 'navbatda',
+        menTashkilotchiman: tashkilotchi_id === men,
       };
     });
   }
