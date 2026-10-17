@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Maydon Jamoa · sanoq</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Sanoq sahifasi (12-Modul 8-dars): qadamlar soni — faqat maxfiy kalit bilan (backend/.env dagi SANOQ_KALITI).
+       Kalit faqat shu ochiq sahifa holatida turadi: sahifa yangilansa — qayta so'raladi; kodga va repo'ga yozilmaydi.
+       Lendingdan bu sahifaga havola yo'q, Umami yo'q. Sahifada faqat sonlar — ism, login va qurilma ID ko'rsatilmaydi.
+       O'zi yangilanadi: socket.io bilan ulanib, kalitni yuboradi; Backend uni faqat «sanoq» xonasiga qo'shadi va yangi qadam
+       yozilganda «sanoq-ozgardi» yuboradi — sahifa sonlarni qayta so'raydi.
+       Backend'da bu sahifa manziliga ruxsat kerak: WEB_ORIGIN ga lending manzili (vergul bilan, oldingilari ham qoladi). -->
+  <header class="tepa">
+    <span class="nom">Maydon Jamoa · sanoq</span>
+  </header>
+
+  <main class="sanoq">
+    <form id="kalitForma" class="kalit">
+      <label for="kalit">Maxfiy kalit</label>
+      <input id="kalit" type="password" autocomplete="off" required>
+      <button class="tugma" type="submit">Ochish</button>
+      <p id="xato" class="xato" hidden></p>
+    </form>
+
+    <section id="sonlar" hidden>
+      <ol id="qadamlar" class="qadamlar"></ol>
+      <p class="kulrang">har qadamda turli qurilmalar</p>
+      <p class="akkauntlar">Ro'yxatdan o'tgan akkauntlar: <b id="royxat">…</b></p>
+      <p class="kulrang">namuna va tekshiruv akkauntlarisiz · <span id="holat">ulanmoqda…</span></p>
+    </section>
+  </main>
+
+  <script>
+    // Backend manzili — NAMUNA: o'z Render manzilingizga almashtiring (oxirida / siz). Maxfiy emas.
+    const BACKEND = 'https://maydon-jamoa-namuna.onrender.com';
+    const YORLIQ = {
+      ochdi: 'ochdi',
+      'royxatdan-otdi': "ro'yxatdan o'tdi",
+      qoshildi: "qo'shildi",
+      tasdiqladi: 'kelishini tasdiqladi',
+    };
+
+    let kalit = null; // faqat sahifa holatida
+    const $ = (id) => document.getElementById(id);
+
+    async function sonlarniOl() {
+      const javob = await fetch(BACKEND + '/hodisalar/sanoq', { headers: { 'X-Sanoq-Kaliti': kalit } });
+      if (javob.status === 401) throw new Error("Kalit noto'g'ri");
+      if (!javob.ok) throw new Error('Xato: ' + javob.status);
+      return javob.json();
+    }
+
+    function korsat(d) {
+      $('qadamlar').replaceChildren(...d.qadamlar.map((q) => {
+        const li = document.createElement('li');
+        li.innerHTML = '<span></span><b></b>';
+        li.firstChild.textContent = YORLIQ[q.nom] ?? q.nom;
+        li.lastChild.textContent = q.soni;
+        return li;
+      }));
+      $('royxat').textContent = d.royxatdanOtgan;
+    }
+
+    async function yangila() {
+      try {
+        korsat(await sonlarniOl());
+      } catch (e) {
+        $('holat').textContent = e.message;
+      }
+    }
+
+    // socket.io mijozi Backend'ning o'zidan yuklanadi (/socket.io/socket.io.js)
+    function ulan() {
+      const s = document.createElement('script');
+      s.src = BACKEND + '/socket.io/socket.io.js';
+      s.onload = () => {
+        const ulanish = io(BACKEND, { auth: { sanoqKaliti: kalit } });
+        ulanish.on('connect', () => { $('holat').textContent = "o'zi yangilanadi"; yangila(); });
+        ulanish.on('disconnect', () => { $('holat').textContent = 'ulanmoqda…'; });
+        ulanish.on('sanoq-ozgardi', yangila);
+      };
+      document.head.appendChild(s);
+    }
+
+    $('kalitForma').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      kalit = $('kalit').value;
+      $('xato').hidden = true;
+      try {
+        korsat(await sonlarniOl());
+        $('kalitForma').hidden = true;
+        $('sonlar').hidden = false;
+        ulan();
+      } catch (err) {
+        kalit = null;
+        $('xato').textContent = err.message;
+        $('xato').hidden = false;
+      }
+    });
+  </script>
+</body>
+</html>

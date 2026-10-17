@@ -166,7 +166,8 @@ Yopiq yo'llar (`/oyinlar` va `/hisob`) — faqat token bilan (`Authorization: Be
 | `POST /royxat` `{ ism, login, parol }` | o'yinchi `oyinchilar` ga (`namuna = false`), parol — faqat hash (`parol_hash`); telefon so'ralmaydi | `201` · `400` bo'sh yoki login qoidaga mos emas · `409` «Bu login band» |
 | `POST /kirish` `{ login, parol }` | token (30 kun) | `200 { token }` · `401` «Login yoki parol noto'g'ri» |
 | `DELETE /hisob` | «Hisobni o'chirish»: akkaunt va uning `ishtirokchilar` dagi yozuvlari o'chadi; e'lon qilgan o'yinlari qoladi (tashkilotchisi bo'sh); qo'shilgan o'yinlarida navbatdagi kiradi | `200` |
-| `POST /hodisalar` `{ nom, qurilma_id }` | qadamlar sanog'i; token kerak emas (yuborilmaydi) | `201` · `400` nom to'rt qadamdan biri emas |
+| `POST /hodisalar` `{ nom, qurilma_id }` | qadamlar sanog'i; token kerak emas (yuborilmaydi); yozilgach sanoq sahifalariga `sanoq-ozgardi` | `201` · `400` nom to'rt qadamdan biri emas |
+| `GET /hodisalar/sanoq` (`?dan=` vaqt) | faqat maxfiy kalit bilan — sarlavha `X-Sanoq-Kaliti` (`SANOQ_KALITI`): `{ qadamlar: [{ nom, soni }], royxatdanOtgan }` — har qadamda turli qurilmalar, ro'yxatdan o'tgan `namuna = false` akkauntlar; `?dan=` — shu vaqtdan keyingi yozuvlar | `200` · `401` kalitsiz yoki noto'g'ri |
 | `GET /oyinlar` | yagona ro'yxat yo'li, eng yangi e'lon tepada: `id, kun, soat, maydon, kerak, qoshilgan, menQoshilganman, tasdiqlagan, menTasdiqlaganman, menTasdiqlayOlaman, navbatda, menNavbatdaman, menTashkilotchiman` | `200` |
 | `POST /oyinlar` `{ kun, soat, maydon, kerak }` | e'lon; tashkilotchi — token egasi | `201` · `400` «Yozilmagan: …» |
 | `POST /oyinlar/:id/qoshilish` | `qoshildi` | `201` · `409` «O'yin to'ldi» / «Siz bu o'yinga qo'shilgansiz» |
@@ -190,6 +191,12 @@ SELECT nom, COUNT(DISTINCT qurilma_id) FROM hodisalar GROUP BY nom;
 ```
 
 Tekshiruv yozuvlari (o'z qurilmangiz) — faqat `WHERE` bilan: `DELETE FROM hodisalar WHERE qurilma_id = '{qurilma ID}';`.
+
+**Sanoq sahifasi** (8-dars) — `lending/sanoq.html` («Maydon Jamoa · sanoq»): avval maxfiy kalit (`SANOQ_KALITI`), keyin to'rt qadam va ro'yxatdan o'tgan akkauntlar.
+Kalit faqat ochiq sahifa holatida — yangilansa, qayta so'raladi; kalitni bilgan har kim ochadi: chiqib ketsa — `.env` va Render'da yangisini qo'ying.
+Sahifa o'zi yangilanadi: socket.io bilan kalitni yuborib ulanadi, Backend uni faqat `sanoq` xonasiga qo'shadi (o'yin xonalari va o'yin hodisalariga emas),
+yangi qadam yozilganda `sanoq-ozgardi` — sahifa sonlarni qayta so'raydi. Lendingdan havola yo'q, Umami yo'q, faqat sonlar.
+Sahifadagi `BACKEND` — namuna manzil, o'z Render manzilingizga almashtiring; Backend `WEB_ORIGIN` ida lending manzili bo'lsin.
 
 ## Ishga tushirish
 
@@ -246,7 +253,8 @@ Qiymatlar repo'ga yozilmaydi — faqat nomlari. Laptopda — `backend/.env` va `
 | `DATABASE_URL` | `backend/.env` · Render | Database ulanish qatori (Neon) — maxfiy |
 | `JWT_SECRET` | `backend/.env` · Render | tokenni imzolaydigan uzun tasodifiy satr — maxfiy; yo'q bo'lsa Backend ishga tushmaydi |
 | `PORT` | `backend/.env` | port; bo'lmasa 3000 (Render o'zi beradi) |
-| `WEB_ORIGIN` | `backend/.env` · Render | brauzerdan so'rov va ulanishga ruxsat (CORS): web-trekda — sayt manzili, mobil trekda — ilovaning brauzer ko'rinishi manzili (7-dars) |
+| `WEB_ORIGIN` | `backend/.env` · Render | brauzerdan so'rov va ulanishga ruxsat (CORS), bir nechta manzil — vergul bilan: web-trekda — sayt manzili; mobil trekda — ilovaning brauzer ko'rinishi (7-dars) va lending (sanoq sahifasi, 8-dars) |
+| `SANOQ_KALITI` | `backend/.env` · Render | sanoq sahifasining maxfiy kaliti (12-Modul 8-dars) — maxfiy; yo'q bo'lsa sanoq hech kimga ochilmaydi |
 | `EXPO_PUBLIC_API_URL` | `mobil/.env` | Backend manzili — maxfiy emas: `EXPO_PUBLIC_` qiymati ilova ichida ochiq ko'rinadi |
 
 Web-trekda sayt Backend manzilini `VITE_API_URL` dan oladi (sayt papkasidagi `.env`; bu repo'dagi `prototip/` Backend'ga ulanmagan — mobil trek namunasi).

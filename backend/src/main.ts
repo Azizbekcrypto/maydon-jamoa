@@ -1,14 +1,16 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
+import { ruxsatliManzillar } from './sanoq.js';
 import { UlanishAdapter } from './ulanish.adapter.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  // Ilova (Expo) brauzer emas — unga CORS kerak emas. Brauzerdan so'rov (web-trek sayti yoki ilovaning brauzer ko'rinishi) —
-  // faqat WEB_ORIGIN dagi manzil (masalan Netlify), yozilmagan bo'lsa CORS yoqilmaydi.
-  if (process.env.WEB_ORIGIN) {
-    app.enableCors({ origin: process.env.WEB_ORIGIN.replace(/\/+$/, '') });
+  // Ilova (Expo) brauzer emas — unga CORS kerak emas. Brauzerdan so'rov (web-trek sayti, ilovaning brauzer ko'rinishi,
+  // lendingdagi sanoq sahifasi) — faqat WEB_ORIGIN dagi manzillar (vergul bilan), yozilmagan bo'lsa CORS yoqilmaydi.
+  const manzillar = ruxsatliManzillar();
+  if (manzillar.length) {
+    app.enableCors({ origin: manzillar });
   }
   // Doimiy ulanish (socket.io) uchun ham o'sha manzil — brauzer ko'rinishi ulana olsin
   app.useWebSocketAdapter(new UlanishAdapter(app));

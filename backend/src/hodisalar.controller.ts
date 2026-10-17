@@ -2,15 +2,22 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Get,
+  Headers,
   Injectable,
   Logger,
   OnApplicationBootstrap,
   OnModuleDestroy,
   Post,
+  Query,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LessThan, Repository } from 'typeorm';
 import { Hodisa } from './hodisa.entity.js';
+import { Oyinchi } from './oyinchi.entity.js';
+import { OyinlarGateway } from './oyinlar.gateway.js';
+import { sanoqKalitiTogrimi } from './sanoq.js';
 
 // Qadamlar (Mentor misolida to'rtta): ochdi → ro'yxatdan o'tdi → qo'shildi → kelishini tasdiqladi.
 // Nomlar kichik harf va chiziqcha bilan, bo'lib o'tgan ish ma'nosida.
@@ -20,7 +27,11 @@ const SAQLASH_KUN = 60; // qadamlar yozuvi — 60 kun
 
 @Controller('hodisalar')
 export class HodisalarController {
-  constructor(@InjectRepository(Hodisa) private readonly hodisalar: Repository<Hodisa>) {}
+  constructor(
+    @InjectRepository(Hodisa) private readonly hodisalar: Repository<Hodisa>,
+    @InjectRepository(Oyinchi) private readonly oyinchilar: Repository<Oyinchi>,
+    private readonly ulanishlar: OyinlarGateway,
+  ) {}
 
   // POST /hodisalar { nom, qurilma_id } → 201 — token kerak emas va yuborilmaydi: ism, login, token yozilmaydi.
   // nom faqat QADAMLAR dan biri, aks holda 400.
@@ -31,7 +42,36 @@ export class HodisalarController {
     if (!QADAMLAR.includes(nom)) throw new BadRequestException(`Qadam nomi: ${QADAMLAR.join(', ')}`);
     if (!/^[a-zA-Z0-9]{8,64}$/.test(qurilmaId)) throw new BadRequestException("qurilma_id — 8–64 harf va raqam");
     await this.hodisalar.insert({ nom, qurilma_id: qurilmaId });
+    // Yozuv saqlanib tugadi — ochiq sanoq sahifalari sonlarni qayta so'raydi
+    this.ulanishlar.sanoqOzgardi();
     return {};
+  }
+
+  // GET /hodisalar/sanoq — faqat maxfiy kalit bilan: so'rov sarlavhasida `X-Sanoq-Kaliti` (backend/.env dagi SANOQ_KALITI);
+  // kalit yo'q yoki mos emas — 401. Javob — faqat sonlar (ism, login, qurilma ID yo'q):
+  // { qadamlar: [{ nom, soni }] — QADAMLAR tartibida, har birida turli qurilma_id lar soni,
+  //   royxatdanOtgan — oyinchilar dagi namuna = false akkauntlar soni }.
+  // ?dan=2026-10-20T12:00:00Z — shu vaqtdan keyingi yozuvlar bo'yicha (royxatdanOtgan — shu vaqtdan keyin o'tganlar).
+  @Get('sanoq')
+  async sanoq(@Headers('x-sanoq-kaliti') kalit: string | undefined, @Query('dan') dan?: string) {
+    if (!sanoqKalitiTogrimi(kalit)) throw new UnauthorizedException();
+    const danVaqt = dan ? new Date(dan) : null;
+    if (danVaqt && Number.isNaN(danVaqt.getTime())) throw new BadRequestException("dan — vaqt, masalan 2026-10-20T12:00:00Z");
+
+    const qatorlar: { nom: string; soni: string }[] = await this.hodisalar
+      .createQueryBuilder('h')
+      .select('h.nom', 'nom')
+      .addSelect('COUNT(DISTINCT h.qurilma_id)', 'soni')
+      .where(danVaqt ? 'h.yaratilgan >= :dan' : '1 = 1', { dan: danVaqt })
+      .groupBy('h.nom')
+      .getRawMany();
+    const sonlar = new Map(qatorlar.map((q) => [q.nom, Number(q.soni)]));
+    const royxatdanOtgan = await this.oyinchilar
+      .createQueryBuilder('o')
+      .where('o.namuna = false')
+      .andWhere(danVaqt ? 'o.yaratilgan >= :dan' : '1 = 1', { dan: danVaqt })
+      .getCount();
+    return { qadamlar: QADAMLAR.map((nom) => ({ nom, soni: sonlar.get(nom) ?? 0 })), royxatdanOtgan };
   }
 }
 

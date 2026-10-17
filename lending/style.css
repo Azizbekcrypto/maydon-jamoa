@@ -193,6 +193,30 @@ a.nom {
 .siyosat h2 { font-size: 20px; margin: 0 0 6px; }
 .siyosat p { margin: 0; }
 
+/* Sanoq sahifasi */
+.sanoq { max-width: 560px; }
+.kalit { display: grid; gap: 10px; margin-top: 12px; }
+.kalit input {
+  padding: 12px;
+  border: 1px solid var(--chiziq);
+  border-radius: 10px;
+  font-size: 16px;
+}
+.kalit .tugma { border: 0; cursor: pointer; justify-self: start; }
+.xato { color: #c0392b; margin: 0; }
+.qadamlar { list-style: none; padding: 0; margin: 12px 0 4px; }
+.qadamlar li {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border: 1px solid var(--chiziq);
+  border-radius: 12px;
+  margin-bottom: 8px;
+  font-size: 18px;
+}
+.qadamlar b { color: var(--yashil); }
+.akkauntlar { font-size: 18px; margin: 20px 0 0; }
+
 /* Telefon kengligida — bitta ustun */
 @media (max-width: 760px) {
   .bosh,
