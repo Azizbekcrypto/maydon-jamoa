@@ -276,6 +276,8 @@ Havola — `https://maydon-jamoa-….netlify.app`; push'dan keyin sayt odatda o'
 O'lchov — Umami (1-dars uyga vazifasi): `<head>` dagi skript sahifa ochilishini sanaydi, tugma bosilishi — hodisa `qoshilmoqchiman`
 (`data-umami-event`). `data-website-id` — namuna: cloud.umami.is → «Websites» → «Add website» (Domain — lending manzili) → «Edit» → «Tracking code» dagi ID bilan almashtiring.
 Reklama to'sgichi yoqilgan brauzerda Umami yozmasligi mumkin.
+Kanal belgisi (6-dars): postdagi havola oxirida — `?kanal=guruh` · `?kanal=sinf` · `?kanal=instagram`; sahifa ochilganda Umami'ga `tashrif` hodisasi,
+ma'lumotida `kanal` (belgi bo'lmasa — `belgisiz`). Umami sahifa ochilishini o'zi ham sanaydi; kanal bo'yicha son — `tashrif` hodisasidan. Belgi tashrif qaysi kanaldan kelganini ko'rsatadi, odamni emas.
 
 ## Darslar va teglar
 

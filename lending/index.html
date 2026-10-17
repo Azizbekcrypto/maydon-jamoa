@@ -64,5 +64,19 @@
       <p>Hozircha o'rnatish havolasi yo'q.</p>
     </section>
   </main>
+
+  <!-- Kanal belgisi (6-dars): havola oxiridagi belgi — tashrif qaysi kanaldan kelgani, odam emas.
+       Masalan: …/?kanal=guruh · ?kanal=sinf · ?kanal=instagram. Belgi bo'lmasa — "belgisiz".
+       Sahifa ochilganda Umami'ga «tashrif» hodisasi, ma'lumotida kanal. Shaxsiy ma'lumot yig'ilmaydi.
+       Umami yuklanmasa (masalan, reklama to'sgichi) — hech narsa yozilmaydi, sahifa ishlayveradi. -->
+  <script>
+    (function () {
+      var kanal = new URLSearchParams(location.search).get('kanal') || 'belgisiz';
+      // Umami skripti defer bilan yuklanadi — sahifa to'liq yuklangach u tayyor bo'ladi
+      window.addEventListener('load', function () {
+        if (window.umami) window.umami.track('tashrif', { kanal: kanal });
+      });
+    })();
+  </script>
 </body>
 </html>
