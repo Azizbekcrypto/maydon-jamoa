@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, AppState, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { AppState, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { sora, tokenOchir, tokenOl } from '@/api';
@@ -117,10 +117,12 @@ export default function Oyinlar() {
           {!mehmon && <UlanishBelgisi />}
         </View>
         {!mehmon && <UlanishIzohi />}
-        {/* Kutish yozuvi (11-Modul 15-dars): bepul Backend uxlagan bo'lsa birinchi javob bir daqiqagacha keladi — o'yinchi nima bo'layotganini biladi */}
+        {/* Joy egallovchi (14-Modul 4-dars): ro'yxat yuklanayotganda ikkita kulrang karta — o'yin kartasi o'lchamida, harakatsiz;
+            ostida kutish yozuvi (11-Modul 15-dars): bepul Backend uxlagan bo'lsa birinchi javob bir daqiqagacha keladi */}
         {!oyinlar && !xato && (
-          <View style={s.kutish}>
-            <ActivityIndicator color={R.yashil} />
+          <View style={s.oyinlar}>
+            <KulrangKarta />
+            <KulrangKarta />
             <Text style={s.kutishMatn}>O'yinlar yuklanmoqda — bu bir daqiqagacha cho'zilishi mumkin.</Text>
           </View>
         )}
@@ -148,6 +150,17 @@ export default function Oyinlar() {
         <Text style={s.tugmaMatn}>E'lon berish</Text>
       </Pressable>
     </SafeAreaView>
+  );
+}
+
+// Joy egallovchi karta: o'yin kartasi bilan bir xil ramka va o'lcham; soat, maydon va «8 / 10» o'rnida kulrang chiziqlar
+function KulrangKarta() {
+  return (
+    <View style={s.karta}>
+      <View style={[s.chiziq, s.chiziqVaqt]} />
+      <View style={[s.chiziq, s.chiziqMaydon]} />
+      <View style={[s.chiziq, s.chiziqHisob]} />
+    </View>
   );
 }
 
@@ -296,7 +309,6 @@ const s = StyleSheet.create({
   nuqta: { width: 8, height: 8, borderRadius: 4 },
   belgiMatn: { fontSize: 14, fontWeight: '600' },
   xato: { color: '#C0392B', fontSize: 15, marginBottom: 12 },
-  kutish: { gap: 10, alignItems: 'center', paddingVertical: 12 },
   kutishMatn: { fontSize: 15, color: R.kulrang, textAlign: 'center' },
   kunGuruhi: { marginBottom: 20 },
   kunSarlavha: { fontSize: 18, fontWeight: '700', color: R.matn, marginBottom: 10 },
@@ -305,6 +317,11 @@ const s = StyleSheet.create({
   vaqt: { fontSize: 16, fontWeight: '600', color: R.matn },
   maydon: { fontSize: 15, color: R.kulrang },
   hisob: { fontSize: 16, fontWeight: '700', color: R.yashil },
+  // kulrang chiziqlar balandligi — yonidagi yozuv qatoriga yaqin (16 · 15 · 16 px shrift), karta o'lchami haqiqiysiga teng
+  chiziq: { backgroundColor: R.chiziq, borderRadius: 4, marginVertical: 1 },
+  chiziqVaqt: { width: 56, height: 16 },
+  chiziqMaydon: { width: 140, height: 14 },
+  chiziqHisob: { width: 48, height: 16 },
   toldi: { color: '#C0392B' },
   tugma: { margin: 20, padding: 16, borderRadius: 12, backgroundColor: R.yashil, alignItems: 'center' },
   tugmaMatn: { color: '#fff', fontSize: 16, fontWeight: '600' },
