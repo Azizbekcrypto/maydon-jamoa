@@ -6,6 +6,10 @@
   <title>Maydon Jamoa — mahalla futboliga jamoa</title>
   <meta name="description" content="O'yinni e'lon qiling — kim qo'shilgani va kim aniq kelishi ko'rinib turadi.">
   <link rel="stylesheet" href="style.css">
+  <!-- Umami (cloud.umami.is → Websites → Edit → Tracking code): sahifa ochilishini o'zi sanaydi.
+       data-website-id — NAMUNA: o'z saytingiz ID'si bilan almashtiring (maxfiy emas — sahifa kodida hammaga ko'rinadi).
+       defer: Umami yuklanmasa ham sahifa va tugma ishlayveradi. -->
+  <script defer src="https://cloud.umami.is/script.js" data-website-id="00000000-0000-0000-0000-000000000000"></script>
 </head>
 <body>
   <!-- Lending: bitta sahifa, oddiy HTML va CSS (yig'ish buyrug'i yo'q).
@@ -19,8 +23,9 @@
       <div class="matn">
         <h1>Mahalla futboliga jamoani bir joyda yig'ing</h1>
         <p class="osti">O'yinni e'lon qiling — kim qo'shilgani va kim aniq kelishi ko'rinib turadi.</p>
-        <!-- Asosiy tugma: sahifa pastidagi «Qanday qo'shilaman» bo'limiga o'tadi -->
-        <a class="tugma" href="#qanday">Qo'shilmoqchiman</a>
+        <!-- Asosiy tugma: sahifa pastidagi «Qanday qo'shilaman» bo'limiga o'tadi.
+             data-umami-event — bosilganda Umami'ga «qoshilmoqchiman» hodisasi yoziladi (tugma yozuvidan yasalgan nom) -->
+        <a class="tugma" href="#qanday" data-umami-event="qoshilmoqchiman">Qo'shilmoqchiman</a>
       </div>
 
       <!-- Telefon maketi — HTML va CSS bilan chizilgan, surat emas. Namuna ma'lumot, haqiqiy odamlar emas -->

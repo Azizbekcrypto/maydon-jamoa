@@ -3,7 +3,7 @@
 «Maydon Jamoa» — mahalladagi mini-futbol uchun jamoa yig'adigan mahsulot: tashkilotchi o'yin e'lon qiladi
 (kun, soat, maydon, nechta odam kerak), boshqa o'yinchilar «Qo'shilaman» ni bosadi; e'londa «8 / 10» — qo'shilganlar / kerak.
 
-Bu repo — 11-Modul Mentor misoli, boshlang'ich holat: prototip, ilova va Backend'ni darslarda qurasiz.
+Bu repo — 11 va 12-Modul Mentor misoli: prototip, ilova va Backend'ni 11-Modulda qurasiz, 12-Modulda — lending, real vaqt, eslatma va birinchi foydalanuvchilar.
 
 ## Talab (7-dars)
 
@@ -208,6 +208,27 @@ telefon saytni bosh ekranga ilova kabi qo'shadi. Netlify (app.netlify.com → ya
 Havola — `https://….netlify.app`; har push'dan keyin sayt o'zi yangilanadi.
 Telefonda: Android Chrome — «⋮» → «Install and create shortcut»; iPhone Safari — «Share» → «Add to Home Screen».
 
+## Lending (12-Modul 1-dars)
+
+`lending/` — mahsulotni bitta sahifada tanishtiradigan sayt: oddiy HTML va CSS (`index.html`, `style.css`), yig'ish buyrug'i yo'q.
+Sarlavha «Mahalla futboliga jamoani bir joyda yig'ing», uch foyda (foyda — katta yozuv, ostida funksiya qatori), asosiy tugma «Qo'shilmoqchiman» →
+sahifa pastidagi «Qanday qo'shilaman» bo'limi («Hozircha o'rnatish havolasi yo'q.»). Telefon maketi — HTML va CSS bilan chizilgan, namuna o'yin «Shanba, 18:00 · Mahalla maydoni · 8 / 10».
+Adaptiv: telefon kengligida bitta ustun. Sahifada forma yo'q — ism, telefon, email so'ralmaydi.
+
+Laptopda: `lending/index.html` ni brauzerda oching. Netlify'da — alohida sayt (app.netlify.com → yangi loyiha → GitHub'dan import → shu repo):
+
+| Sozlama | Qiymat |
+|---|---|
+| Base directory | bo'sh (repo ildizi) |
+| Build command | bo'sh (yig'ish yo'q) |
+| Publish directory | `lending` |
+
+Havola — `https://maydon-jamoa-….netlify.app`; push'dan keyin sayt odatda o'zi yangilanadi.
+
+O'lchov — Umami (1-dars uyga vazifasi): `<head>` dagi skript sahifa ochilishini sanaydi, tugma bosilishi — hodisa `qoshilmoqchiman`
+(`data-umami-event`). `data-website-id` — namuna: cloud.umami.is → «Websites» → «Add website» (Domain — lending manzili) → «Edit» → «Tracking code» dagi ID bilan almashtiring.
+Reklama to'sgichi yoqilgan brauzerda Umami yozmasligi mumkin.
+
 ## Darslar va teglar
 
 Teglar: `m11-dars-NN-start` — dars boshidagi holat, `m11-dars-NN-done` — dars oxiridagi holat.
@@ -229,6 +250,16 @@ Kod yoziladigan darslar: 7, 8, 9, 10, 11, 12, 13, 14.
 | `m11-dars-12-done` | 12 · 2-asosiy funksiya: o'yin kuni tasdiq | `POST /oyinlar/:id/tasdiq` → holat `keladi`; ruxsatni Backend beradi: faqat o'yin kuni («bugun» — Toshkent vaqti) va faqat qo'shilgan o'yinchiga, aks holda `403` «Tasdiq faqat o'yin kuni» yoki «Siz bu o'yinga qo'shilmagansiz» (tokensiz `401`); `GET /oyinlar` da `tasdiqlagan` (faqat o'yinni e'lon qilganga, boshqalarga `null`), `menTasdiqlaganman`, `menTasdiqlayOlaman` (…/tasdiq dagi o'sha qoida). Ilovada: «Kelaman» faqat ruxsat bor joyda → «Tasdiqladingiz» (qayta ochilganda ham); tashkilotchida «Kelishini tasdiqladi: 7 / 9», tasdiqlaganlar doirasi yashil ✓ — ekran ochilganda va pastga tortilganda |
 | `m11-dars-13-done` | 13 · sinov tuzatishi | sinovdagi eng muhim to'xtash (3 kishidan 3 tasi Shanba 18:00 dagi o'yinni topishda to'xtadi) tuzatilgan: «O'yinlar» kun va soat bo'yicha, har kun o'z sarlavhasi bilan — faqat ilovada (`mobil/src/app/index.tsx`), `GET /oyinlar` tartibi o'zgarmagan; `SINOV.md` — vazifa, «Vazifani bajardi: 2 / 3», to'xtashlar jadvali (tuzatildi · keyin) va qayta sinov |
 | `m11-dars-14-done` | 14 · 3-asosiy funksiya: chiqish va navbat | `POST /oyinlar/:id/navbat` — faqat to'lgan o'yinga (`navbatda`; to'lmagan bo'lsa `409`), `POST /oyinlar/:id/chiqish` — qo'shilgan yoki navbatdagi o'yinchi `chiqdi`; qo'shilgan chiqsa, navbatga birinchi yozilgan (`yaratilgan` bo'yicha) `qoshildi` bo'ladi; qo'shilish, navbat va chiqish — bitta ish (tranzaksiya, o'yin qatori qulflanadi): oxirgi joyga ikki so'rov bir lahzada kelsa ham bitta odam yoziladi, ikkinchisi kutadi va `409` «O'yin to'ldi» oladi; qayta yozilganda — o'sha bitta qator; `GET /oyinlar` da `navbatda`, `menNavbatdaman`. Ilovada: to'lgan o'yinda «Navbatga yozilish», «Navbatdasiz», «O'yindan chiqish» → «Rostdan chiqasizmi?» (Yo'q · Ha), kartada «Navbatda: N», «O'yin» ekranida ham pastga tortib yangilash |
+
+### 12-Modul
+
+Teglar: `m12-dars-NN-start` — dars boshidagi holat, `m12-dars-NN-done` — dars oxiridagi holat.
+`m12-dars-01-start` = `m11-dars-14-done`; keyingi dars boshi — oldingi dars oxiri, bitta istisno: `m12-dars-05-start` — `m12-dars-04-done` ustiga README eslatmasi.
+Repo'ga yoziladigan darslar: 1–10; 11 va 12 (pitch) — repo'ga yozmaydi, tegi yo'q.
+
+| Teg | Dars | Nima bor |
+|---|---|---|
+| `m12-dars-01-done` | 1 · lending | `lending/index.html`, `lending/style.css` — sarlavha, sarlavha osti, uch foyda (foyda va funksiya qatori), asosiy tugma «Qo'shilmoqchiman» → «Qanday qo'shilaman» («Hozircha o'rnatish havolasi yo'q.»), telefon maketi (HTML va CSS), adaptiv — telefonda bitta ustun; forma yo'q. Uyga vazifadan: Umami skripti (`data-website-id` — namuna, o'z sayt ID'ingiz bilan almashtiriladi) va tugma hodisasi `qoshilmoqchiman`. Netlify: Base — bo'sh, Build — bo'sh, Publish — `lending` |
 
 ## Ortda qoldingizmi
 
