@@ -214,7 +214,9 @@ Test rejim: pul yechilmaydi. Karta ma'lumoti hech qayerda so'ralmaydi va yozilma
 
 Hozircha: «To'lovga o'tish» Backend'dan to'lov raqamini oladi va mashq to'lov sahifasini ochadi; «To'lash (mashq)» dan keyin to'lov xabari Pro'ni 30 kunga uzaytiradi, ilova uni `GET /men` dan o'qiydi. Test rejim: pul yechilmaydi.
 
-> Eslatma: agent «to'lov ishlaydi» degan — to'rt usul bilan hali tekshirilmagan. Bu holatda 2 muammo bor — 5-darsda topiladi.
+5-darsda to'rt usul bilan buzib tekshirildi (ikki marta yuborish · kechiktirib yuborish · rad etish · noto'g'ri imzo) — yozuv `BUZISH.md` «To'lov» da.
+Topilgan ikki muammo tuzatilgan: Pro faqat yangi yozilgan to'lovdan keyin uzayadi (yozuv va Pro bitta tranzaksiyada) · javob kelmasa sahifa «Javob kutilmoqda» deydi,
+ilovada «Qayta tekshirish» — qaytganda va tugma bosilganda `GET /men` qayta so'raladi.
 
 ### Pro va «Doimiy o'yin» (4-dars)
 
@@ -532,6 +534,7 @@ Teglar: `m13-dars-NN-start` — dars boshidagi holat, `m13-dars-NN-done` — dar
 | `m13-dars-03-done` | 3 · webhook: to'lov Backend'ga qanday yetib keladi | `tolovlar` jadvali (`tolov_raqami` noyob · `oyinchi_id` · `summa` · `holat` · `yaratilgan`); `POST /tolov/webhook` — imzo `X-Imzo` (HMAC SHA-256, xom tana — `rawBody`, `timingSafeEqual`), takror — `200 { takror: true }`, rad ham yoziladi; `GET /tolov-mashq` — «Mashq to'lov» sahifasi («To'lash (mashq)», «Rad etish (mashq)», «Ikki marta yuborish», «Imzosiz yuborish»), xabarni Backend imzolaydi; `TOLOV_KALITI` (`.env.example` da qiymatsiz); README «To'lov» — «Reja: to'lov oqimi» va «Hozir ishlaydi». Pro va ilova o'zgarmagan |
 | `m13-dars-04-done` | 4 · narx va to'lov taklifi ekrani | `oyinchilar.pro_gacha`; `GET /men` — `pro`, `proGacha`; `oyinlar.doimiy`, `POST /oyinlar` `doimiy: true` faqat Pro'da (`403`), keyingi «Doimiy o'yin» `GET /oyinlar` da (`backend/src/doimiy.ts`, taymer yo'q); ilovada «E'lon berish» — «Har hafta takrorlansin», to'lov taklifi ekrani (`mobil/src/app/pro.tsx`: «Doimiy o'yin — Pro'da» · «30 kun — 15 000 so'm» · «To'lovga o'tish» · «Test rejim: pul yechilmaydi»), «Pro: {sana}gacha». To'lov yo'li: `POST /tolov/boshlash` (`boshlangan_tolovlar`, `m-` + 12 tasodifiy belgi; `PRO_NARX`, `PRO_KUN` — `backend/src/tolov/narx.ts`), mashq sahifasi `?raqam=` bilan («To'lov topilmadi.»), webhook hisob va summani raqam yozuvidan oladi va Pro'ni 30 kun uzaytiradi; ilova qaytganda `GET /men`. README «Hozircha» qatori. Agent «to'lov ishlaydi» degan — to'rt usul bilan tekshirish 5-darsda |
 | `m13-dars-05-start` | 5 · boshlanish | `m13-dars-04-done` + `README.md` «To'lov» da eslatma: «Bu holatda 2 muammo bor — 5-darsda topiladi.» Kod — agent «to'lov ishlaydi» deganidan keyingi holat (ataylab buzilmagan, to'rt usul bilan tekshirilmagan) |
+| `m13-dars-05-done` | 5 · to'lovni ulaymiz va buzib ko'ramiz | qolgan holatlar: `GET /men` da `oxirgiTolov` (`tolandi` · `rad` · `kutilmoqda`), ilovada «To'lov o'tmadi — qayta urinib ko'ring» va «To'lovga o'tish», «Javob kutilmoqda»; Pro tugasa keyingi «Doimiy o'yin» yaratilmaydi (e'lon qilinganlar qoladi); mashq sahifasida «Kechiktirib yuborish» (70 soniya) va «Noto'g'ri imzo» (`401`). Ikki muammo tuzatilgan (`backend/src/tolov/tolov.controller.ts`, `mashq.controller.ts`, `mobil/src/app/pro.tsx`): Pro bir marta — yozuvdan keyin, bitta tranzaksiyada · sahifada «Javob kutilmoqda», ilovada «Qayta tekshirish» va qaytganda qayta so'rash. `BUZISH.md` «To'lov» — to'rt urinish (buzildi · buzildi · buzilmadi · buzilmadi), tuzatish va qayta tekshiruv; README eslatmasi o'rnida — tuzatilganlar |
 
 ## Ortda qoldingizmi
 

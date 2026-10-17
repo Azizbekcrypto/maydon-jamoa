@@ -31,11 +31,27 @@ agent «to'lov ishlaydi» degan — bu da'vo. Buzish faqat o'z mahsulotida, «Ma
 Har urinishdan oldin Pro yo'q edi (o'z hisobim, Neon: `UPDATE oyinchilar SET pro_gacha = NULL WHERE id = {hisob raqami};`).
 «Talab bo'yicha» — 3, 4-darslar va 5-dars 1-amaliyot talabidan.
 
-| № | Usul | Nima qildim | Nima kutdim | Nima bo'ldi | Belgi |
-|---|---|---|---|---|---|
-| 1 | Ikki marta yuborish | Pro yo'q edi. «To'lovga o'tish» ni, keyin sahifada «Ikki marta yuborish» ni bosdim; javoblarga va Neon'dagi to'lovlar bilan Pro muddatiga qaradim. | Ikki javob: `200 { ok: true }` va `200 { takror: true }`; `tolovlar` da bitta qator; Pro 30 kunga yoqiladi. | Javoblar va `tolovlar` kutgandek, lekin Pro muddati 60 kun bo'ldi. | buzildi |
-| 2 | Kechiktirib yuborish | Pro yo'q edi. «To'lovga o'tish» ni, keyin «Kechiktirib yuborish» ni bosdim; sahifaga qaradim, keyin ilovaga qaytib, undan chiqmay bir daqiqa kutdim. | Sahifa natijani kutadi; xabar kelgach ilovada Pro ko'rinadi. | Sahifa 10 soniyadan keyin «To'lov o'tmadi» dedi. Bir daqiqadan keyin Neon'da Pro yozildi, ilovada esa «Javob kutilmoqda» qoldi. | buzildi |
-| 3 | Rad etish | «To'lovga o'tish» ni, keyin «Rad etish (mashq)» ni bosdim va ilovaga qaytdim. | Sahifada «To'lov o'tmadi»; `tolovlar` da «rad» qatori; Pro yo'q; ilovada «To'lov o'tmadi — qayta urinib ko'ring». | Sahifada «To'lov o'tmadi», `tolovlar` da «rad» qatori, Pro yo'q, ilovada «To'lov o'tmadi — qayta urinib ko'ring». | buzilmadi |
-| 4 | Noto'g'ri imzo | «To'lovga o'tish» ni, keyin «Noto'g'ri imzo» ni bosdim; sahifadagi javobga va Neon'ga qaradim. | Sahifada `401`; `tolovlar` da yangi qator yo'q; Pro yo'q. | Sahifada `401`, yangi qator yo'q, Pro yo'q. | buzilmadi |
+| № | Usul | Nima qildim | Nima kutdim | Nima bo'ldi | Belgi | Tuzatish | Qayta tekshiruv |
+|---|---|---|---|---|---|---|---|
+| 1 | Ikki marta yuborish | Pro yo'q edi. «To'lovga o'tish» ni, keyin sahifada «Ikki marta yuborish» ni bosdim; javoblarga va Neon'dagi to'lovlar bilan Pro muddatiga qaradim. | Ikki javob: `200 { ok: true }` va `200 { takror: true }`; `tolovlar` da bitta qator; Pro 30 kunga yoqiladi. | Javoblar va `tolovlar` kutgandek, lekin Pro muddati 60 kun bo'ldi. | buzildi | tuzatish qilindi | qayta tekshiruvda takrorlanmadi |
+| 2 | Kechiktirib yuborish | Pro yo'q edi. «To'lovga o'tish» ni, keyin «Kechiktirib yuborish» ni bosdim; sahifaga qaradim, keyin ilovaga qaytib, undan chiqmay bir daqiqa kutdim. | Sahifa natijani kutadi; xabar kelgach ilovada Pro ko'rinadi. | Sahifa 10 soniyadan keyin «To'lov o'tmadi» dedi. Bir daqiqadan keyin Neon'da Pro yozildi, ilovada esa «Javob kutilmoqda» qoldi. | buzildi | tuzatish qilindi | qayta tekshiruvda takrorlanmadi |
+| 3 | Rad etish | «To'lovga o'tish» ni, keyin «Rad etish (mashq)» ni bosdim va ilovaga qaytdim. | Sahifada «To'lov o'tmadi»; `tolovlar` da «rad» qatori; Pro yo'q; ilovada «To'lov o'tmadi — qayta urinib ko'ring». | Sahifada «To'lov o'tmadi», `tolovlar` da «rad» qatori, Pro yo'q, ilovada «To'lov o'tmadi — qayta urinib ko'ring». | buzilmadi | — | — |
+| 4 | Noto'g'ri imzo | «To'lovga o'tish» ni, keyin «Noto'g'ri imzo» ni bosdim; sahifadagi javobga va Neon'ga qaradim. | Sahifada `401`; `tolovlar` da yangi qator yo'q; Pro yo'q. | Sahifada `401`, yangi qator yo'q, Pro yo'q. | buzilmadi | — | — |
 
 «buzilmadi» (3, 4-urinish) — shu telefonda, shu urinishda. «buzilmadi» ham natija.
+
+### Topilgan muammolar va tuzatish
+
+Tuzatish — `backend/src/tolov/tolov.controller.ts` (to'lov xabari), `backend/src/tolov/mashq.controller.ts` (mashq sahifasi), `mobil/src/app/pro.tsx` (to'lov natijasi).
+
+1. **Ikki marta kelgan xabar Pro'ni ikki marta uzaytirdi** (1-urinish). Sabab: Pro'ni uzaytiradigan qator takror tekshiruvidan oldin ishlardi —
+   `tolovlar` da bitta qator qoldi (3-dars himoyasi ishladi), lekin Pro har xabarda uzaydi.
+   Tuzatish: Pro faqat yangi yozilgan to'lovdan keyin uzayadi — yozuv va Pro bitta tranzaksiyada; takrorga `200 { takror: true }`, Pro o'zgarmaydi.
+2. **Kechikkan xabar: sahifa «To'lov o'tmadi» dedi, keyin Pro yoqildi — ilova eski holatda qoldi** (2-urinish). Sabab: sahifa javobni 10 soniya kutib, «o'tmadi» deb yozardi;
+   ilova to'lovdan qaytganda natijani bir marta so'rardi.
+   Tuzatish: javob kelmasa sahifa «Javob kutilmoqda» ko'rsatadi; ilovada «Javob kutilmoqda» ostida «Qayta tekshirish» — ilova har qaytganda va shu tugma bosilganda `GET /men` ni qayta so'raydi.
+
+Qayta tekshiruv — o'sha usul bilan (har urinishdan oldin Pro yo'q): «Ikki marta yuborish» — Pro 30 kun, `tolovlar` da bitta qator · «Kechiktirib yuborish» — sahifada «Javob kutilmoqda»,
+bir daqiqadan keyin ilovada «Qayta tekshirish» → Pro.
+
+«Tuzatish qilindi» — kodda o'zgartirish qilindi (ish fakti). «Qayta tekshiruvda takrorlanmadi» — o'sha usul bilan qayta buzib ko'rilgan natija: shu telefonda, shu urinishda.
