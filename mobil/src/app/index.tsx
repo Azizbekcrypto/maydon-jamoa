@@ -1,6 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { tokenOchir, tokenOl } from '@/api';
@@ -10,28 +10,38 @@ import { oyinlarniOl, type Oyin } from '@/oyin';
 import { R } from '@/ranglar';
 
 // O'yinlar: ro'yxat Backend'dan (GET /oyinlar, token bilan), eng yangi e'lon tepada.
-// Ekran ochilganda so'raladi (E'lon berishdan qaytganda ham — yangi e'lon tepada). Token bo'lmasa — «Kirish».
+// «8 / 10» — real vaqt nuqtasi: ekran ochilganda va pastga tortib yangilaganda qayta so'raladi
+// (ekran o'zi yangilanmaydi). Token bo'lmasa — «Kirish». To'lgan o'yinda son yonida «to'ldi».
 export default function Oyinlar() {
   const router = useRouter();
   const [oyinlar, setOyinlar] = useState<Oyin[] | null>(null);
   const [xato, setXato] = useState('');
+  const [tortildi, setTortildi] = useState(false);
+
+  const yukla = useCallback(async () => {
+    if (!(await tokenOl())) {
+      router.replace('/kirish');
+      return;
+    }
+    try {
+      setOyinlar(await oyinlarniOl());
+      setXato('');
+    } catch (e) {
+      setXato((e as Error).message);
+    }
+  }, [router]);
 
   useFocusEffect(
     useCallback(() => {
-      (async () => {
-        if (!(await tokenOl())) {
-          router.replace('/kirish');
-          return;
-        }
-        try {
-          setOyinlar(await oyinlarniOl());
-          setXato('');
-        } catch (e) {
-          setXato((e as Error).message);
-        }
-      })();
-    }, [router]),
+      yukla();
+    }, [yukla]),
   );
+
+  async function tort() {
+    setTortildi(true);
+    await yukla();
+    setTortildi(false);
+  }
 
   async function hisobdanChiq() {
     await tokenOchir();
@@ -46,7 +56,9 @@ export default function Oyinlar() {
           <Text style={s.chiqish}>Hisobdan chiqish</Text>
         </Pressable>
       </View>
-      <ScrollView contentContainerStyle={s.ichi}>
+      <ScrollView
+        contentContainerStyle={s.ichi}
+        refreshControl={<RefreshControl refreshing={tortildi} onRefresh={tort} tintColor={R.yashil} colors={[R.yashil]} />}>
         <Text style={s.sarlavha}>O'yinlar</Text>
         {!oyinlar && !xato && <ActivityIndicator color={R.yashil} />}
         {!!xato && <Text style={s.xato}>O'yinlarni yuklab bo'lmadi: {xato}</Text>}
@@ -59,6 +71,7 @@ export default function Oyinlar() {
               <Text style={s.maydon}>{o.maydon}</Text>
               <Text style={s.hisob}>
                 {o.qoshilgan} / {o.kerak}
+                {o.qoshilgan >= o.kerak && <Text style={s.toldi}> · to'ldi</Text>}
               </Text>
             </BosiladiganKarta>
           ))}
@@ -84,6 +97,7 @@ const s = StyleSheet.create({
   vaqt: { fontSize: 16, fontWeight: '600', color: R.matn },
   maydon: { fontSize: 15, color: R.kulrang },
   hisob: { fontSize: 16, fontWeight: '700', color: R.yashil },
+  toldi: { color: '#C0392B' },
   tugma: { margin: 20, padding: 16, borderRadius: 12, backgroundColor: R.yashil, alignItems: 'center' },
   tugmaMatn: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });

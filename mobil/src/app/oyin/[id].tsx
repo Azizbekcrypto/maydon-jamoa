@@ -1,6 +1,6 @@
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { sora } from '@/api';
@@ -12,12 +12,14 @@ import { R } from '@/ranglar';
 
 // O'yin: bitta fayl har o'yinni ochadi — id manzildan keladi (/oyin/2 → id = '2').
 // Ma'lumot GET /oyinlar dan (alohida yo'l yo'q): «8 / 10», qo'shilganlar va tugma.
+// Ekran ochilganda va pastga tortib yangilaganda qayta so'raladi. To'lgan o'yinda «Qo'shilaman» o'rnida «O'yin to'ldi».
 export default function OyinEkrani() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [oyin, setOyin] = useState<Oyin | null | undefined>(undefined);
   const [xabar, setXabar] = useState('');
   const [kutish, setKutish] = useState(false);
+  const [tortildi, setTortildi] = useState(false);
 
   const yukla = useCallback(async () => {
     try {
@@ -33,6 +35,13 @@ export default function OyinEkrani() {
       yukla();
     }, [yukla]),
   );
+
+  async function tort() {
+    setTortildi(true);
+    setXabar('');
+    await yukla();
+    setTortildi(false);
+  }
 
   // «Qo'shilaman» → POST /oyinlar/:id/qoshilish. Javob kelguncha tugma o'chiq — ikki marta bosilmaydi.
   // 409 bo'lsa («O'yin to'ldi», «Siz bu o'yinga qo'shilgansiz») — Backend xabari tugma ostida.
@@ -59,7 +68,9 @@ export default function OyinEkrani() {
 
   return (
     <SafeAreaView style={s.ekran}>
-      <ScrollView contentContainerStyle={s.ichi}>
+      <ScrollView
+        contentContainerStyle={s.ichi}
+        refreshControl={<RefreshControl refreshing={tortildi} onRefresh={tort} tintColor={R.yashil} colors={[R.yashil]} />}>
         <Pressable onPress={() => router.back()}>
           <Text style={s.orqaga}>‹ O'yinlar</Text>
         </Pressable>
@@ -84,6 +95,8 @@ export default function OyinEkrani() {
           {!!xabar && <Text style={s.xato}>{xabar}</Text>}
           {oyin.menQoshilganman ? (
             <Tugma matn="Qo'shildingiz" onPress={() => {}} ochiq />
+          ) : oyin.qoshilgan >= oyin.kerak ? (
+            <Tugma matn="O'yin to'ldi" onPress={() => {}} ochiq />
           ) : (
             <Tugma matn="Qo'shilaman" onPress={qoshil} ochiq={kutish} />
           )}
