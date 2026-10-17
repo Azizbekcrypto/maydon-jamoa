@@ -3,13 +3,11 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { sora, tokenOchir, tokenOl } from '@/api';
+import { tokenOchir, tokenOl } from '@/api';
 import { BosiladiganKarta } from '@/components/bosiladigan-karta';
 import { kunNomi } from '@/kun';
+import { oyinlarniOl, type Oyin } from '@/oyin';
 import { R } from '@/ranglar';
-
-// Backend javobidagi o'yin: GET /oyinlar
-type Oyin = { id: number; kun: string; soat: string; maydon: string; kerak: number };
 
 // O'yinlar: ro'yxat Backend'dan (GET /oyinlar, token bilan), eng yangi e'lon tepada.
 // Ekran ochilganda so'raladi (E'lon berishdan qaytganda ham — yangi e'lon tepada). Token bo'lmasa — «Kirish».
@@ -26,7 +24,7 @@ export default function Oyinlar() {
           return;
         }
         try {
-          setOyinlar(await sora<Oyin[]>('/oyinlar'));
+          setOyinlar(await oyinlarniOl());
           setXato('');
         } catch (e) {
           setXato((e as Error).message);
@@ -59,7 +57,9 @@ export default function Oyinlar() {
                 {kunNomi(o.kun)}, {o.soat}
               </Text>
               <Text style={s.maydon}>{o.maydon}</Text>
-              <Text style={s.hisob}>{o.kerak} kishi kerak</Text>
+              <Text style={s.hisob}>
+                {o.qoshilgan} / {o.kerak}
+              </Text>
             </BosiladiganKarta>
           ))}
         </View>
