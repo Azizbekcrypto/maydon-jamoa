@@ -5,7 +5,8 @@ import { ruxsatliManzillar } from './sanoq.js';
 import { UlanishAdapter } from './ulanish.adapter.js';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // rawBody — to'lov xabarining imzosi (13-Modul 3-dars) so'rovning xom tanasidan hisoblanadi: req.rawBody (Buffer)
+  const app = await NestFactory.create(AppModule, { rawBody: true });
   // Ilova (Expo) brauzer emas — unga CORS kerak emas. Brauzerdan so'rov (web-trek sayti, ilovaning brauzer ko'rinishi,
   // lendingdagi sanoq sahifasi) — faqat WEB_ORIGIN dagi manzillar (vergul bilan), yozilmagan bo'lsa CORS yoqilmaydi.
   const manzillar = ruxsatliManzillar();

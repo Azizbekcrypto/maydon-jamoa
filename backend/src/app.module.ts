@@ -17,6 +17,8 @@ import { Oyinchi } from './oyinchi.entity.js';
 import { OyinlarController } from './oyinlar.controller.js';
 import { RoyxatController } from './royxat.controller.js';
 import { TokenGuard } from './token.guard.js';
+import { TolovController } from './tolov/tolov.controller.js';
+import { Tolov } from './tolov/tolov.entity.js';
 
 @Module({
   imports: [
@@ -26,7 +28,7 @@ import { TokenGuard } from './token.guard.js';
       useFactory: () => ({
         type: 'postgres',
         url: process.env.DATABASE_URL,
-        entities: [Oyinchi, Oyin, Ishtirokchi, Hodisa],
+        entities: [Oyinchi, Oyin, Ishtirokchi, Hodisa, Tolov],
         // Jadvallar entity'lardan o'zi yaratiladi (README'dagi arxitektura bo'yicha)
         synchronize: true,
       }),
@@ -36,7 +38,7 @@ import { TokenGuard } from './token.guard.js';
         return new DataSource(options!).initialize();
       },
     }),
-    TypeOrmModule.forFeature([Oyinchi, Oyin, Ishtirokchi, Hodisa]),
+    TypeOrmModule.forFeature([Oyinchi, Oyin, Ishtirokchi, Hodisa, Tolov]),
     // Token backend/.env dagi JWT_SECRET bilan imzolanadi, 30 kun amal qiladi.
     // Kalit faqat .env dan: kodda zaxira qiymat yo'q, kalit bo'lmasa Backend ishga tushmaydi.
     JwtModule.registerAsync({
@@ -47,7 +49,15 @@ import { TokenGuard } from './token.guard.js';
       },
     }),
   ],
-  controllers: [AppController, RoyxatController, KirishController, OyinlarController, HisobController, HodisalarController],
+  controllers: [
+    AppController,
+    RoyxatController,
+    KirishController,
+    OyinlarController,
+    HisobController,
+    HodisalarController,
+    TolovController,
+  ],
   providers: [NamunaMalumot, TokenGuard, OyinlarGateway, HodisalarTozalash],
 })
 export class AppModule {}

@@ -75,6 +75,17 @@ Saqlanadigan ma'lumotlar: o'yinchilar · o'yinlar · kim qaysi o'yinga qo'shilga
 | `qurilma_id` | qurilma ID — ilova birinchi ochilganda yaratgan tasodifiy harf va raqamlar: odamning ismini ham, loginini ham bildirmaydi |
 | `yaratilgan` | yozuv vaqti (Database o'zi to'ldiradi) |
 
+**`tolovlar`** — to'lov xabarlari (13-Modul 3-dars): har to'lov raqami — bitta qator; test rejim — pul yechilmaydi, karta ma'lumoti yo'q
+
+| Ustun | Nima saqlaydi |
+|---|---|
+| `id` | yozuv raqami (Database o'zi to'ldiradi) |
+| `tolov_raqami` | to'lov raqami (mashqda `m-…`) — noyob: bitta raqam jadvalda bir marta (takror xabar ikkinchi qator yozdirmaydi) |
+| `oyinchi_id` | kim to'lagani → `oyinchilar.id`; hisob o'chirilsa — uning to'lov yozuvlari ham o'chadi |
+| `summa` | so'mda, butun son |
+| `holat` | `tolandi` · `rad` (rad etilgan to'lov ham yoziladi) |
+| `yaratilgan` | xabar qachon yozilgani (Database o'zi to'ldiradi) |
+
 Bog'lovchi ustunlar — boshqa jadvaldagi qatorni ko'rsatadigan ustun: `oyinlar.tashkilotchi_id` → `oyinchilar` ·
 `ishtirokchilar.oyin_id` → `oyinlar` · `ishtirokchilar.oyinchi_id` → `oyinchilar`.
 
@@ -194,6 +205,7 @@ Bitta istisno — mehmon ko'rinishi (12-Modul 8-dars): `GET /oyinlar` tokensiz h
 | `POST /oyinlar/:id/tasdiq` | `keladi` — faqat o'yin kuni (Toshkent vaqti) va qo'shilgan o'yinchiga | `201` · `403` «Tasdiq faqat o'yin kuni» / «Siz bu o'yinga qo'shilmagansiz» |
 | `POST /oyinlar/:id/navbat` | `navbatda` — faqat to'lgan o'yinga | `201` · `409` |
 | `POST /oyinlar/:id/chiqish` | `chiqdi`; qo'shilgan chiqsa — navbatdagi birinchi `qoshildi` | `201` · `409` |
+| `POST /tolov/webhook` `{ tolovRaqami, holat, summa, oyinchiId }` · sarlavha `X-Imzo` | to'lov xabari (13-Modul 3-dars): imzo — HMAC SHA-256 (xom tana, `TOLOV_KALITI`) → maydonlar → takror → `tolovlar` ga yozuv (`rad` ham); token kerak emas | `200 { ok: true }` · `200 { takror: true }` · `400` · `401` imzo yo'q yoki mos emas |
 
 ## Sanoq — Neon SQL Editor (12-Modul 7-dars)
 
@@ -284,6 +296,7 @@ Qiymatlar repo'ga yozilmaydi — faqat nomlari. Laptopda — `backend/.env` va `
 | `PORT` | `backend/.env` | port; bo'lmasa 3000 (Render o'zi beradi) |
 | `WEB_ORIGIN` | `backend/.env` · Render | brauzerdan so'rov va ulanishga ruxsat (CORS), bir nechta manzil — vergul bilan: web-trekda — sayt manzili; mobil trekda — ilovaning brauzer ko'rinishi (7-dars) va lending (sanoq sahifasi, 8-dars) |
 | `SANOQ_KALITI` | `backend/.env` · Render | sanoq sahifasining maxfiy kaliti (12-Modul 8-dars) — maxfiy; yo'q bo'lsa sanoq hech kimga ochilmaydi |
+| `TOLOV_KALITI` | `backend/.env` · Render | to'lov xabarining imzo kaliti (13-Modul 3-dars) — maxfiy, tasodifiy 64 belgi (`node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`); bo'sh bo'lsa hech bir to'lov xabari qabul qilinmaydi |
 | `EXPO_PUBLIC_API_URL` | `mobil/.env` | Backend manzili — maxfiy emas: `EXPO_PUBLIC_` qiymati ilova ichida ochiq ko'rinadi |
 
 Web-trekda sayt Backend manzilini `VITE_API_URL` dan oladi (sayt papkasidagi `.env`; bu repo'dagi `prototip/` Backend'ga ulanmagan — mobil trek namunasi).
@@ -307,7 +320,7 @@ Avval `git push` — Render kodni GitHub'dagi repo'dan oladi va har push'dan key
 
 Port — `PORT` o'zgaruvchisidan (Render o'zi beradi), u bo'lmasa — 3000.
 Tekshirish: `https://….onrender.com/hodisalar/sanoq` → `401` — Backend internetda, kalitsiz yopiq; `…/oyinlar` — mehmon javobi (ism, login va `men…` yo'q).
-Environment ga `SANOQ_KALITI` ham (8-dars); brauzer ko'rinishi va lending bo'lsa — `WEB_ORIGIN` (vergul bilan).
+Environment ga `SANOQ_KALITI` ham (8-dars), `TOLOV_KALITI` (13-Modul 3-dars); brauzer ko'rinishi va lending bo'lsa — `WEB_ORIGIN` (vergul bilan).
 Bepul Backend 15 daqiqa so'rovsiz qolsa uxlaydi — keyingi birinchi javob bir daqiqagacha kechikishi mumkin. Render bepul xizmatni prod uchun tavsiya qilmaydi.
 
 Backend manzili: `https://maydon-jamoa-….onrender.com` (manzil — ochiq qiymat; ilovada — `mobil/.env` dagi `EXPO_PUBLIC_API_URL`).
