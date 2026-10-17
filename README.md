@@ -75,6 +75,30 @@ Bog'lovchi ustunlar — boshqa jadvaldagi qatorni ko'rsatadigan ustun: `oyinlar.
 
 «8 / 10»: 8 — shu o'yinning `ishtirokchilar` dagi `qoshildi` yoki `keladi` qatorlari soni (`navbatda`, `chiqdi` sanalmaydi), 10 — `oyinlar.kerak`.
 
+### Real vaqt nuqtalari
+
+Real vaqt nuqtasi — ekran ochiq turganda boshqa odam tufayli ma'lumoti o'zgarishi mumkin bo'lgan joy.
+
+| Joy | Ilova qachon so'raydi |
+|---|---|
+| «8 / 10» | ekran ochilganda va pastga tortib yangilaganda |
+| qo'shilganlar ro'yxati | ekran ochilganda va pastga tortib yangilaganda |
+| o'yin kunidagi «Kelaman» belgilari | ekran ochilganda va pastga tortib yangilaganda |
+
+Ekran o'zi yangilanishi hozircha yo'q (WebSocket — roadmap'da «keyinroq», 12-Modul).
+
+### Platforma
+
+**Mobil** — o'yinchi maydonda, qo'lida telefon; eslatma telefonga kelishi kerak.
+
+### Stek
+
+| Qism | Texnologiya |
+|---|---|
+| ilova | Expo (React Native), telefonda Expo Go orqali |
+| Backend | NestJS va TypeORM, Render |
+| Database | Neon (PostgreSQL) |
+
 ## Ishga tushirish
 
 Prototip (brauzerda; telefon ko'rinishi — F12, keyin Ctrl+Shift+M):
