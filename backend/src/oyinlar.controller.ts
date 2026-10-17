@@ -14,8 +14,11 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
+import { keyingiDoimiylarniYarat } from './doimiy.js';
 import { Ishtirokchi } from './ishtirokchi.entity.js';
+import { proBormi } from './men/pro.js';
 import { Oyin } from './oyin.entity.js';
+import { Oyinchi } from './oyinchi.entity.js';
 import { OyinlarGateway } from './oyinlar.gateway.js';
 import { bugunToshkent, sanaTogrimi } from './sana.js';
 import { MehmonUchunOchiq, TokenGuard, type Sorov } from './token.guard.js';
@@ -35,6 +38,7 @@ export class OyinlarController {
   constructor(
     @InjectRepository(Oyin) private readonly oyinlar: Repository<Oyin>,
     @InjectRepository(Ishtirokchi) private readonly ishtirokchilar: Repository<Ishtirokchi>,
+    @InjectRepository(Oyinchi) private readonly oyinchilar: Repository<Oyinchi>,
     // Real vaqt: o'zgarish Database'ga yozib tugatilgach — oyin-ozgardi { oyinId, sabab } hamma ulangan ilovaga
     private readonly ulanishlar: OyinlarGateway,
   ) {}
@@ -50,10 +54,12 @@ export class OyinlarController {
   // tasdiqlagan — kelishini tasdiqlaganlar (keladi) soni; faqat o'yinni e'lon qilgan o'yinchiga, boshqalarga — null.
   // menTasdiqlayOlaman — POST …/tasdiq dagi o'sha qoida (o'yin kuni, qo'shilgan) va hali tasdiqlamagan:
   // «Kelaman» faqat shunda chiqadi, ilova sanani o'zi solishtirmaydi.
+  // «Doimiy o'yin» (13-Modul 4-dars): ro'yxatdan oldin vaqti o'tgan doimiy o'yinlarning keyingi haftadagi o'yini yaratiladi (doimiy.ts).
   @Get()
   @MehmonUchunOchiq()
   async royxat(@Req() sorov: Sorov) {
     const men = sorov.oyinchiId;
+    await keyingiDoimiylarniYarat(this.oyinlar);
     const oyinlar = await this.oyinlar.find({
       select: { id: true, kun: true, soat: true, maydon: true, kerak: true, tashkilotchi_id: true },
       order: { yaratilgan: 'DESC', id: 'DESC' },
@@ -100,9 +106,10 @@ export class OyinlarController {
     });
   }
 
-  // POST /oyinlar { kun: '2026-10-11', soat: '19:00', maydon, kerak } → 201 — yangi e'lon.
+  // POST /oyinlar { kun: '2026-10-11', soat: '19:00', maydon, kerak, doimiy? } → 201 — yangi e'lon.
   // Tashkilotchi — token egasi: formada «kim» so'ralmaydi. Biror maydon bo'sh bo'lsa — 400, hech narsa yozilmaydi.
   // Tashkilotchi e'lon berganda o'zi qo'shilmaydi — yangi e'lon «0 / N».
+  // doimiy: true («Har hafta takrorlansin», 13-Modul 4-dars) — faqat Pro'dagi tashkilotchidan; Pro yo'q — 403, o'yin yaratilmaydi.
   @Post()
   async elon(@Req() sorov: Sorov, @Body() body: Record<string, unknown>) {
     const kun = typeof body?.kun === 'string' ? body.kun.trim() : '';
@@ -121,7 +128,13 @@ export class OyinlarController {
     if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(soat)) throw new BadRequestException('Soatni 19:00 kabi yozing');
     if (!Number.isInteger(kerak) || kerak < 1) throw new BadRequestException("Nechta odam — butun son bo'lsin");
 
-    const oyin = await this.oyinlar.save({ kun, soat, maydon, kerak, tashkilotchi_id: sorov.oyinchiId! });
+    const doimiy = body?.doimiy === true;
+    if (doimiy) {
+      const tashkilotchi = await this.oyinchilar.findOneBy({ id: sorov.oyinchiId! });
+      if (!proBormi(tashkilotchi?.pro_gacha)) throw new ForbiddenException("«Doimiy o'yin» — faqat Pro'da");
+    }
+
+    const oyin = await this.oyinlar.save({ kun, soat, maydon, kerak, tashkilotchi_id: sorov.oyinchiId!, doimiy });
     this.ulanishlar.oyinOzgardi(oyin.id, 'elon-berildi');
     return { id: oyin.id, kun: oyin.kun, soat: oyin.soat, maydon: oyin.maydon, kerak: oyin.kerak };
   }

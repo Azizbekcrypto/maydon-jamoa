@@ -9,6 +9,7 @@ import { Hodisa } from './hodisa.entity.js';
 import { HodisalarController, HodisalarTozalash } from './hodisalar.controller.js';
 import { Ishtirokchi } from './ishtirokchi.entity.js';
 import { KirishController } from './kirish.controller.js';
+import { MenController } from './men/men.controller.js';
 import { telefondanLoginga } from './migratsiya.js';
 import { NamunaMalumot } from './namuna.js';
 import { OyinlarGateway } from './oyinlar.gateway.js';
@@ -59,6 +60,7 @@ import { Tolov } from './tolov/tolov.entity.js';
     HodisalarController,
     TolovController,
     MashqTolovController,
+    MenController,
   ],
   providers: [NamunaMalumot, TokenGuard, OyinlarGateway, HodisalarTozalash],
 })

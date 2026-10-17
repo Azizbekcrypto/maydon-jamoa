@@ -7,6 +7,7 @@ import { sora, tokenOchir, tokenOl } from '@/api';
 import { BosiladiganKarta } from '@/components/bosiladigan-karta';
 import { ESLATMA_BOR, eslatmalarniYoq, eslatmalarYoqiqmi, hammasiniBekor, ruxsatBormi } from '@/eslatma';
 import { kunNomi } from '@/kun';
+import { menniUnut } from '@/men';
 import { oyinlarniOl, useOyinlar, type Oyin } from '@/oyin';
 import { R } from '@/ranglar';
 import { tasdiqSora } from '@/tasdiq';
@@ -68,6 +69,7 @@ export default function Oyinlar() {
     uzil();
     await hammasiniBekor().catch(() => {});
     await tokenOchir();
+    menniUnut();
     router.replace('/kirish');
   }
 

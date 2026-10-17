@@ -22,6 +22,11 @@ export class Oyinchi {
   @Column({ type: 'boolean', default: false })
   namuna: boolean;
 
+  // Pro muddati (13-Modul 4-dars): shu vaqtgacha Pro — sana yoki bo'sh (Pro yo'q). Muddat tugagach Pro o'zi to'xtaydi —
+  // avtomatik to'lov (pul yechish) yo'q. Mavjud akkauntlarda bo'sh
+  @Column({ type: 'timestamptz', nullable: true })
+  pro_gacha: Date | null;
+
   // Ro'yxatdan o'tgan vaqt (Database o'zi to'ldiradi)
   @CreateDateColumn({ type: 'timestamptz' })
   yaratilgan: Date;

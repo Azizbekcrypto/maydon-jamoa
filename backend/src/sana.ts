@@ -5,7 +5,7 @@ export function bugunToshkent(hozir = new Date()): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tashkent' }).format(hozir);
 }
 
-function kunQosh(kun: string, n: number): string {
+export function kunQosh(kun: string, n: number): string {
   const d = new Date(`${kun}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + n);
   return d.toISOString().slice(0, 10);

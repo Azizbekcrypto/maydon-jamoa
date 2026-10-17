@@ -20,3 +20,11 @@ export function keyingiKunlar(soni = 7): { sana: string; nom: string }[] {
     return { sana, nom: kunNomi(sana) };
   });
 }
+
+// Pro muddati ekranda: '2026-11-06T…' → «6-noyabr» («Pro: 6-noyabrgacha»)
+const OY_NOMLARI = ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr'];
+
+export function sanaNomi(vaqt: string): string {
+  const d = new Date(vaqt);
+  return `${d.getDate()}-${OY_NOMLARI[d.getMonth()]}`;
+}

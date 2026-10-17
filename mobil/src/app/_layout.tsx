@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { tokenOl } from '@/api';
 import { eslatmaBosilishiniSana, uchKunlikniQoy } from '@/eslatma';
 import { hodisaYoz } from '@/hodisa';
+import { menniOl } from '@/men';
 import { R } from '@/ranglar';
 import { useJonliXabarlar } from '@/ulanish';
 
@@ -22,6 +23,11 @@ async function uchKunlikniYangila() {
   if (await tokenOl()) await uchKunlikniQoy();
 }
 
+// Pro holati (13-Modul 4-dars) — ilova ochilganda, faqat kirgan foydalanuvchiga (GET /men)
+async function proniYangila() {
+  if (await tokenOl()) await menniOl();
+}
+
 export default function Layout() {
   useEffect(() => {
     if (!ochdiYozildi) {
@@ -29,6 +35,7 @@ export default function Layout() {
       hodisaYoz('ochdi');
     }
     uchKunlikniYangila().catch(() => {});
+    proniYangila().catch(() => {});
     // Eslatma bosilib ochilganini sanash (9-dars)
     const eslatmaObunasi = eslatmaBosilishiniSana();
     let oldingi: string | null | undefined = AppState.currentState;

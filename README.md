@@ -43,6 +43,7 @@ Saqlanadigan ma'lumotlar: o'yinchilar · o'yinlar · kim qaysi o'yinga qo'shilga
 | `login` | kirish uchun o'zi tanlagan nom (3–20 belgi, harf va raqam; kichik harfda; takrorlanmaydi) — boshqa o'yinchilar ko'rmaydi. 12-Modul 7-darsgacha bu yerda `telefon` edi |
 | `parol_hash` | hash — paroldan yasalgan satr: undan parolni qaytarib bo'lmaydi (parolning o'zi saqlanmaydi) |
 | `namuna` | `true` — namuna va tekshiruv akkauntlari (sanoqqa kirmaydi); ro'yxatdan o'tish formasi har doim `false` yozadi |
+| `pro_gacha` | Pro muddati (13-Modul 4-dars) — shu vaqtgacha Pro; bo'sh — Pro yo'q. Muddat tugagach Pro o'zi to'xtaydi, avtomatik to'lov yo'q |
 | `yaratilgan` | ro'yxatdan o'tgan vaqt (Database o'zi to'ldiradi) |
 
 **`oyinlar`** — e'lon qilingan o'yinlar
@@ -55,6 +56,7 @@ Saqlanadigan ma'lumotlar: o'yinchilar · o'yinlar · kim qaysi o'yinga qo'shilga
 | `maydon` | maydon nomi, masalan «Mahalla maydoni» |
 | `kerak` | nechta odam kerak — «8 / 10» dagi 10 |
 | `tashkilotchi_id` | o'yinni kim e'lon qilgani → `oyinchilar.id`; tashkilotchi hisobini o'chirsa — bo'sh (`null`), o'yin qoladi |
+| `doimiy` | «Doimiy o'yin» (13-Modul 4-dars, Pro): `true` — seriyaning eng oxirgi o'yini; vaqti o'tgach `GET /oyinlar` da keyingi haftaning o'yini yaratiladi va belgi unga o'tadi |
 | `yaratilgan` | e'lon qachon berilgani (Database o'zi to'ldiradi) |
 
 **`ishtirokchilar`** — kim qaysi o'yinda; har qo'shilish — bitta qator
@@ -202,6 +204,23 @@ Test rejim: pul yechilmaydi. Karta ma'lumoti hech qayerda so'ralmaydi va yozilma
 
 Hozir ishlaydi: to'lov xabari `POST /tolov/webhook` da qabul qilinadi va `tolovlar` ga yoziladi; Pro va ilova hali o'zgarmaydi. Test rejim: pul yechilmaydi.
 
+### Pro va «Doimiy o'yin» (4-dars)
+
+Pul modeli — bepul asos va pullik qo'shimcha: o'yinchilar uchun hamma narsa bepul; tashkilotchi uchun **Pro** (30 kunlik pullik obuna) —
+bitta qulaylik: **«Doimiy o'yin»** — har hafta shu kun va soatda o'yin o'zi e'lon qilinadi. Narx — Mentorning taxmini: 30 kun — 15 000 so'm.
+
+- «E'lon berish» ekranida belgi **«Har hafta takrorlansin»**: Pro bo'lmasa — to'lov taklifi ekrani (`mobil/src/app/pro.tsx`): «Doimiy o'yin — Pro'da» ·
+  «Har hafta shu kun va soatda o'yin o'zi e'lon qilinadi.» · «30 kun — 15 000 so'm» · «To'lovga o'tish» · pastda kulrang «Test rejim: pul yechilmaydi»; karta maydoni yo'q,
+  orqaga qaytsa belgi o'chiq qoladi. Pro bo'lsa — belgi yonadi, ostida kulrang «Pro: 6-noyabrgacha». Pro holati — `GET /men` dan (ilova ochilganda va «E'lon berish» ochilganda).
+- `POST /oyinlar` `doimiy: true` ni faqat Pro'dagi tashkilotchidan qabul qiladi (aks holda `403`, o'yin yaratilmaydi).
+- Keyingi o'yin **`GET /oyinlar` so'ralganda** yaratiladi (`backend/src/doimiy.ts`): doimiy o'yinning vaqti o'tgan bo'lsa (Toshkent vaqti) — bir haftadan keyingi kunga,
+  o'sha soat, maydon, kerakli odamlar soni va tashkilotchi bilan; `doimiy` belgisi yangisiga o'tadi. Backend uxlashi mumkin — vaqtga bog'langan ish (taymer) yo'q.
+- Pro muddati tugagach Pro o'zi to'xtaydi (`GET /men` da `pro: false`) — avtomatik to'lov yo'q.
+
+Tekshiruv uchun (faqat o'z hisobingiz, `WHERE id` bilan): `UPDATE oyinchilar SET pro_gacha = now() + interval '1 day' WHERE id = {hisob raqami};` ·
+tekshiruv o'yinini o'tgan haftaga: `UPDATE oyinlar SET kun = kun - 7 WHERE id = {o'yin raqami};` → ro'yxatni yangilang — keyingi haftaning o'yini chiqadi ·
+tozalash: `UPDATE oyinchilar SET pro_gacha = NULL WHERE id = {hisob raqami};`, `DELETE FROM oyinlar WHERE id IN ({tekshiruv o'yinlari});`.
+
 **To'lov xabari** (webhook) — `POST /tolov/webhook`, tana `{ tolovRaqami, holat: 'tolandi' | 'rad', summa, oyinchiId }` (`summa` — so'mda),
 sarlavha `X-Imzo` = HMAC SHA-256 (so'rovning xom tanasi, `TOLOV_KALITI`), hex. Tartib: imzo → maydonlar → takror → yozuv:
 imzo yo'q, shakli noto'g'ri yoki mos emas — `401`, hech narsa yozilmaydi · maydon yetishmasa yoki `holat` boshqa — `400` ·
@@ -234,8 +253,9 @@ Bitta istisno — mehmon ko'rinishi (12-Modul 8-dars): `GET /oyinlar` tokensiz h
 | `DELETE /hisob` | «Hisobni o'chirish»: akkaunt va uning `ishtirokchilar` dagi yozuvlari o'chadi; e'lon qilgan o'yinlari qoladi (tashkilotchisi bo'sh); qo'shilgan o'yinlarida navbatdagi kiradi | `200` |
 | `POST /hodisalar` `{ nom, qurilma_id }` | qadamlar sanog'i (va 9-darsdan sanoq yozuvi `eslatmadan-ochdi`); token kerak emas (yuborilmaydi); yozilgach sanoq sahifalariga `sanoq-ozgardi` | `201` · `400` nom ruxsat etilganlardan emas |
 | `GET /hodisalar/sanoq` (`?dan=` vaqt) | faqat maxfiy kalit bilan — sarlavha `X-Sanoq-Kaliti` (`SANOQ_KALITI`): `{ qadamlar: [{ nom, soni }], eslatmadanOchdi, royxatdanOtgan }` — har qadamda turli qurilmalar, ro'yxatdan o'tgan `namuna = false` akkauntlar; `?dan=` — shu vaqtdan keyingi yozuvlar | `200` · `401` kalitsiz yoki noto'g'ri |
-| `GET /oyinlar` | yagona ro'yxat yo'li, eng yangi e'lon tepada: `id, kun, soat, maydon, kerak, qoshilgan, menQoshilganman, tasdiqlagan, menTasdiqlaganman, menTasdiqlayOlaman, navbatda, menNavbatdaman, menTashkilotchiman` | `200` |
-| `POST /oyinlar` `{ kun, soat, maydon, kerak }` | e'lon; tashkilotchi — token egasi | `201` · `400` «Yozilmagan: …» |
+| `GET /oyinlar` | (13-Modul 4-dars: avval vaqti o'tgan «Doimiy o'yin»ning keyingi haftadagi o'yini yaratiladi) yagona ro'yxat yo'li, eng yangi e'lon tepada: `id, kun, soat, maydon, kerak, qoshilgan, menQoshilganman, tasdiqlagan, menTasdiqlaganman, menTasdiqlayOlaman, navbatda, menNavbatdaman, menTashkilotchiman` | `200` |
+| `GET /men` | kirgan o'yinchining holati (13-Modul 4-dars): `{ pro, proGacha }` — `pro` = `pro_gacha` hozirdan keyin | `200` · `401` tokensiz |
+| `POST /oyinlar` `{ kun, soat, maydon, kerak, doimiy? }` | e'lon; tashkilotchi — token egasi; `doimiy: true` («Har hafta takrorlansin») — faqat Pro'dagi tashkilotchidan | `201` · `400` «Yozilmagan: …» · `403` «Doimiy o'yin» — faqat Pro'da |
 | `POST /oyinlar/:id/qoshilish` | `qoshildi` | `201` · `409` «O'yin to'ldi» / «Siz bu o'yinga qo'shilgansiz» |
 | `POST /oyinlar/:id/tasdiq` | `keladi` — faqat o'yin kuni (Toshkent vaqti) va qo'shilgan o'yinchiga | `201` · `403` «Tasdiq faqat o'yin kuni» / «Siz bu o'yinga qo'shilmagansiz» |
 | `POST /oyinlar/:id/navbat` | `navbatda` — faqat to'lgan o'yinga | `201` · `409` |

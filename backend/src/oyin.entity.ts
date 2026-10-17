@@ -31,6 +31,11 @@ export class Oyin {
   @JoinColumn({ name: 'tashkilotchi_id' })
   tashkilotchi: Oyinchi;
 
+  // «Doimiy o'yin» (13-Modul 4-dars, Pro): har hafta shu kun va soatda o'yin o'zi e'lon qilinadi.
+  // Belgi seriyaning eng oxirgi o'yinida turadi: keyingi o'yin yaratilganda yangisiga o'tadi, eskisida o'chadi
+  @Column({ type: 'boolean', default: false })
+  doimiy: boolean;
+
   @CreateDateColumn({ type: 'timestamptz' })
   yaratilgan: Date;
 }
