@@ -31,8 +31,20 @@ const kuzatuvchilar = new Set<(o: Oyin[]) => void>();
 
 export const oxirgiRoyxat = () => oxirgi;
 
+// Mehmon ko'rinishi (kirmagan odam, 12-Modul 8-dars): Backend faqat id, kun, soat, maydon, kerak, qoshilgan beradi —
+// qolgan maydonlar «yo'q» qiymati bilan to'ldiriladi (ekranlar bitta turdan o'qiydi).
+const MEHMON_UCHUN: Omit<Oyin, 'id' | 'kun' | 'soat' | 'maydon' | 'kerak' | 'qoshilgan'> = {
+  menQoshilganman: false,
+  tasdiqlagan: null,
+  menTasdiqlaganman: false,
+  menTasdiqlayOlaman: false,
+  navbatda: 0,
+  menNavbatdaman: false,
+  menTashkilotchiman: false,
+};
+
 export async function oyinlarniOl(): Promise<Oyin[]> {
-  const royxat = await sora<Oyin[]>('/oyinlar');
+  const royxat = (await sora<Partial<Oyin>[]>('/oyinlar')).map((o) => ({ ...MEHMON_UCHUN, ...o }) as Oyin);
   oxirgi = royxat;
   kuzatuvchilar.forEach((k) => k(royxat));
   return royxat;

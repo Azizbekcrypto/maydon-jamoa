@@ -25,7 +25,9 @@ function kunlarBoyicha(oyinlar: Oyin[]): { kun: string; oyinlar: Oyin[] }[] {
   return guruhlar;
 }
 
-// O'yinlar: ro'yxat Backend'dan (GET /oyinlar, token bilan). Token bo'lmasa — «Kirish». To'lgan o'yinda son yonida «to'ldi».
+// O'yinlar: ro'yxat Backend'dan (GET /oyinlar). To'lgan o'yinda son yonida «to'ldi».
+// Mehmon ko'rinishi (12-Modul 8-dars): token yo'q bo'lsa ham ilova birinchi ekranda «O'yinlar»ni ko'rsatadi, tepada «Kirish»;
+// kirmagan odamga ro'yxat ekran ochilganda va pastga tortganda yangilanadi — real vaqt ulanishi faqat kirganlarga.
 // «8 / 10» — real vaqt nuqtasi: ekran ochilganda, pastga tortib yangilaganda, oyin-ozgardi hodisasidan keyin va
 // qayta ulanganda (uzilish paytidagi hodisa kelmaydi) — ulanish.ts qayta so'raydi, ro'yxat shu javobdan o'zi yangilanadi.
 // Token o'qilgach ilova Backend'ga doimiy ulanadi; sarlavha yonida — ulanish belgisi.
@@ -34,21 +36,20 @@ export default function Oyinlar() {
   const oyinlar = useOyinlar();
   const [xato, setXato] = useState('');
   const [tortildi, setTortildi] = useState(false);
+  const [mehmon, setMehmon] = useState(false);
 
   const yukla = useCallback(async () => {
-    if (!(await tokenOl())) {
-      router.replace('/kirish');
-      return;
-    }
-    // Ulanish bor bo'lsa — qayta ochilmaydi (ekran necha marta ochilsa ham bitta)
-    ulan();
+    const token = await tokenOl();
+    setMehmon(!token);
+    // Ulanish — faqat kirganlarga; bor bo'lsa qayta ochilmaydi (ekran necha marta ochilsa ham bitta)
+    if (token) ulan();
     try {
       await oyinlarniOl();
       setXato('');
     } catch (e) {
       setXato((e as Error).message);
     }
-  }, [router]);
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -87,23 +88,29 @@ export default function Oyinlar() {
     <SafeAreaView style={s.ekran}>
       <View style={s.tepa}>
         <Text style={s.nom}>Maydon Jamoa</Text>
-        <View style={s.hisobTugmalar}>
-          <Pressable onPress={hisobdanChiq}>
-            <Text style={s.chiqish}>Hisobdan chiqish</Text>
+        {mehmon ? (
+          <Pressable onPress={() => router.push('/kirish')}>
+            <Text style={s.kirish}>Kirish</Text>
           </Pressable>
-          <Pressable onPress={hisobniOchir}>
-            <Text style={s.ochirish}>Hisobni o'chirish</Text>
-          </Pressable>
-        </View>
+        ) : (
+          <View style={s.hisobTugmalar}>
+            <Pressable onPress={hisobdanChiq}>
+              <Text style={s.chiqish}>Hisobdan chiqish</Text>
+            </Pressable>
+            <Pressable onPress={hisobniOchir}>
+              <Text style={s.ochirish}>Hisobni o'chirish</Text>
+            </Pressable>
+          </View>
+        )}
       </View>
       <ScrollView
         contentContainerStyle={s.ichi}
         refreshControl={<RefreshControl refreshing={tortildi} onRefresh={tort} tintColor={R.yashil} colors={[R.yashil]} />}>
         <View style={s.sarlavhaQator}>
           <Text style={s.sarlavha}>O'yinlar</Text>
-          <UlanishBelgisi />
+          {!mehmon && <UlanishBelgisi />}
         </View>
-        <UlanishIzohi />
+        {!mehmon && <UlanishIzohi />}
         {!oyinlar && !xato && <ActivityIndicator color={R.yashil} />}
         {!!xato && <Text style={s.xato}>O'yinlarni yuklab bo'lmadi: {xato}</Text>}
         {kunlarBoyicha(oyinlar ?? []).map((guruh) => (
@@ -125,7 +132,7 @@ export default function Oyinlar() {
           </View>
         ))}
       </ScrollView>
-      <Pressable style={s.tugma} onPress={() => router.push('/elon')}>
+      <Pressable style={s.tugma} onPress={() => router.push(mehmon ? '/royxat' : '/elon')}>
         <Text style={s.tugmaMatn}>E'lon berish</Text>
       </Pressable>
     </SafeAreaView>
@@ -167,6 +174,7 @@ const s = StyleSheet.create({
   nom: { fontSize: 18, fontWeight: '700', color: R.yashil },
   hisobTugmalar: { flexDirection: 'row', gap: 16 },
   chiqish: { fontSize: 14, color: R.kulrang },
+  kirish: { fontSize: 16, fontWeight: '600', color: R.yashil },
   ochirish: { fontSize: 14, color: '#C0392B' },
   ichi: { padding: 20, paddingTop: 4 },
   sarlavhaQator: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },

@@ -4,7 +4,7 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { sora } from '@/api';
+import { sora, tokenOl } from '@/api';
 import { Tugma } from '@/components/forma';
 import { Son } from '@/components/son';
 import { hodisaYoz } from '@/hodisa';
@@ -12,7 +12,7 @@ import { kunNomi } from '@/kun';
 import { oyinlarniOl, useOyinlar, type Oyin } from '@/oyin';
 import { R } from '@/ranglar';
 import { tasdiqSora } from '@/tasdiq';
-import { oyinniOch, oyinniYop, useKorayotganlar } from '@/ulanish';
+import { oyinniOch, oyinniYop, ulan, useKorayotganlar } from '@/ulanish';
 
 // Eslatma (rejalashtirilgan, expo-notifications): «Qo'shilaman» muvaffaqiyatli bo'lganda ilova eslatmani
 // o'yindan bir soat oldinga qo'yadi — sarlavha «Maydon Jamoa», matn «Bugun, 18:00 · Mahalla maydoni».
@@ -72,6 +72,7 @@ async function eslatmaBekor(oyinId: number) {
 // «Hozir ko'ryapti: N»: ekran ochilganda Backend'ga oyin-ochildi, yopilganda oyin-yopildi — ulanish o'yin xonasiga
 // kiradi va chiqadi; son korayotganlar-ozgardi bilan keladi (o'zim ham sanalaman, ism ko'rsatilmaydi).
 // Ochiq o'yin ulanish.ts da eslab qolinadi: qayta ulanganda ilova shu xonaga qayta kiradi.
+// Mehmon ko'rinishi (kirmagan odam, 8-dars): o'yin ko'rinadi, «Qo'shilaman» (to'lgan o'yinda «Navbatga yozilish») — «Ro'yxatdan o'tish».
 export default function OyinEkrani() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -83,8 +84,13 @@ export default function OyinEkrani() {
   const [tortildi, setTortildi] = useState(false);
   // «Kelaman»: Backend rad etgan bo'lsa — sababi
   const [tasdiqXabar, setTasdiqXabar] = useState('');
+  const [mehmon, setMehmon] = useState(false);
 
   const yukla = useCallback(async () => {
+    const token = await tokenOl();
+    setMehmon(!token);
+    // Ekran to'g'ridan-to'g'ri ochilgan bo'lsa ham (masalan, brauzer ko'rinishida havola) — kirgan odam ulanadi
+    if (token) ulan();
     try {
       await oyinlarniOl();
     } catch (e) {
@@ -161,7 +167,7 @@ export default function OyinEkrani() {
       <ScrollView
         contentContainerStyle={s.ichi}
         refreshControl={<RefreshControl refreshing={tortildi} onRefresh={tort} tintColor={R.yashil} colors={[R.yashil]} />}>
-        <Pressable onPress={() => router.back()}>
+        <Pressable onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}>
           <Text style={s.orqaga}>‹ O'yinlar</Text>
         </Pressable>
         {!oyin ? (
@@ -178,7 +184,7 @@ export default function OyinEkrani() {
             </View>
             <Doiralar oyin={oyin} />
             {korayotgan !== null && <Text style={s.korayotgan}>Hozir ko'ryapti: {korayotgan}</Text>}
-            {(oyin.navbatda > 0 || oyin.qoshilgan >= oyin.kerak) && (
+            {!mehmon && (oyin.navbatda > 0 || oyin.qoshilgan >= oyin.kerak) && (
               <Text style={s.navbat}>Navbatda: {oyin.navbatda}</Text>
             )}
             {oyin.tasdiqlagan !== null && (
@@ -192,7 +198,12 @@ export default function OyinEkrani() {
       {oyin && (
         <View style={s.past}>
           {!!xabar && <Text style={s.xato}>{xabar}</Text>}
-          {oyin.menNavbatdaman ? (
+          {mehmon ? (
+            <Tugma
+              matn={oyin.qoshilgan >= oyin.kerak ? 'Navbatga yozilish' : "Qo'shilaman"}
+              onPress={() => router.push('/royxat')}
+            />
+          ) : oyin.menNavbatdaman ? (
             <Text style={s.navbatdasiz}>Navbatdasiz</Text>
           ) : oyin.menQoshilganman ? (
             <Tugma matn="Qo'shildingiz" onPress={() => {}} ochiq />

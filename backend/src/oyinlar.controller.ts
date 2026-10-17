@@ -18,7 +18,7 @@ import { Ishtirokchi } from './ishtirokchi.entity.js';
 import { Oyin } from './oyin.entity.js';
 import { OyinlarGateway } from './oyinlar.gateway.js';
 import { bugunToshkent, sanaTogrimi } from './sana.js';
-import { TokenGuard, type Sorov } from './token.guard.js';
+import { MehmonUchunOchiq, TokenGuard, type Sorov } from './token.guard.js';
 
 // «8 / 10» dagi 8 — shu o'yinda holati qoshildi yoki keladi bo'lgan qatorlar (navbatda, chiqdi sanalmaydi)
 export const QOSHILGAN = ['qoshildi', 'keladi'];
@@ -39,7 +39,9 @@ export class OyinlarController {
     private readonly ulanishlar: OyinlarGateway,
   ) {}
 
-  // GET /oyinlar — faqat token bilan (tokensiz 401). Yagona ro'yxat yo'li: «O'yin» ekrani ham shundan o'qiydi.
+  // GET /oyinlar — yagona ro'yxat yo'li: «O'yin» ekrani ham shundan o'qiydi.
+  // Mehmon ko'rinishi (12-Modul 8-dars): tokensiz ham javob beradi — faqat id, kun, soat, maydon, kerak, qoshilgan
+  // (men… maydonlari, tashkilotchi va o'yinchilar ismi — yo'q). Token bilan — to'liq javob (pastda).
   // Eng yangi e'lon tepada: yaratilgan bo'yicha kamayib.
   // → [{ id, kun: '2026-10-11', soat: '17:00', maydon, kerak, qoshilgan, menQoshilganman,
   //      tasdiqlagan, menTasdiqlaganman, menTasdiqlayOlaman, navbatda, menNavbatdaman, menTashkilotchiman }]
@@ -49,8 +51,9 @@ export class OyinlarController {
   // menTasdiqlayOlaman — POST …/tasdiq dagi o'sha qoida (o'yin kuni, qo'shilgan) va hali tasdiqlamagan:
   // «Kelaman» faqat shunda chiqadi, ilova sanani o'zi solishtirmaydi.
   @Get()
+  @MehmonUchunOchiq()
   async royxat(@Req() sorov: Sorov) {
-    const men = sorov.oyinchiId!;
+    const men = sorov.oyinchiId;
     const oyinlar = await this.oyinlar.find({
       select: { id: true, kun: true, soat: true, maydon: true, kerak: true, tashkilotchi_id: true },
       order: { yaratilgan: 'DESC', id: 'DESC' },
@@ -65,6 +68,17 @@ export class OyinlarController {
         .groupBy('i.oyin_id')
         .getRawMany();
     const sonlar = new Map(sanoq.map((q) => [q.oyin_id, q]));
+    if (men === undefined) {
+      // Kirmagan odamga — faqat shu maydonlar
+      return oyinlar.map((o) => ({
+        id: o.id,
+        kun: o.kun,
+        soat: o.soat,
+        maydon: o.maydon,
+        kerak: o.kerak,
+        qoshilgan: Number(sonlar.get(o.id)?.qoshilgan ?? 0),
+      }));
+    }
     const meniki = new Map(
       (await this.ishtirokchilar.find({ where: { oyinchi_id: men } })).map((i) => [i.oyin_id, i.holat]),
     );
