@@ -1,5 +1,6 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
 
+import { useHarakatKam } from '@/hooks/use-harakat-kam';
 import { R } from '@/ranglar';
 
 // Forma qatori: yorliq va kiritish maydoni
@@ -15,11 +16,13 @@ export function Maydoncha(p: { nom: string } & TextInputProps) {
 
 // Asosiy tugma (yashil); o'chiq bo'lsa — kulrang.
 // kutmoqda (14-Modul 4-dars, bosish javobi): yozuv yonida kichik kutish belgisi — so'rov yuborildi, javob kutilmoqda.
+// Telefonda «harakatni kamaytirish» yoqilgan bo'lsa belgi chiqmaydi (aylanadigan belgi), kutish yozuvi qoladi.
 export function Tugma(p: { matn: string; onPress: () => void; ochiq?: boolean; kutmoqda?: boolean }) {
+  const kam = useHarakatKam();
   return (
     <Pressable style={[s.tugma, p.ochiq && s.ochiq]} disabled={p.ochiq} onPress={p.onPress}>
       <View style={s.tugmaIchi}>
-        {p.kutmoqda && <ActivityIndicator size="small" color={R.kulrang} />}
+        {p.kutmoqda && !kam && <ActivityIndicator size="small" color={R.kulrang} />}
         <Text style={[s.tugmaMatn, p.ochiq && s.ochiqMatn]}>{p.matn}</Text>
       </View>
     </Pressable>

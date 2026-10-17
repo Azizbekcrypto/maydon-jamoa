@@ -39,6 +39,8 @@ export default function OyinEkrani() {
   const [qoshilmoqda, setQoshilmoqda] = useState(false);
   // So'rov ketgan payt — ekran hali yangilanmagan bo'lsa ham ikkinchi bosish ikkinchi so'rov yubormaydi
   const yuborilmoqda = useRef(false);
+  // Muvaffaqiyat: o'z qo'shilishi o'tgan har safar bittaga oshadi — son bir marta kattalashib qaytadi (Son)
+  const [pop, setPop] = useState(0);
   const [tortildi, setTortildi] = useState(false);
   // «Kelaman»: Backend rad etgan bo'lsa — sababi
   const [tasdiqXabar, setTasdiqXabar] = useState('');
@@ -81,8 +83,10 @@ export default function OyinEkrani() {
     setXabar('');
     setKutish(true);
     if (yol === 'qoshilish') setQoshilmoqda(true);
+    let otdi = false;
     try {
       await sora(`/oyinlar/${id}/${yol}`, { method: 'POST' });
+      otdi = yol === 'qoshilish';
       // Qadamlar sanog'i: «Qo'shilaman» muvaffaqiyatli bo'lganda — qoshildi
       if (yol === 'qoshilish') hodisaYoz('qoshildi');
       // Eslatma (eslatma.ts) — Backend javobi muvaffaqiyatli bo'lgandan keyin; eslatma xatosi asosiy ishni buzmaydi.
@@ -98,6 +102,8 @@ export default function OyinEkrani() {
       await yukla();
       setKutish(false);
       setQoshilmoqda(false);
+      // yangi son ekranga chiqqandan keyin — bir marta kattalashib qaytadi
+      if (otdi) setPop((n) => n + 1);
       yuborilmoqda.current = false;
     }
   }
@@ -159,7 +165,7 @@ export default function OyinEkrani() {
             </Text>
             <Text style={s.maydon}>{oyin.maydon}</Text>
             <View style={s.hisobQator}>
-              <Son qiymat={oyin.qoshilgan} style={s.hisob} />
+              <Son qiymat={oyin.qoshilgan} pop={pop} style={s.hisob} />
               <Text style={s.hisob}> / {oyin.kerak}</Text>
             </View>
             <Doiralar oyin={oyin} />
