@@ -101,7 +101,19 @@ Ekran o'zi yangilanishi hozircha yo'q (WebSocket — roadmap'da «keyinroq», 12
 
 ## Ishga tushirish
 
-Prototip (brauzerda; telefon ko'rinishi — F12, keyin Ctrl+Shift+M):
+**Ilova (mobil trek)** — telefonda Expo Go kerak (iPhone'da — kompyuterdagi bilan bitta Expo akkaunti: `npx expo login`):
+
+```
+cd mobil
+npm install
+npx expo start
+```
+
+Terminaldagi QR'ni skanerlang: Android'da — Expo Go'dagi «Scan QR code», iPhone'da — kamera ilovasi.
+QR odatda telefon va kompyuter bitta Wi-Fi'da bo'lsa ochiladi; ochilmasa — `npm i -g @expo/ngrok`, keyin `npx expo start --tunnel` (sekinroq).
+Expo Go'dagi ilova kodi kompyuterdagi `npx expo start` dan keladi: u to'xtasa, telefonda ham ochilmaydi.
+
+**Prototip (brauzerda; web-trek namunasi)** — telefon ko'rinishi: F12, keyin Ctrl+Shift+M:
 
 ```
 cd prototip
@@ -109,7 +121,21 @@ npm install
 npm run dev
 ```
 
-`localhost:5173` → «Maydon Jamoa», O'yinlar — to'rt o'yin kartasi.
+`localhost:5173` → «Maydon Jamoa», O'yinlar — to'rt o'yin kartasi (600 px dan tor oynada bitta ustunda).
+
+## Prototip internetda — PWA (web-trek namunasi)
+
+`prototip/public/manifest.webmanifest` (nom, ikonkalar 192 va 512 px, `start_url`, `display: standalone`) va HTTPS manzil —
+telefon saytni bosh ekranga ilova kabi qo'shadi. Netlify (app.netlify.com → yangi loyiha → GitHub'dan import):
+
+| Sozlama | Qiymat |
+|---|---|
+| Base directory | `prototip` |
+| Build command | `npm run build` |
+| Publish directory | `dist` |
+
+Havola — `https://….netlify.app`; har push'dan keyin sayt o'zi yangilanadi.
+Telefonda: Android Chrome — «⋮» → «Install and create shortcut»; iPhone Safari — «Share» → «Add to Home Screen».
 
 ## Darslar va teglar
 
@@ -120,6 +146,7 @@ Teglar: `m11-dars-NN-start` — dars boshidagi holat, `m11-dars-NN-done` — dar
 |---|---|---|
 | `m11-dars-07-done` | 7 · jonli prototip | `PRD.md` (5-darsdan), `wireframe.jpg`; `prototip/` (React + Vite + `motion`): uch ekran — O'yinlar · O'yin · E'lon berish, namuna ma'lumot `prototip/src/namuna.js` (4 o'yin, Shanba va Yakshanba); uch animatsiya — karta kichrayib qaytadi, «8 / 10» dagi son kattalashib qaytadi, ekranlar Motion bilan almashadi; `README.md` — talab va wireframe surati |
 | `m11-dars-08-done` | 8 · arxitektura va platforma | `README.md` «Arxitektura» bo'limi: chizma (ilova · Backend · Database), uch jadval (`oyinchilar` · `oyinlar` · `ishtirokchilar`) va bog'lovchi ustunlar, real vaqt nuqtalari, platforma (mobil) va bir gapli asos, stek; kod o'zgarmagan |
+| `m11-dars-09-done` | 9 · telefonda | `mobil/` (Expo, `npx create-expo-app@latest mobil`; Expo Router, TypeScript): `src/app/_layout.tsx` — `<Stack />`, `index.tsx` — O'yinlar, `oyin/[id].tsx` — O'yin (to'rt o'yin bitta faylda, `id` manzildan), `elon.tsx` — E'lon berish; namuna ma'lumot `mobil/src/namuna.ts` (prototipdagidek, `id` '1'…'4'); karta kichrayib qaytadi, son kattalashib qaytadi; shablondagi `explore` va pastki tablar olib tashlangan. Web-trek namunasi: `prototip/` adaptiv (600 px dan tor oynada bitta ustun) va PWA — `public/manifest.webmanifest`, `ikonka-192.png`, `ikonka-512.png` |
 
 ## Ortda qoldingizmi
 
