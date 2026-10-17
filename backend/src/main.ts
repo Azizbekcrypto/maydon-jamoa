@@ -9,6 +9,7 @@ async function bootstrap() {
   if (process.env.WEB_ORIGIN) {
     app.enableCors({ origin: process.env.WEB_ORIGIN.replace(/\/+$/, '') });
   }
-  await app.listen(3000);
+  // Port — PORT o'zgaruvchisidan (Render o'zi beradi), u bo'lmasa — 3000 (laptop)
+  await app.listen(process.env.PORT ?? 3000);
 }
 await bootstrap();

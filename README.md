@@ -123,6 +123,27 @@ npm run dev
 
 `localhost:5173` → «Maydon Jamoa», O'yinlar — to'rt o'yin kartasi (600 px dan tor oynada bitta ustunda).
 
+## Internetga chiqarish
+
+Telefon laptopdagi Backend'ni `localhost` bilan topmaydi (telefon uchun `localhost` — telefonning o'zi), shuning uchun Backend Render'da turadi.
+Avval `git push` — Render kodni GitHub'dagi repo'dan oladi va har push'dan keyin o'zi yangilanadi.
+
+**Backend — Render** (render.com → New > Web Service → `maydon-jamoa` repo):
+
+| Sozlama | Qiymat |
+|---|---|
+| Root Directory | `backend` |
+| Build Command | `npm install && npm run build` |
+| Start Command | `npm run start:prod` |
+| Instance Type | Free |
+| Environment | `DATABASE_URL`, `JWT_SECRET` — qiymatlari `backend/.env` dan (bu yerda — faqat nomlari) |
+
+Port — `PORT` o'zgaruvchisidan (Render o'zi beradi), u bo'lmasa — 3000.
+Tekshirish: `https://….onrender.com/oyinlar` → `401` — Backend internetda, tokensiz yopiq.
+Bepul Backend 15 daqiqa so'rovsiz qolsa uxlaydi — keyingi birinchi javob bir daqiqagacha kechikishi mumkin. Render bepul xizmatni prod uchun tavsiya qilmaydi.
+
+Backend manzili: `https://maydon-jamoa-….onrender.com` (manzil — ochiq qiymat; ilovada — `mobil/.env` dagi `EXPO_PUBLIC_API_URL`).
+
 ## Prototip internetda — PWA (web-trek namunasi)
 
 `prototip/public/manifest.webmanifest` (nom, ikonkalar 192 va 512 px, `start_url`, `display: standalone`) va HTTPS manzil —
