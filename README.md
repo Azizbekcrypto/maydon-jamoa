@@ -97,6 +97,7 @@ Ekran o'zi yangilanishi hozircha yo'q (WebSocket — roadmap'da «keyinroq», 12
 |---|---|
 | ilova | Expo (React Native), telefonda Expo Go orqali |
 | Backend | NestJS va TypeORM, Render |
+| real vaqt | socket.io — doimiy ulanish (imkon bo'lsa WebSocket orqali): Backend'da NestJS gateway (`@nestjs/websockets`, `@nestjs/platform-socket.io`), ilovada `socket.io-client` |
 | Database | Neon (PostgreSQL) |
 
 ## Backend yo'llari
@@ -145,6 +146,7 @@ Terminaldagi QR'ni skanerlang: Android'da — Expo Go'dagi «Scan QR code», iPh
 QR odatda telefon va kompyuter bitta Wi-Fi'da bo'lsa ochiladi; ochilmasa — `npm i -g @expo/ngrok`, keyin `npx expo start --tunnel` (sekinroq).
 Expo Go'dagi ilova kodi kompyuterdagi `npx expo start` dan keladi: u to'xtasa, telefonda ham ochilmaydi; o'yinlar esa `EXPO_PUBLIC_API_URL` dagi Backend'dan.
 Ilovada: «Ro'yxatdan o'tish» (namuna ism va namuna telefon, masalan `Ali` · `+998 90 000 00 01` — o'z raqamingizni yozmang) → «Kirish» → «O'yinlar».
+«O'yinlar» sarlavhasi yonida — ulanish belgisi: «Ulangan» (Backend'ga doimiy ulangan) · «Ulanmoqda…» (ulanish yo'q, ilova o'zi urinmoqda — masalan, uchish rejimida) · «Ulanmagan» (ilova urinmayapti — token yaroqsiz yoki hisobdan chiqilgan).
 Ikkinchi o'yinchini tekshirish: «Hisobdan chiqish» → boshqa namuna telefon bilan ro'yxatdan o'ting (masalan `+998 90 000 00 02`; telefon takrorlansa — `409`).
 «Kelaman» faqat o'yin kuni chiqadi: bugun o'yin bo'lmasa — bugungi sana bilan yangi e'lon bering va unga ikkinchi akkaunt bilan qo'shiling.
 

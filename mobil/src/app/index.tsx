@@ -8,6 +8,7 @@ import { BosiladiganKarta } from '@/components/bosiladigan-karta';
 import { kunNomi } from '@/kun';
 import { oyinlarniOl, type Oyin } from '@/oyin';
 import { R } from '@/ranglar';
+import { ulan, useUlanishHolati, uzil } from '@/ulanish';
 
 // Sinov tuzatishi (13-dars): o'yinlar kun va soat bo'yicha, har kun o'z sarlavhasi bilan («Shanba», «Yakshanba»).
 // Tartib faqat ilovada — GET /oyinlar o'z tartibida (eng yangi e'lon tepada) keladi.
@@ -24,7 +25,8 @@ function kunlarBoyicha(oyinlar: Oyin[]): { kun: string; oyinlar: Oyin[] }[] {
 
 // O'yinlar: ro'yxat Backend'dan (GET /oyinlar, token bilan).
 // «8 / 10» — real vaqt nuqtasi: ekran ochilganda va pastga tortib yangilaganda qayta so'raladi
-// (ekran o'zi yangilanmaydi). Token bo'lmasa — «Kirish». To'lgan o'yinda son yonida «to'ldi».
+// (ekran o'zi hali yangilanmaydi). Token bo'lmasa — «Kirish». To'lgan o'yinda son yonida «to'ldi».
+// Token o'qilgach ilova Backend'ga doimiy ulanadi (ulanish.ts); sarlavha yonida — ulanish belgisi.
 export default function Oyinlar() {
   const router = useRouter();
   const [oyinlar, setOyinlar] = useState<Oyin[] | null>(null);
@@ -36,6 +38,8 @@ export default function Oyinlar() {
       router.replace('/kirish');
       return;
     }
+    // Ulanish bor bo'lsa — qayta ochilmaydi (ekran necha marta ochilsa ham bitta)
+    ulan();
     try {
       setOyinlar(await oyinlarniOl());
       setXato('');
@@ -57,6 +61,7 @@ export default function Oyinlar() {
   }
 
   async function hisobdanChiq() {
+    uzil();
     await tokenOchir();
     router.replace('/kirish');
   }
@@ -72,7 +77,10 @@ export default function Oyinlar() {
       <ScrollView
         contentContainerStyle={s.ichi}
         refreshControl={<RefreshControl refreshing={tortildi} onRefresh={tort} tintColor={R.yashil} colors={[R.yashil]} />}>
-        <Text style={s.sarlavha}>O'yinlar</Text>
+        <View style={s.sarlavhaQator}>
+          <Text style={s.sarlavha}>O'yinlar</Text>
+          <UlanishBelgisi />
+        </View>
         {!oyinlar && !xato && <ActivityIndicator color={R.yashil} />}
         {!!xato && <Text style={s.xato}>O'yinlarni yuklab bo'lmadi: {xato}</Text>}
         {kunlarBoyicha(oyinlar ?? []).map((guruh) => (
@@ -101,13 +109,34 @@ export default function Oyinlar() {
   );
 }
 
+// Ulanish belgisi: «Ulangan» (yashil nuqta) · «Ulanmoqda…» · «Ulanmagan» (kulrang)
+const BELGI = {
+  ulangan: { matn: 'Ulangan', rang: R.yashil },
+  ulanmoqda: { matn: 'Ulanmoqda…', rang: '#D08A1E' },
+  ulanmagan: { matn: 'Ulanmagan', rang: R.kulrang },
+} as const;
+
+function UlanishBelgisi() {
+  const b = BELGI[useUlanishHolati()];
+  return (
+    <View style={s.belgi}>
+      <View style={[s.nuqta, { backgroundColor: b.rang }]} />
+      <Text style={[s.belgiMatn, { color: b.rang }]}>{b.matn}</Text>
+    </View>
+  );
+}
+
 const s = StyleSheet.create({
   ekran: { flex: 1, backgroundColor: R.fon },
   tepa: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12 },
   nom: { fontSize: 18, fontWeight: '700', color: R.yashil },
   chiqish: { fontSize: 14, color: R.kulrang },
   ichi: { padding: 20, paddingTop: 4 },
-  sarlavha: { fontSize: 26, fontWeight: '700', color: R.matn, marginBottom: 16 },
+  sarlavhaQator: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+  sarlavha: { fontSize: 26, fontWeight: '700', color: R.matn },
+  belgi: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  nuqta: { width: 8, height: 8, borderRadius: 4 },
+  belgiMatn: { fontSize: 14, fontWeight: '600' },
   xato: { color: '#C0392B', fontSize: 15, marginBottom: 12 },
   kunGuruhi: { marginBottom: 20 },
   kunSarlavha: { fontSize: 18, fontWeight: '700', color: R.matn, marginBottom: 10 },
