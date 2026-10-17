@@ -10,7 +10,10 @@
   <!-- Maxfiylik siyosati (12-Modul 7-dars): ilova haqiqatda nima qilishini aytadi — yuridik hujjat emas.
        Har javob koddan tekshirilgan: backend/src/oyinchi.entity.ts, royxat.controller.ts, hodisa.entity.ts,
        hodisalar.controller.ts (60 kun), mobil/src/hodisa.ts (qurilma ID), lending/index.html (Umami).
-       «Database'ni faqat ilova egasi ko'radi» — koddan bilinmaydi, Mentor o'zi yozgan. -->
+       «Database'ni faqat ilova egasi ko'radi» — koddan bilinmaydi, Mentor o'zi yozgan.
+       To'lov bandi (13-Modul 7-dars) — backend/src/tolov/tolov.entity.ts (tolovlar: tolov_raqami, oyinchi_id, holat, summa, yaratilgan),
+       boshlangan-tolov.entity.ts, oyinchi.entity.ts (pro_gacha). Karta maydoni kodda yo'q. «Qancha saqlanadi?» ga tegilmadi:
+       to'lov yozuvlari hisob bilan birga o'chadi (hisob o'chirilsa — tolovlar va boshlangan_tolovlar qatorlari ham). -->
   <header class="tepa">
     <a class="nom" href="./">Maydon Jamoa</a>
   </header>
@@ -21,12 +24,14 @@
     <section>
       <h2>Qaysi ma'lumot?</h2>
       <p>Ro'yxatdan o'tishda — ism, login va parol; parolning o'zi saqlanmaydi, o'rnida undan yasalgan satr (hash) turadi. Telefon raqami so'ralmaydi.
-        Ilovada qadamlar sanaladi — ism va loginsiz, qurilma ID bilan. Ilova eslatmadan ochilgani ham qurilma ID bilan sanaladi. Lendingda Umami tashrif va tugma bosilishini sanaydi — unga ism va login yuborilmaydi.</p>
+        Ilovada qadamlar sanaladi — ism va loginsiz, qurilma ID bilan. Ilova eslatmadan ochilgani ham qurilma ID bilan sanaladi. Lendingda Umami tashrif va tugma bosilishini sanaydi — unga ism va login yuborilmaydi.
+        Karta ma'lumoti so'ralmaydi — to'lov test rejimda; Maydon Jamoa kartani ko'rmaydi va saqlamaydi. Biz saqlaymiz: to'lov raqami, kim to'lagani (hisob), holati (to'landi yoki rad etildi), summa, sana va Pro muddati.</p>
     </section>
 
     <section>
       <h2>Nima uchun?</h2>
-      <p>Ism — o'yindagi o'yinchilar bir-birini tanishi uchun. Login va parol — hisobga kirish uchun. Qadamlar sanog'i — ilovaning qaysi joyi tushunarsizligini bilish uchun.</p>
+      <p>Ism — o'yindagi o'yinchilar bir-birini tanishi uchun. Login va parol — hisobga kirish uchun. Qadamlar sanog'i — ilovaning qaysi joyi tushunarsizligini bilish uchun.
+        To'lov raqami, hisob, holat va summa — to'lovni bir marta hisoblash va «to'lovim qayerda?» savoliga javob berish uchun. Pro muddati — Pro'ni yoqish va to'xtatish uchun.</p>
     </section>
 
     <section>

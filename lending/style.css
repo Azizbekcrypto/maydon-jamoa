@@ -185,6 +185,7 @@ a.nom {
 }
 
 .past a { text-decoration: underline; }
+.past a + a { margin-left: 20px; }
 
 /* Maxfiylik sahifasi */
 .siyosat { max-width: 720px; }

@@ -5,12 +5,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { sora } from '@/api';
 import { Tugma } from '@/components/forma';
+import { MAXFIYLIK, OFERTA } from '@/lending';
 import { menniOl } from '@/men';
 import { PRO_TAKLIF } from '@/pro';
 import { R } from '@/ranglar';
 
 // To'lov taklifi ekrani (13-Modul 4-dars): «E'lon berish»da «Har hafta takrorlansin» bosilganda, Pro bo'lmasa ochiladi.
 // Karta yoki boshqa to'lov ma'lumoti so'raladigan maydon yo'q. Orqaga qaytsa — belgi o'chiq qoladi.
+// «To'lovga o'tish» ostida «Pro shartlari» va «Maxfiylik siyosati» (7-dars) — lendingdagi oferta va siyosat.
 // «To'lovga o'tish» → POST /tolov/boshlash (to'lov raqamini Backend beradi) → havola telefon brauzerida ochiladi
 // (brauzer ko'rinishida — yangi oynada): «Mashq to'lov» sahifasi. Ilovaga qaytganda GET /men qayta so'raladi —
 // Pro yoqilgan bo'lsa, ekran yopiladi va «E'lon berish»da belgi va «Pro: {sana}gacha» ko'rinadi.
@@ -81,6 +83,15 @@ export default function ProTaklif() {
         )}
         {!!xabar && <Text style={s.xato}>{xabar}</Text>}
         <Tugma matn={PRO_TAKLIF.tugma} onPress={tolovgaOt} ochiq={kutish} />
+        {/* Shartlar to'lashdan oldin (7-dars): ikki kichik havola — telefon brauzerida lending sahifalari */}
+        <View style={s.havolalar}>
+          <Pressable onPress={() => Linking.openURL(OFERTA)}>
+            <Text style={s.havola}>Pro shartlari</Text>
+          </Pressable>
+          <Pressable onPress={() => Linking.openURL(MAXFIYLIK)}>
+            <Text style={s.havola}>Maxfiylik siyosati</Text>
+          </Pressable>
+        </View>
         <Text style={s.test}>{PRO_TAKLIF.test}</Text>
       </View>
     </SafeAreaView>
@@ -99,5 +110,7 @@ const s = StyleSheet.create({
   kutilmoqda: { fontSize: 16, fontWeight: '600', color: R.matn, textAlign: 'center' },
   qayta: { padding: 12, borderRadius: 12, borderWidth: 1, borderColor: R.yashil, alignItems: 'center' },
   qaytaMatn: { color: R.yashil, fontSize: 16, fontWeight: '600' },
+  havolalar: { flexDirection: 'row', justifyContent: 'center', gap: 20 },
+  havola: { fontSize: 14, color: R.yashil, textDecorationLine: 'underline' },
   test: { fontSize: 14, color: R.kulrang, textAlign: 'center' },
 });
