@@ -167,6 +167,14 @@ Topilgan uch muammo tuzatilgan: qayta ulanganda ro'yxat qayta so'raladi · `oyin
   o'chirilsa — hamma rejalashtirilgan eslatma bekor; yoqilsa — qo'shilgan, hali boshlanmagan o'yinlar va uch kunlik eslatma qaytadan.
   Telefonda ruxsat berilmagan bo'lsa — ostida «Telefon sozlamalarida eslatmalarga ruxsat berilmagan».
 
+### Havolani ulashish (10-dars — Mentor zaxira rejasidagi ish)
+
+Zaxira reja: bo'g'in — kanal (post faqat ikki joyga yetdi: 60 kishilik guruh va sinf chati); gipoteza — «Agar har o'yin e'loni bilan birga havola yuborilsa,
+yangi odamlar keladi, chunki tashkilotchi o'z jamoasini o'zi chaqiradi»; ish — e'lon berilgach ilovada «Havolani ulashish» tugmasi (7-dars rejasining 3-bosqichi oldinga suriladi).
+«O'yin» ekranida, o'yinni e'lon qilgan tashkilotchida: telefonning ulashish oynasi ochiladi — tashkilotchi o'zi tanlagan joyga yuboradi (ilova hech kimga o'zi yubormaydi).
+Havola — lending manzili `?kanal=ilova` belgisi bilan (`mobil/src/lending.ts`): Umami'da `tashrif` hodisasi kanal bo'yicha ko'rinadi — gipoteza shu bilan tekshiriladi.
+APK o'zi yangilanmaydi: tugma odamlarga yangi o'rnatish fayli va lendingdagi yangi havola bilan yetadi.
+
 ## Backend yo'llari
 
 Yopiq yo'llar (`/oyinlar` va `/hisob`) — faqat token bilan (`Authorization: Bearer <token>`), tokensiz `401`.
@@ -411,6 +419,7 @@ Repo'ga yoziladigan darslar: 1–10; 11 va 12 (pitch) — repo'ga yozmaydi, tegi
 | `m12-dars-07-done` | 7 · 50 foydalanuvchiga reja va ishga tushirish | `oyinchilar`: `telefon` → `login` (3–20 harf va raqam, «Bu login band»), `namuna`, `yaratilgan`; bir martalik migratsiya (`backend/src/migratsiya.ts`: mavjud akkauntlar ismidan namuna login oladi, `namuna = true`, `telefon` ustuni olib tashlanadi); `POST /royxat { ism, login, parol }`, `POST /kirish { login, parol }`; `DELETE /hisob` — «Hisobni o'chirish» («Rostdan o'chirasizmi?»; e'lon qilgan o'yinlar qoladi — tashkilotchisi bo'sh; «Hisobdan chiqish» va «Hisobni o'chirish»da eslatmalar bekor); `hodisalar` jadvali, `POST /hodisalar`, `hodisaYoz` to'rt joyda (qurilma ID; 60 kun). Forma ostida gap va «Maxfiylik siyosati». `lending/maxfiylik.html` (to'rt savol), lendingda ikki havola (manzillar — namuna). Brauzer ko'rinishi: token `localStorage` da, eslatma yo'q, `app.json` `web.output: single`, `public/_redirects`; socket.io ham `WEB_ORIGIN` ga ruxsat. README — sanoq SQL |
 | `m12-dars-08-done` | 8 · qadamlar bo'yicha sanoq va tuzatish | `GET /hodisalar/sanoq` — faqat maxfiy kalit bilan (sarlavha `X-Sanoq-Kaliti` = `SANOQ_KALITI`, aks holda `401`): to'rt qadam — turli qurilmalar soni, ro'yxatdan o'tgan `namuna = false` akkauntlar, `?dan=`; `lending/sanoq.html` — kalit faqat sahifa holatida, o'zi yangilanadi (socket.io: kalit bilan faqat `sanoq` xonasiga, `POST /hodisalar` dan keyin `sanoq-ozgardi`); `oyin-ozgardi` — faqat ilova ulanishlariga; `WEB_ORIGIN` — bir nechta manzil (vergul). Tuzatish — mehmon ko'rinishi: `GET /oyinlar` tokensiz ham (faqat `id, kun, soat, maydon, kerak, qoshilgan`); ilova kirmagan odamga «O'yinlar»ni tepada «Kirish» bilan ko'rsatadi, «Qo'shilaman» → «Ro'yxatdan o'tish», real vaqt ulanishi — faqat kirganlarga |
 | `m12-dars-09-done` | 9 · loyiha kuni: qaytaradigan eslatma | jonli xabar «Shanba, 18:00 — 2 joy qoldi» (o'zi qo'shilmagan o'yinda bir yoki ikki joy, yangi hodisasiz, bir xil son uchun bir marta); uch kunlik eslatma (`mobil/src/eslatma.ts`: ilova ochilganda oldingisi bekor, uch kundan keyin 17:00 «Hafta oxiriga o'yin bormi? E'lonlarni ko'ring»; faqat kirganga; haftalik chegara — ikkita); `eslatmadan-ochdi` (istalgan eslatma bosilib ochilganda, bitta bosishga bitta) — `POST /hodisalar` qabul qiladi, `GET /hodisalar/sanoq` da `eslatmadanOchdi`, sanoq sahifasida yangi qator; «Eslatmalar» o'chirgichi (ruxsat yo'q bo'lsa — qator); maxfiylik: «Ilova eslatmadan ochilgani ham qurilma ID bilan sanaladi.» |
+| `m12-dars-10-done` | 10 · uyga vazifa (Mentor misoli): zaxira rejadagi ish | «O'yin» ekranida, o'yinni e'lon qilgan tashkilotchida — «Havolani ulashish»: telefonning ulashish oynasi, xabarda o'yin (kun, soat, maydon) va lending havolasi `?kanal=ilova` (`mobil/src/lending.ts`); README — zaxira reja va tugma. 12-dars jonli demosi shu tegdan. Metrika hisoboti, Mentor tekshiruvi va SQL so'rovlari — darsda (Neon SQL Editor), repo'ga yozilmaydi |
 
 ## Ortda qoldingizmi
 

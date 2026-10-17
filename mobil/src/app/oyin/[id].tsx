@@ -1,6 +1,6 @@
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { sora, tokenOl } from '@/api';
@@ -9,6 +9,7 @@ import { Son } from '@/components/son';
 import { oyinEslatmasiniBekor, oyinEslatmasiniQoy, uchKunlikniQoy } from '@/eslatma';
 import { hodisaYoz } from '@/hodisa';
 import { kunNomi } from '@/kun';
+import { ULASHISH_HAVOLASI } from '@/lending';
 import { oyinlarniOl, useOyinlar, type Oyin } from '@/oyin';
 import { R } from '@/ranglar';
 import { tasdiqSora } from '@/tasdiq';
@@ -21,6 +22,8 @@ import { oyinniOch, oyinniYop, ulan, useKorayotganlar } from '@/ulanish';
 // «Hozir ko'ryapti: N»: ekran ochilganda Backend'ga oyin-ochildi, yopilganda oyin-yopildi — ulanish o'yin xonasiga
 // kiradi va chiqadi; son korayotganlar-ozgardi bilan keladi (o'zim ham sanalaman, ism ko'rsatilmaydi).
 // Ochiq o'yin ulanish.ts da eslab qolinadi: qayta ulanganda ilova shu xonaga qayta kiradi.
+// «Havolani ulashish» (10-dars) — o'yinni e'lon qilgan tashkilotchida: telefonning ulashish oynasi ochiladi, tashkilotchi
+// o'zi tanlagan joyga (o'z jamoasiga) yuboradi — ilova hech kimga o'zi yubormaydi. Havola — lending, ?kanal=ilova belgisi bilan.
 // Mehmon ko'rinishi (kirmagan odam, 8-dars): o'yin ko'rinadi, «Qo'shilaman» (to'lgan o'yinda «Navbatga yozilish») — «Ro'yxatdan o'tish».
 export default function OyinEkrani() {
   const router = useRouter();
@@ -84,6 +87,14 @@ export default function OyinEkrani() {
     } finally {
       await yukla();
       setKutish(false);
+    }
+  }
+
+  async function ulash(o: Oyin) {
+    try {
+      await Share.share({ message: `${kunNomi(o.kun)}, ${o.soat} · ${o.maydon} — Maydon Jamoa'da qo'shiling: ${ULASHISH_HAVOLASI}` });
+    } catch (e) {
+      setXabar((e as Error).message);
     }
   }
 
@@ -176,6 +187,11 @@ export default function OyinEkrani() {
             </Pressable>
           )}
           {!!tasdiqXabar && <Text style={s.xato}>{tasdiqXabar}</Text>}
+          {oyin.menTashkilotchiman && (
+            <Pressable style={s.ulashish} onPress={() => ulash(oyin)}>
+              <Text style={s.ulashishMatn}>Havolani ulashish</Text>
+            </Pressable>
+          )}
         </View>
       )}
     </SafeAreaView>
@@ -226,6 +242,8 @@ const s = StyleSheet.create({
   korayotgan: { fontSize: 15, color: R.kulrang, marginTop: 12 },
   navbat: { fontSize: 15, color: R.kulrang, marginTop: 12 },
   navbatdasiz: { fontSize: 16, fontWeight: '600', color: R.matn, textAlign: 'center', padding: 8 },
+  ulashish: { padding: 14, borderRadius: 12, borderWidth: 1, borderColor: R.yashil, alignItems: 'center' },
+  ulashishMatn: { color: R.yashil, fontSize: 16, fontWeight: '600' },
   chiqish: { padding: 14, borderRadius: 12, borderWidth: 1, borderColor: '#C0392B', alignItems: 'center' },
   chiqishMatn: { color: '#C0392B', fontSize: 16, fontWeight: '600' },
   past: { padding: 20, gap: 10 },
