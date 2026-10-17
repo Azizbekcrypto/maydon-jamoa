@@ -117,7 +117,13 @@ export default function Oyinlar() {
           {!mehmon && <UlanishBelgisi />}
         </View>
         {!mehmon && <UlanishIzohi />}
-        {!oyinlar && !xato && <ActivityIndicator color={R.yashil} />}
+        {/* Kutish yozuvi (11-Modul 15-dars): bepul Backend uxlagan bo'lsa birinchi javob bir daqiqagacha keladi — o'yinchi nima bo'layotganini biladi */}
+        {!oyinlar && !xato && (
+          <View style={s.kutish}>
+            <ActivityIndicator color={R.yashil} />
+            <Text style={s.kutishMatn}>O'yinlar yuklanmoqda — bu bir daqiqagacha cho'zilishi mumkin.</Text>
+          </View>
+        )}
         {!!xato && <Text style={s.xato}>O'yinlarni yuklab bo'lmadi: {xato}</Text>}
         {kunlarBoyicha(oyinlar ?? []).map((guruh) => (
           <View key={guruh.kun} style={s.kunGuruhi}>
@@ -290,6 +296,8 @@ const s = StyleSheet.create({
   nuqta: { width: 8, height: 8, borderRadius: 4 },
   belgiMatn: { fontSize: 14, fontWeight: '600' },
   xato: { color: '#C0392B', fontSize: 15, marginBottom: 12 },
+  kutish: { gap: 10, alignItems: 'center', paddingVertical: 12 },
+  kutishMatn: { fontSize: 15, color: R.kulrang, textAlign: 'center' },
   kunGuruhi: { marginBottom: 20 },
   kunSarlavha: { fontSize: 18, fontWeight: '700', color: R.matn, marginBottom: 10 },
   oyinlar: { gap: 12 },
