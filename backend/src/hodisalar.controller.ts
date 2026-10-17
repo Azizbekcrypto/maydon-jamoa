@@ -26,7 +26,10 @@ export const QADAMLAR = ['ochdi', 'royxatdan-otdi', 'qoshildi', 'tasdiqladi'];
 // Sanoq yozuvi (9-dars): ilovaning istalgan eslatmasi bosilib ilova ochilgani — qadam emas, qadamlar ostidagi alohida qator.
 // Bitta ochilish ikki yozuv beradi: ochdi va eslatmadan-ochdi — ataylab.
 export const ESLATMADAN_OCHDI = 'eslatmadan-ochdi';
-const QABUL = [...QADAMLAR, ESLATMADAN_OCHDI];
+// Sanoq yozuvi (13-Modul 8-dars): Telegram xabaridagi havola (?kanal=telegram) bilan ilovaning brauzer ko'rinishi ochildi —
+// havola bosilganini aytadi; xabar odamni qaytardimi — buni aytmaydi
+export const TELEGRAMDAN_OCHDI = 'telegramdan-ochdi';
+const QABUL = [...QADAMLAR, ESLATMADAN_OCHDI, TELEGRAMDAN_OCHDI];
 const SAQLASH_KUN = 60; // qadamlar yozuvi — 60 kun
 
 @Controller('hodisalar')
@@ -38,7 +41,7 @@ export class HodisalarController {
   ) {}
 
   // POST /hodisalar { nom, qurilma_id } → 201 — token kerak emas va yuborilmaydi: ism, login, token yozilmaydi.
-  // nom faqat QADAMLAR dan biri yoki eslatmadan-ochdi, aks holda 400.
+  // nom faqat QADAMLAR dan biri, eslatmadan-ochdi yoki telegramdan-ochdi, aks holda 400.
   @Post()
   async yoz(@Body() body: Record<string, unknown>) {
     const nom = typeof body?.nom === 'string' ? body.nom : '';
@@ -55,6 +58,7 @@ export class HodisalarController {
   // kalit yo'q yoki mos emas — 401. Javob — faqat sonlar (ism, login, qurilma ID yo'q):
   // { qadamlar: [{ nom, soni }] — QADAMLAR tartibida, har birida turli qurilma_id lar soni,
   //   eslatmadanOchdi — eslatma bosilib ilova ochilgan turli qurilmalar soni (9-dars),
+  //   telegramdanOchdi — Telegram xabaridagi havola bilan ochilgan turli qurilmalar soni (13-Modul 8-dars),
   //   royxatdanOtgan — oyinchilar dagi namuna = false akkauntlar soni }.
   // ?dan=2026-10-20T12:00:00Z — shu vaqtdan keyingi yozuvlar bo'yicha (royxatdanOtgan — shu vaqtdan keyin o'tganlar).
   @Get('sanoq')
@@ -79,6 +83,7 @@ export class HodisalarController {
     return {
       qadamlar: QADAMLAR.map((nom) => ({ nom, soni: sonlar.get(nom) ?? 0 })),
       eslatmadanOchdi: sonlar.get(ESLATMADAN_OCHDI) ?? 0,
+      telegramdanOchdi: sonlar.get(TELEGRAMDAN_OCHDI) ?? 0,
       royxatdanOtgan,
     };
   }

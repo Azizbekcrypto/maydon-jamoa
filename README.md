@@ -75,7 +75,7 @@ Saqlanadigan ma'lumotlar: o'yinchilar · o'yinlar · kim qaysi o'yinga qo'shilga
 | Ustun | Nima saqlaydi |
 |---|---|
 | `id` | yozuv raqami (Database o'zi to'ldiradi) |
-| `nom` | qadam: `ochdi` · `royxatdan-otdi` · `qoshildi` · `tasdiqladi`; sanoq yozuvi `eslatmadan-ochdi` (9-dars) |
+| `nom` | qadam: `ochdi` · `royxatdan-otdi` · `qoshildi` · `tasdiqladi`; sanoq yozuvlari `eslatmadan-ochdi` (9-dars) · `telegramdan-ochdi` (13-Modul 8-dars) |
 | `qurilma_id` | qurilma ID — ilova birinchi ochilganda yaratgan tasodifiy harf va raqamlar: odamning ismini ham, loginini ham bildirmaydi |
 | `yaratilgan` | yozuv vaqti (Database o'zi to'ldiradi) |
 
@@ -294,6 +294,13 @@ Bot — **yangi bot** (@BotFather: `/newbot`): botda bitta webhook, 7-Moduldagi 
   bitta Database ishida (o'yinchi qatori qulflanadi), faqat yozuv qo'shilgan bo'lsa — xabar; Telegram qabul qilmasa (botni to'xtatgan) — yozuv o'chiriladi, chat raqami qoladi.
   `GET /oyinlar` javobi xabarlar yuborilgach qaytadi; bitta chatga sekundiga bittadan ko'p xabar yuborilmaydi. Ilova eslatmalari (telefonda) bu sanoqqa kirmaydi.
 
+- **O'chirish:** «Telegram ulangan» yonida **«Telegram xabarlarini o'chirish»** — so'rov oynasisiz, bir bosishda (`DELETE /telegram`): chat raqami va kutayotgan kod o'chadi,
+  qator yana «Telegram'da xabar olish». «Hisobni o'chirish»da chat raqami va `telegram_xabarlar` yozuvlari ham o'chadi.
+- **Sanoq:** Telegram xabaridagi havola bilan brauzer ko'rinishi ochilsa (`?kanal=telegram`) — sanoq yozuvi `telegramdan-ochdi` (bitta ochilishga bitta; `ochdi` ham yoziladi — bu xato emas);
+  `GET /hodisalar/sanoq` da `telegramdanOchdi`, sanoq sahifasida qadamlar ostida «Telegram'dan ochdi» — turli qurilmalar. Bu son havola bosilganini aytadi, xabar odamni qaytardimi — aytmaydi.
+- Maxfiylik siyosatida (`lending/maxfiylik.html`) — Telegram qatori: chat raqami va qaysi o'yin haqida xabar yuborilgani — nima uchun va qancha saqlanadi.
+  APK o'zi yangilanmaydi: o'rnatilgan faylda Telegram tugmasi yo'q — Expo Go va brauzer ko'rinishida (brauzer ko'rinishi — qayta eksport).
+
 Tekshirish: Neon'da `SELECT id, telegram_chat_id IS NOT NULL AS ulangan FROM oyinchilar WHERE id = {hisob raqami};` (chat raqamining o'zi chiqmaydi) ·
 `git grep -n "TELEGRAM_"` — faqat nomlar.
 
@@ -307,9 +314,9 @@ Bitta istisno — mehmon ko'rinishi (12-Modul 8-dars): `GET /oyinlar` tokensiz h
 |---|---|---|
 | `POST /royxat` `{ ism, login, parol }` | o'yinchi `oyinchilar` ga (`namuna = false`), parol — faqat hash (`parol_hash`); telefon so'ralmaydi | `201` · `400` bo'sh yoki login qoidaga mos emas · `409` «Bu login band» |
 | `POST /kirish` `{ login, parol }` | token (30 kun) | `200 { token }` · `401` «Login yoki parol noto'g'ri» |
-| `DELETE /hisob` | «Hisobni o'chirish»: akkaunt va uning `ishtirokchilar` dagi yozuvlari o'chadi; e'lon qilgan o'yinlari qoladi (tashkilotchisi bo'sh); qo'shilgan o'yinlarida navbatdagi kiradi | `200` |
-| `POST /hodisalar` `{ nom, qurilma_id }` | qadamlar sanog'i (va 9-darsdan sanoq yozuvi `eslatmadan-ochdi`); token kerak emas (yuborilmaydi); yozilgach sanoq sahifalariga `sanoq-ozgardi` | `201` · `400` nom ruxsat etilganlardan emas |
-| `GET /hodisalar/sanoq` (`?dan=` vaqt) | faqat maxfiy kalit bilan — sarlavha `X-Sanoq-Kaliti` (`SANOQ_KALITI`): `{ qadamlar: [{ nom, soni }], eslatmadanOchdi, royxatdanOtgan }` — har qadamda turli qurilmalar, ro'yxatdan o'tgan `namuna = false` akkauntlar; `?dan=` — shu vaqtdan keyingi yozuvlar | `200` · `401` kalitsiz yoki noto'g'ri |
+| `DELETE /hisob` | «Hisobni o'chirish»: akkaunt va uning `ishtirokchilar` dagi yozuvlari o'chadi (13-Modul: Telegram chat raqami, `telegram_xabarlar`, mashq to'lov yozuvlari ham); e'lon qilgan o'yinlari qoladi (tashkilotchisi bo'sh); qo'shilgan o'yinlarida navbatdagi kiradi | `200` |
+| `POST /hodisalar` `{ nom, qurilma_id }` | qadamlar sanog'i (va 9-darsdan sanoq yozuvi `eslatmadan-ochdi`, 13-Modul 8-darsdan `telegramdan-ochdi`); token kerak emas (yuborilmaydi); yozilgach sanoq sahifalariga `sanoq-ozgardi` | `201` · `400` nom ruxsat etilganlardan emas |
+| `GET /hodisalar/sanoq` (`?dan=` vaqt) | faqat maxfiy kalit bilan — sarlavha `X-Sanoq-Kaliti` (`SANOQ_KALITI`): `{ qadamlar: [{ nom, soni }], eslatmadanOchdi, telegramdanOchdi, royxatdanOtgan }` — har qadamda turli qurilmalar, ro'yxatdan o'tgan `namuna = false` akkauntlar; `?dan=` — shu vaqtdan keyingi yozuvlar | `200` · `401` kalitsiz yoki noto'g'ri |
 | `GET /oyinlar` | (13-Modul 4-dars: avval vaqti o'tgan «Doimiy o'yin»ning keyingi haftadagi o'yini yaratiladi) yagona ro'yxat yo'li, eng yangi e'lon tepada: `id, kun, soat, maydon, kerak, qoshilgan, menQoshilganman, tasdiqlagan, menTasdiqlaganman, menTasdiqlayOlaman, navbatda, menNavbatdaman, menTashkilotchiman` | `200` |
 | `GET /men` | kirgan o'yinchining holati (13-Modul 4-dars): `{ pro, proGacha, oxirgiTolov }` — `pro` = `pro_gacha` hozirdan keyin; `oxirgiTolov` (5-dars) — `{ tolovRaqami, holat: 'tolandi' \| 'rad' \| 'kutilmoqda' }` yoki `null`; `telegram` (8-dars) — Telegram ulanganmi (chat raqamisiz) | `200` · `401` tokensiz |
 | `POST /oyinlar` `{ kun, soat, maydon, kerak, doimiy? }` | e'lon; tashkilotchi — token egasi; `doimiy: true` («Har hafta takrorlansin») — faqat Pro'dagi tashkilotchidan | `201` · `400` «Yozilmagan: …» · `403` «Doimiy o'yin» — faqat Pro'da |
@@ -320,6 +327,7 @@ Bitta istisno — mehmon ko'rinishi (12-Modul 8-dars): `GET /oyinlar` tokensiz h
 | `POST /tolov/webhook` `{ tolovRaqami, holat, summa, oyinchiId }` · sarlavha `X-Imzo` | to'lov xabari (13-Modul 3-dars): imzo — HMAC SHA-256 (xom tana, `TOLOV_KALITI`) → maydonlar (4-darsdan hisob va summa `boshlangan_tolovlar` dagi raqam yozuviga mos) → takror → `tolovlar` ga yozuv (`rad` ham); `tolandi` — `pro_gacha` + 30 kun; token kerak emas | `200 { ok: true }` · `200 { takror: true }` · `400` · `401` imzo yo'q yoki mos emas |
 | `POST /tolov/boshlash` | (token bilan, 4-dars) yangi to'lov raqami — `boshlangan_tolovlar` ga; summa — `PRO_NARX` | `201 { tolovRaqami, havola }` · `401` |
 | `POST /telegram/kod` | (token bilan, 8-dars) yangi bir martalik kod, 10 daqiqa | `201 { havola: 'https://t.me/<bot>?start=<kod>' }` · `503` bot sozlanmagan |
+| `DELETE /telegram` | (token bilan) «Telegram xabarlarini o'chirish»: `telegram_chat_id`, `telegram_kod`, `telegram_kod_gacha` — bo'sh | `200 { telegram: false }` |
 | `POST /telegram/webhook` · sarlavha `X-Telegram-Bot-Api-Secret-Token` | Telegram yuboradi: faqat shaxsiy chatdagi `/start <kod>` — kod amal qilsa chat raqami yoziladi, kod o'chadi; bot javobi; takror `update_id` — qayta ishlanmaydi | `200` · `401` kalit `TELEGRAM_SIR` ga teng emas |
 | `GET /tolov-mashq?raqam=…` | «Mashq to'lov» sahifasi (HTML; test rejim); raqamsiz yoki noma'lum — «To'lov topilmadi.» | `200` |
 | `POST /tolov-mashq/yubor` `{ tur: 'tolash' \| 'rad' \| 'ikki' \| 'imzosiz' \| 'kech' \| 'notogriImzo', raqam }` | xabarni Backend'da yasaydi (hisob va summa — raqamdan), imzolaydi va o'z `POST /tolov/webhook` iga yuboradi | `200 { tolovRaqami, javoblar: [{ holat, tana }] }` · `400` |
@@ -578,6 +586,7 @@ Teglar: `m13-dars-NN-start` — dars boshidagi holat, `m13-dars-NN-done` — dar
 | `m13-dars-05-start` | 5 · boshlanish | `m13-dars-04-done` + `README.md` «To'lov» da eslatma: «Bu holatda 2 muammo bor — 5-darsda topiladi.» Kod — agent «to'lov ishlaydi» deganidan keyingi holat (ataylab buzilmagan, to'rt usul bilan tekshirilmagan) |
 | `m13-dars-05-done` | 5 · to'lovni ulaymiz va buzib ko'ramiz | qolgan holatlar: `GET /men` da `oxirgiTolov` (`tolandi` · `rad` · `kutilmoqda`), ilovada «To'lov o'tmadi — qayta urinib ko'ring» va «To'lovga o'tish», «Javob kutilmoqda»; Pro tugasa keyingi «Doimiy o'yin» yaratilmaydi (e'lon qilinganlar qoladi); mashq sahifasida «Kechiktirib yuborish» (70 soniya) va «Noto'g'ri imzo» (`401`). Ikki muammo tuzatilgan (`backend/src/tolov/tolov.controller.ts`, `mashq.controller.ts`, `mobil/src/app/pro.tsx`): Pro bir marta — yozuvdan keyin, bitta tranzaksiyada · sahifada «Javob kutilmoqda», ilovada «Qayta tekshirish» va qaytganda qayta so'rash. `BUZISH.md` «To'lov» — to'rt urinish (buzildi · buzildi · buzilmadi · buzilmadi), tuzatish va qayta tekshiruv; README eslatmasi o'rnida — tuzatilganlar |
 | `m13-dars-07-done` | 7 · shartlarni ochiq aytish: oferta va maxfiylik | `lending/oferta.html` — «Pro shartlari» (mashq hujjati, olti band, «Bu hujjat yuridik maslahat emas.»; forma, to'lov tugmasi, Umami yo'q); `lending/maxfiylik.html` — «Qaysi ma'lumot?» va «Nima uchun?» ga to'lov bandi (boshqa gaplar o'zgarmagan); `lending/index.html` pastida «Pro shartlari»; to'lov taklifi ekranida «To'lovga o'tish» ostida «Pro shartlari» · «Maxfiylik siyosati» (telefon brauzerida). APK va brauzer ko'rinishi bu tegda qayta tayyorlanmagan |
+| `m13-dars-08-done` | 8 · loyiha kuni: ketayotgan foydalanuvchini qaytarish | Telegram bot (`backend/src/telegram/`): `oyinchilar.telegram_chat_id`, `telegram_kod`, `telegram_kod_gacha`; Render'da `setWebhook` (`TELEGRAM_SIR`) va `getMe`; `POST /telegram/kod` → `t.me/<bot>?start=<kod>`; `POST /telegram/webhook` (kalit sarlavhasi, faqat shaxsiy chat `/start <kod>`, `update_id` bir marta — `telegram_yangilanishlar`, faqat chat raqami); «yana e'lon qilindi» xabari keyingi «Doimiy o'yin» yaratilganda — `telegram_xabarlar`, haftasiga ≤2, bir o'yin haqida bir marta; `DELETE /telegram` — «Telegram xabarlarini o'chirish»; «Hisobni o'chirish»da Telegram yozuvlari ham; `telegramdan-ochdi` (brauzer ko'rinishi `?kanal=telegram`), sanoq sahifasida «Telegram'dan ochdi»; maxfiylik siyosatiga qator; `TELEGRAM_BOT_TOKEN`, `TELEGRAM_SIR` (`.env.example` da qiymatsiz). Yangi APK yo'q |
 
 ## Ortda qoldingizmi
 

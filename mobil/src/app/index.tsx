@@ -186,7 +186,8 @@ function EslatmalarOchirgichi({ oyinlar }: { oyinlar: Oyin[] | null }) {
 
 // «Telegram'da xabar olish» (13-Modul 8-dars) — sozlama qatori, «Hisobdan chiqish» yonida.
 // Bosilganda POST /telegram/kod dan bir martalik havola (t.me/<bot>?start=<kod>) olinadi va Telegram'da ochiladi —
-// o'yinchi botda «Start»ni o'zi bosadi. Ulangan bo'lsa — «Telegram ulangan». Ilovaga qaytganda holat GET /men dan qayta so'raladi.
+// o'yinchi botda «Start»ni o'zi bosadi. Ulangan bo'lsa — «Telegram ulangan» va «Telegram xabarlarini o'chirish».
+// Ilovaga qaytganda holat GET /men dan qayta so'raladi.
 function TelegramQatori() {
   const men = useMen();
   const [xato, setXato] = useState('');
@@ -199,6 +200,17 @@ function TelegramQatori() {
       return () => obuna.remove();
     }, []),
   );
+
+  // «Telegram xabarlarini o'chirish» — so'rov oynasisiz, bir bosishda: chat raqami o'chadi, qator yana «Telegram'da xabar olish»
+  async function ochir() {
+    setXato('');
+    try {
+      await sora('/telegram', { method: 'DELETE' });
+      await menniOl();
+    } catch (e) {
+      setXato((e as Error).message);
+    }
+  }
 
   async function ulash() {
     setXato('');
@@ -215,6 +227,9 @@ function TelegramQatori() {
       {men?.telegram ? (
         <View style={s.sozlama}>
           <Text style={s.sozlamaMatn}>Telegram ulangan</Text>
+          <Pressable onPress={ochir}>
+            <Text style={s.telegramOchir}>Telegram xabarlarini o'chirish</Text>
+          </Pressable>
         </View>
       ) : (
         <Pressable onPress={ulash} style={s.telegramTugma}>
@@ -263,6 +278,7 @@ const s = StyleSheet.create({
   telegramTugma: { paddingVertical: 8, gap: 2 },
   telegramMatn: { fontSize: 15, fontWeight: '600', color: R.yashil },
   telegramIzoh: { fontSize: 13, color: R.kulrang },
+  telegramOchir: { fontSize: 14, color: R.yashil, paddingVertical: 8 },
   chiqish: { fontSize: 14, color: R.kulrang },
   kirish: { fontSize: 16, fontWeight: '600', color: R.yashil },
   ochirish: { fontSize: 14, color: '#C0392B' },

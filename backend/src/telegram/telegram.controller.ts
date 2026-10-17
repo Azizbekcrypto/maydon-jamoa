@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Headers,
   HttpCode,
   Post,
@@ -55,6 +56,19 @@ export class TelegramController {
       { telegram_kod: kod, telegram_kod_gacha: new Date(Date.now() + KOD_DAQIQA * 60_000) },
     );
     return { havola: `https://t.me/${bot}?start=${kod}` };
+  }
+
+  // DELETE /telegram (token bilan) — «Telegram xabarlarini o'chirish» (8-dars): faqat o'z yozuvi — chat raqami va kutayotgan
+  // bir martalik kod o'chadi, xabar to'xtaydi. Qaysi o'yin haqida xabar yuborilgani (telegram_xabarlar) hisob o'chirilguncha qoladi.
+  @Delete()
+  @HttpCode(200)
+  @UseGuards(TokenGuard)
+  async ochir(@Req() sorov: Sorov) {
+    await this.oyinchilar.update(
+      { id: sorov.oyinchiId! },
+      { telegram_chat_id: null, telegram_kod: null, telegram_kod_gacha: null },
+    );
+    return { telegram: false };
   }
 
   // POST /telegram/webhook — Telegram yuboradi. Sarlavha X-Telegram-Bot-Api-Secret-Token ≠ TELEGRAM_SIR — 401, hech narsa qilinmaydi.

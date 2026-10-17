@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { AppState, StyleSheet, Text, View } from 'react-native';
+import { AppState, Platform, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { tokenOl } from '@/api';
@@ -33,6 +33,11 @@ export default function Layout() {
     if (!ochdiYozildi) {
       ochdiYozildi = true;
       hodisaYoz('ochdi');
+      // Brauzer ko'rinishi Telegram xabaridagi havola bilan ochildi (13-Modul 8-dars) — bitta ochilishga bitta yozuv:
+      // sahifa yuklanganda bir marta (qayta chizilganda emas); ochdi avvalgidek yoziladi
+      if (Platform.OS === 'web' && new URLSearchParams(window.location.search).get('kanal') === 'telegram') {
+        hodisaYoz('telegramdan-ochdi');
+      }
     }
     uchKunlikniYangila().catch(() => {});
     proniYangila().catch(() => {});

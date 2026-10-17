@@ -17,7 +17,8 @@ export class HisobController {
   ) {}
 
   // DELETE /hisob — «Hisobni o'chirish» (ilova avval «Rostdan o'chirasizmi?» deb so'raydi). Faqat token egasining o'zi.
-  // O'chadi: shu akkaunt (oyinchilar, WHERE id = …) va uning qatnashuv yozuvlari (ishtirokchilar, WHERE oyinchi_id = …).
+  // O'chadi: shu akkaunt (oyinchilar, WHERE id = …) va uning qatnashuv yozuvlari (ishtirokchilar, WHERE oyinchi_id = …);
+  // 13-Modul: Telegram chat raqami va telegram_xabarlar yozuvlari, mashq to'lov yozuvlari (tolovlar, boshlangan_tolovlar — bog'lovchi ustun bilan).
   // O'chmaydi: u e'lon qilgan o'yinlar — tashkilotchisi bo'sh qoladi (oyinlar.tashkilotchi_id = null).
   // U qo'shilgan o'yinlarda son o'yindan chiqqandagi kabi yangilanadi: navbatdagi birinchisi qoshildi bo'ladi, oyin-ozgardi · chiqdi.
   @Delete()
@@ -41,6 +42,8 @@ export class HisobController {
         }
       }
       await m.query(`DELETE FROM ishtirokchilar WHERE oyinchi_id = $1`, [men]);
+      // Telegram (13-Modul 8-dars): qaysi o'yin haqida xabar yuborilgani; chat raqami akkaunt bilan birga o'chadi
+      await m.query(`DELETE FROM telegram_xabarlar WHERE oyinchi_id = $1`, [men]);
       await m.query(`DELETE FROM oyinchilar WHERE id = $1`, [men]);
       return qatorlar.filter((q) => q.holat !== 'chiqdi').map((q) => q.oyin_id);
     });
