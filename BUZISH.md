@@ -23,3 +23,19 @@ Tuzatish — `mobil/src/ulanish.ts` (va undan foydalanadigan `src/app/oyin/[id].
    Tuzatish: qayta ulanganda ilova ochiq turgan o'yin xonasiga qayta kiradi (`oyin-ochildi`).
 
 «Tuzatish qilindi» — kodda o'zgartirish qilindi (ish fakti). «Qayta tekshiruvda takrorlanmadi» — o'sha usul bilan qayta buzib ko'rilgan natija: shu telefonda, shu urinishda — hamma telefon uchun isbot emas.
+
+## To'lov (13-Modul 5-dars)
+
+Mahsulot: Maydon Jamoa (mobil trek, Expo Go). Holat — `m13-dars-05-start` va 5-darsning 1-amaliyoti (qolgan holatlar va ikki yangi tugma):
+agent «to'lov ishlaydi» degan — bu da'vo. Buzish faqat o'z mahsulotida, «Mashq to'lov» tugmalari bilan; test rejim — pul yechilmaydi.
+Har urinishdan oldin Pro yo'q edi (o'z hisobim, Neon: `UPDATE oyinchilar SET pro_gacha = NULL WHERE id = {hisob raqami};`).
+«Talab bo'yicha» — 3, 4-darslar va 5-dars 1-amaliyot talabidan.
+
+| № | Usul | Nima qildim | Nima kutdim | Nima bo'ldi | Belgi |
+|---|---|---|---|---|---|
+| 1 | Ikki marta yuborish | Pro yo'q edi. «To'lovga o'tish» ni, keyin sahifada «Ikki marta yuborish» ni bosdim; javoblarga va Neon'dagi to'lovlar bilan Pro muddatiga qaradim. | Ikki javob: `200 { ok: true }` va `200 { takror: true }`; `tolovlar` da bitta qator; Pro 30 kunga yoqiladi. | Javoblar va `tolovlar` kutgandek, lekin Pro muddati 60 kun bo'ldi. | buzildi |
+| 2 | Kechiktirib yuborish | Pro yo'q edi. «To'lovga o'tish» ni, keyin «Kechiktirib yuborish» ni bosdim; sahifaga qaradim, keyin ilovaga qaytib, undan chiqmay bir daqiqa kutdim. | Sahifa natijani kutadi; xabar kelgach ilovada Pro ko'rinadi. | Sahifa 10 soniyadan keyin «To'lov o'tmadi» dedi. Bir daqiqadan keyin Neon'da Pro yozildi, ilovada esa «Javob kutilmoqda» qoldi. | buzildi |
+| 3 | Rad etish | «To'lovga o'tish» ni, keyin «Rad etish (mashq)» ni bosdim va ilovaga qaytdim. | Sahifada «To'lov o'tmadi»; `tolovlar` da «rad» qatori; Pro yo'q; ilovada «To'lov o'tmadi — qayta urinib ko'ring». | Sahifada «To'lov o'tmadi», `tolovlar` da «rad» qatori, Pro yo'q, ilovada «To'lov o'tmadi — qayta urinib ko'ring». | buzilmadi |
+| 4 | Noto'g'ri imzo | «To'lovga o'tish» ni, keyin «Noto'g'ri imzo» ni bosdim; sahifadagi javobga va Neon'ga qaradim. | Sahifada `401`; `tolovlar` da yangi qator yo'q; Pro yo'q. | Sahifada `401`, yangi qator yo'q, Pro yo'q. | buzilmadi |
+
+«buzilmadi» (3, 4-urinish) — shu telefonda, shu urinishda. «buzilmadi» ham natija.
