@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { LOGIN_QOIDASI } from './login.js';
 import { Oyinchi } from './oyinchi.entity.js';
 import { taklifKodiToqnashdi, yangiTaklifKodi } from './taklif/kod.js';
+import { qurilmaYoz } from './taklif/qurilma.js';
 
 function matn(q: unknown): string {
   return typeof q === 'string' ? q.trim() : '';
@@ -14,7 +15,7 @@ function matn(q: unknown): string {
 export class RoyxatController {
   constructor(@InjectRepository(Oyinchi) private readonly oyinchilar: Repository<Oyinchi>) {}
 
-  // POST /royxat { ism, login, parol, taklifKodi? } → 201 { id, ism } · token bermaydi — ilova «Kirish»ni ochadi.
+  // POST /royxat { ism, login, parol, taklifKodi?, qurilmaId? } → 201 { id, ism } · token bermaydi — ilova «Kirish»ni ochadi.
   // Telefon raqami so'ralmaydi. Login — o'zi tanlagan nom: 3–20 belgi, harf va raqam (kichik harfda saqlanadi:
   // «Ali» va «ali» — bitta login); band bo'lsa — 409 «Bu login band».
   // Parol jadvalga yozilmaydi — faqat hash'i (parol_hash). Forma orqali o'tgan har akkaunt — namuna = false.
@@ -56,6 +57,8 @@ export class RoyxatController {
           taklif_kodi: yangiTaklifKodi(),
           taklif_qilgan_id,
         });
+        // Hisob ochilgan qurilma (10-dars, taklif mukofotidagi «bir qurilma» qoidasi uchun)
+        await qurilmaYoz(this.oyinchilar.manager, oyinchi.id, body?.qurilmaId);
         return { id: oyinchi.id, ism: oyinchi.ism };
       } catch (e) {
         if (taklifKodiToqnashdi(e)) continue;

@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { sora } from '@/api';
 import { Maydoncha, Tugma } from '@/components/forma';
-import { hodisaYoz } from '@/hodisa';
+import { hodisaYoz, qurilmaIdOl } from '@/hodisa';
 import { MAXFIYLIK } from '@/lending';
 import { R } from '@/ranglar';
 
@@ -27,7 +27,8 @@ export default function Royxat() {
     setXabar('');
     setKutish(true);
     try {
-      await sora('/royxat', { method: 'POST', body: { ism, login, parol, taklifKodi } });
+      // qurilmaId — hisob ochilgan qurilma (10-dars: taklif mukofotidagi «bir qurilma» qoidasi)
+      await sora('/royxat', { method: 'POST', body: { ism, login, parol, taklifKodi, qurilmaId: await qurilmaIdOl() } });
       hodisaYoz('royxatdan-otdi');
       router.replace('/kirish');
     } catch (e) {

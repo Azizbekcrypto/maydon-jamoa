@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { sora, tokenSaqla } from '@/api';
 import { Maydoncha, Tugma } from '@/components/forma';
 import { uchKunlikniQoy } from '@/eslatma';
+import { qurilmaniYoz } from '@/hodisa';
 import { R } from '@/ranglar';
 
 // Kirish: POST /kirish { login, parol } → token telefonda expo-secure-store ga saqlanadi → «O'yinlar»
@@ -23,6 +24,8 @@ export default function Kirish() {
       const { token } = await sora<{ token: string }>('/kirish', { method: 'POST', body: { login, parol } });
       await tokenSaqla(token);
       uchKunlikniQoy().catch(() => {});
+      // Shu qurilma hisobning qurilmalari ro'yxatiga (13-Modul 10-dars)
+      qurilmaniYoz();
       router.replace('/');
     } catch (e) {
       setXabar((e as Error).message);

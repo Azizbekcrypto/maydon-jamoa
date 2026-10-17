@@ -15,7 +15,9 @@
        boshlangan-tolov.entity.ts, oyinchi.entity.ts (pro_gacha). Karta maydoni kodda yo'q. «Qancha saqlanadi?» ga tegilmadi:
        to'lov yozuvlari hisob bilan birga o'chadi (hisob o'chirilsa — tolovlar va boshlangan_tolovlar qatorlari ham).
        Telegram qatori (13-Modul 8-dars) — oyinchi.entity.ts (telegram_chat_id, telegram_kod), telegram/telegram-xabar.entity.ts (oyinchi_id, oyin_id, yuborilgan);
-       kodda yana bir martalik kod saqlanadi (10 daqiqa, ishlatilgach o'chadi) va ishlangan Telegram so'rov raqamlari (update_id) — gapda yo'q, Mentor qarori bilan qo'shilmadi. -->
+       kodda yana bir martalik kod saqlanadi (10 daqiqa, ishlatilgach o'chadi) va ishlangan Telegram so'rov raqamlari (update_id) — gapda yo'q, Mentor qarori bilan qo'shilmadi.
+       Taklif qatori (13-Modul 10-dars) — oyinchi.entity.ts (taklif_qilgan_id), taklif/taklif-natija.entity.ts (kim taklif qilgan, natija, vaqt),
+       taklif/oyinchi-qurilma.entity.ts (hisob va qurilma ID); kodda yana hisobning taklif kodi saqlanadi (6 belgi, maxfiy emas) — gapda yo'q. -->
   <header class="tepa">
     <a class="nom" href="./">Maydon Jamoa</a>
   </header>
@@ -28,14 +30,16 @@
       <p>Ro'yxatdan o'tishda — ism, login va parol; parolning o'zi saqlanmaydi, o'rnida undan yasalgan satr (hash) turadi. Telefon raqami so'ralmaydi.
         Ilovada qadamlar sanaladi — ism va loginsiz, qurilma ID bilan. Ilova eslatmadan ochilgani ham qurilma ID bilan sanaladi. Lendingda Umami tashrif va tugma bosilishini sanaydi — unga ism va login yuborilmaydi.
         Karta ma'lumoti so'ralmaydi — to'lov test rejimda; Maydon Jamoa kartani ko'rmaydi va saqlamaydi. Biz saqlaymiz: to'lov raqami, kim to'lagani (hisob), holati (to'landi yoki rad etildi), summa, sana va Pro muddati.
-        Telegram'da xabar olishni yoqsangiz — Telegram chat raqamingiz va qaysi o'yin haqida xabar yuborilgani saqlanadi. Ismingiz va Telegram nomingiz saqlanmaydi.</p>
+        Telegram'da xabar olishni yoqsangiz — Telegram chat raqamingiz va qaysi o'yin haqida xabar yuborilgani saqlanadi. Ismingiz va Telegram nomingiz saqlanmaydi.
+        Taklif kodi bilan kelgan hisoblarda kim kimni taklif qilgani, mukofot natijasi va vaqti, hisob ishlatilgan qurilma ID lari saqlanadi.</p>
     </section>
 
     <section>
       <h2>Nima uchun?</h2>
       <p>Ism — o'yindagi o'yinchilar bir-birini tanishi uchun. Login va parol — hisobga kirish uchun. Qadamlar sanog'i — ilovaning qaysi joyi tushunarsizligini bilish uchun.
         To'lov raqami, hisob, holat va summa — to'lovni bir marta hisoblash va «to'lovim qayerda?» savoliga javob berish uchun. Pro muddati — Pro'ni yoqish va to'xtatish uchun.
-        Telegram chat raqami va qaysi o'yin haqida xabar yuborilgani — siz qatnashgan «Doimiy o'yin» yana e'lon qilinganini yozish va haftasiga ikkitadan oshirmaslik uchun.</p>
+        Telegram chat raqami va qaysi o'yin haqida xabar yuborilgani — siz qatnashgan «Doimiy o'yin» yana e'lon qilinganini yozish va haftasiga ikkitadan oshirmaslik uchun.
+        Taklif ma'lumoti — mukofotni qoidaga ko'ra berish va bir qurilma ID li hisoblarni ajratish uchun.</p>
     </section>
 
     <section>

@@ -7,7 +7,7 @@ import { sora, tokenOl } from '@/api';
 import { Tugma } from '@/components/forma';
 import { Son } from '@/components/son';
 import { oyinEslatmasiniBekor, oyinEslatmasiniQoy, uchKunlikniQoy } from '@/eslatma';
-import { hodisaYoz } from '@/hodisa';
+import { hodisaYoz, qurilmaniYoz } from '@/hodisa';
 import { kunNomi } from '@/kun';
 import { taklifHavolasi, ULASHISH_HAVOLASI } from '@/lending';
 import { menniOl } from '@/men';
@@ -95,6 +95,7 @@ export default function OyinEkrani() {
   // 13-Modul 10-dars: havola — shaxsiy, o'z taklif kodi bilan (GET /men dagi taklifKodi); tugma nomi va joyi o'zgarmagan
   async function ulash(o: Oyin) {
     try {
+      await qurilmaniYoz();
       const { taklifKodi } = await menniOl();
       const havola = taklifKodi ? taklifHavolasi(taklifKodi) : ULASHISH_HAVOLASI;
       await Share.share({ message: `${kunNomi(o.kun)}, ${o.soat} · ${o.maydon} — Maydon Jamoa'da qo'shiling: ${havola}` });
@@ -197,6 +198,11 @@ export default function OyinEkrani() {
               <Text style={s.ulashishMatn}>Havolani ulashish</Text>
             </Pressable>
           )}
+          {oyin.menTashkilotchiman && (
+            <Text style={s.qoida}>
+              Siz taklif qilgan yangi o'yinchi o'yinga qo'shilsa yoki o'yin e'lon qilsa — Pro'ga 7 kun qo'shiladi (haftasiga ko'pi bilan 2 marta).
+            </Text>
+          )}
         </View>
       )}
     </SafeAreaView>
@@ -249,6 +255,7 @@ const s = StyleSheet.create({
   navbatdasiz: { fontSize: 16, fontWeight: '600', color: R.matn, textAlign: 'center', padding: 8 },
   ulashish: { padding: 14, borderRadius: 12, borderWidth: 1, borderColor: R.yashil, alignItems: 'center' },
   ulashishMatn: { color: R.yashil, fontSize: 16, fontWeight: '600' },
+  qoida: { fontSize: 13, color: R.kulrang, textAlign: 'center' },
   chiqish: { padding: 14, borderRadius: 12, borderWidth: 1, borderColor: '#C0392B', alignItems: 'center' },
   chiqishMatn: { color: '#C0392B', fontSize: 16, fontWeight: '600' },
   past: { padding: 20, gap: 10 },

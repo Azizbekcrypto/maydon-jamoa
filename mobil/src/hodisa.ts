@@ -1,4 +1,4 @@
-import { API } from '@/api';
+import { API, sora } from '@/api';
 import { ol, saqla } from '@/saqlash';
 
 // Qadamlar sanog'i (12-Modul 7-dars): ochdi → royxatdan-otdi → qoshildi → tasdiqladi.
@@ -17,7 +17,9 @@ function tasodifiyId(): string {
   return Array.from({ length: 24 }, () => belgilar[Math.floor(Math.random() * belgilar.length)]).join('');
 }
 
-async function qurilmaIdOl(): Promise<string> {
+// Qurilma ID taklif mukofotida ham ishlatiladi (13-Modul 10-dars): ro'yxatdan o'tishda, kirishda va «Havolani ulashish»da
+// Backend'ga yuboriladi (hisobning qurilmalari). «Hisobdan chiqish» uni o'chirmaydi — qurilma o'zgarmaydi.
+export async function qurilmaIdOl(): Promise<string> {
   if (qurilmaId) return qurilmaId;
   qurilmaId = await ol(KALIT);
   if (!qurilmaId) {
@@ -25,6 +27,15 @@ async function qurilmaIdOl(): Promise<string> {
     await saqla(KALIT, qurilmaId);
   }
   return qurilmaId;
+}
+
+// Kirgan hisobning qurilmalari ro'yxatiga shu qurilma (POST /men/qurilma). O'tmasa ham ilova ishlayveradi.
+export async function qurilmaniYoz() {
+  try {
+    await sora('/men/qurilma', { method: 'POST', body: { qurilmaId: await qurilmaIdOl() } });
+  } catch {
+    // jim: keyingi kirish yoki ulashishda yana yuboriladi
+  }
 }
 
 // Ish muvaffaqiyatli tugagandan keyin chaqiriladi. So'rov o'tmasa ham ilova ishlayveradi — foydalanuvchiga xato ko'rsatilmaydi.

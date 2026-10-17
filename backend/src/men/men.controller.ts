@@ -1,7 +1,8 @@
-import { Controller, Get, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, HttpCode, Post, Req, UseGuards } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Oyinchi } from '../oyinchi.entity.js';
+import { QURILMA_QOIDASI, qurilmaYoz } from '../taklif/qurilma.js';
 import { TokenGuard, type Sorov } from '../token.guard.js';
 import { BoshlanganTolov } from '../tolov/boshlangan-tolov.entity.js';
 import { Tolov } from '../tolov/tolov.entity.js';
@@ -15,6 +16,17 @@ export class MenController {
     @InjectRepository(BoshlanganTolov) private readonly boshlanganlar: Repository<BoshlanganTolov>,
     @InjectRepository(Tolov) private readonly tolovlar: Repository<Tolov>,
   ) {}
+
+  // POST /men/qurilma { qurilmaId } (10-dars) — shu qurilma kirgan hisobning qurilmalari ro'yxatiga (kirishda va «Havolani ulashish»da)
+  @Post('qurilma')
+  @HttpCode(200)
+  async qurilma(@Req() sorov: Sorov, @Body() body: Record<string, unknown>) {
+    if (typeof body?.qurilmaId !== 'string' || !QURILMA_QOIDASI.test(body.qurilmaId)) {
+      throw new BadRequestException('qurilmaId — 8–64 harf va raqam');
+    }
+    await qurilmaYoz(this.oyinchilar.manager, sorov.oyinchiId!, body.qurilmaId);
+    return {};
+  }
 
   // GET /men — kirgan o'yinchining o'z holati (token bilan; tokensiz 401):
   // { pro: pro_gacha hozirdan keyinmi, proGacha: '2026-11-06T…Z' | null, oxirgiTolov }. Ilova Pro holatini shundan o'qiydi.

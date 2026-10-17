@@ -17,6 +17,9 @@ import { Oyin } from './oyin.entity.js';
 import { Oyinchi } from './oyinchi.entity.js';
 import { OyinlarController } from './oyinlar.controller.js';
 import { RoyxatController } from './royxat.controller.js';
+import { TaklifMukofoti } from './taklif/mukofot.service.js';
+import { OyinchiQurilma } from './taklif/oyinchi-qurilma.entity.js';
+import { TaklifNatija } from './taklif/taklif-natija.entity.js';
 import { TelegramXabar } from './telegram/telegram-xabar.entity.js';
 import { TelegramYangilanish } from './telegram/telegram-yangilanish.entity.js';
 import { TelegramController } from './telegram/telegram.controller.js';
@@ -36,7 +39,7 @@ import { Tolov } from './tolov/tolov.entity.js';
       useFactory: () => ({
         type: 'postgres',
         url: process.env.DATABASE_URL,
-        entities: [Oyinchi, Oyin, Ishtirokchi, Hodisa, Tolov, BoshlanganTolov, TelegramYangilanish, TelegramXabar],
+        entities: [Oyinchi, Oyin, Ishtirokchi, Hodisa, Tolov, BoshlanganTolov, TelegramYangilanish, TelegramXabar, OyinchiQurilma, TaklifNatija],
         // Jadvallar entity'lardan o'zi yaratiladi (README'dagi arxitektura bo'yicha)
         synchronize: true,
       }),
@@ -46,7 +49,7 @@ import { Tolov } from './tolov/tolov.entity.js';
         return new DataSource(options!).initialize();
       },
     }),
-    TypeOrmModule.forFeature([Oyinchi, Oyin, Ishtirokchi, Hodisa, Tolov, BoshlanganTolov, TelegramYangilanish, TelegramXabar]),
+    TypeOrmModule.forFeature([Oyinchi, Oyin, Ishtirokchi, Hodisa, Tolov, BoshlanganTolov, TelegramYangilanish, TelegramXabar, OyinchiQurilma, TaklifNatija]),
     // Token backend/.env dagi JWT_SECRET bilan imzolanadi, 30 kun amal qiladi.
     // Kalit faqat .env dan: kodda zaxira qiymat yo'q, kalit bo'lmasa Backend ishga tushmaydi.
     JwtModule.registerAsync({
@@ -69,6 +72,6 @@ import { Tolov } from './tolov/tolov.entity.js';
     MenController,
     TelegramController,
   ],
-  providers: [NamunaMalumot, TokenGuard, OyinlarGateway, HodisalarTozalash, TelegramXizmati, YanaElonXabari],
+  providers: [NamunaMalumot, TokenGuard, OyinlarGateway, HodisalarTozalash, TelegramXizmati, YanaElonXabari, TaklifMukofoti],
 })
 export class AppModule {}

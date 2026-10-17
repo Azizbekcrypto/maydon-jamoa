@@ -328,6 +328,17 @@ SELECT COUNT(*) FROM oyinchilar o WHERE o.namuna = false AND o.taklif_qilgan_id 
 
 Lendingga taklif havolasi bilan tashriflar — Umami'da `tashrif`, kanal `taklif` (tashrifni sanaydi, qurilmani emas).
 
+**Mukofot** — taklif qilgan hisobga Pro'ning bepul haftasi (`pro_gacha` + 7 kun; o'tgan yoki bo'sh bo'lsa — bugundan; pul ham, chegirma ham emas).
+Qachon: taklif kodi bilan ochilgan hisob **birinchi marta** asosiy harakatni qilganda (o'yinga qo'shilsa yoki o'yin e'lon qilsa) — harakat saqlangandan keyin, alohida Database ishida
+(`backend/src/taklif/mukofot.service.ts`), bir marta. Uch shart: 1) ikkala hisob ham namuna emas · 2) yangi hisob qurilma ID si taklif qilganning qurilmalari ichida yo'q
+(taklif qilganniki hali yozilmagan — mukofot yo'q) · 3) taklif qilgan shu hafta (dushanba–yakshanba, Toshkent vaqti) 2 tadan kam mukofot olgan — sanashda uning qatori qulflanadi (`FOR UPDATE`).
+Natija — `taklif_natijalari` (`id` · `taklif_qilgan_id` · `taklif_qilingan_id` noyob · `natija` · `yaratilgan`): `berildi` · `bir-qurilma` · `namuna` · `nomalum` · `cheklov`;
+taklif qilingan hisob o'chirilsa — yozuv qoladi, hisob havolasi bo'shatiladi. Tekshiruvda xato bo'lsa — qo'shilish va e'lon buzilmaydi, keyingi harakatda yana tekshiriladi.
+Qurilmalar — `oyinchi_qurilmalari` (`oyinchi_id`, `qurilma_id` jufti noyob; eskisi o'chmaydi): ro'yxatdan o'tishda (`POST /royxat` da `qurilmaId`), kirishda va «Havolani ulashish»da (`POST /men/qurilma`).
+«Bir qurilma» qoidasining chegarasi: bitta odam ikki telefonda ikki hisob ochsa — Backend buni ajratmaydi (u odamni emas, hisob va qurilmani taniydi).
+«Havolani ulashish» ostida kulrang qator: «Siz taklif qilgan yangi o'yinchi o'yinga qo'shilsa yoki o'yin e'lon qilsa — Pro'ga 7 kun qo'shiladi (haftasiga ko'pi bilan 2 marta).»
+Maxfiylik siyosatida — taklif ma'lumoti qatori; ofertada (`lending/oferta.html`) — 7-band «Taklif mukofoti» (qoida va berilmaydigan to'rt holat). Havola faqat tanish doiraga — bosim yo'q.
+
 ## Backend yo'llari
 
 Yopiq yo'llar (`/oyinlar` va `/hisob`) — faqat token bilan (`Authorization: Bearer <token>`), tokensiz `401`.
@@ -349,6 +360,7 @@ Bitta istisno — mehmon ko'rinishi (12-Modul 8-dars): `GET /oyinlar` tokensiz h
 | `POST /oyinlar/:id/navbat` | `navbatda` — faqat to'lgan o'yinga | `201` · `409` |
 | `POST /oyinlar/:id/chiqish` | `chiqdi`; qo'shilgan chiqsa — navbatdagi birinchi `qoshildi` | `201` · `409` |
 | `POST /tolov/webhook` `{ tolovRaqami, holat, summa, oyinchiId }` · sarlavha `X-Imzo` | to'lov xabari (13-Modul 3-dars): imzo — HMAC SHA-256 (xom tana, `TOLOV_KALITI`) → maydonlar (4-darsdan hisob va summa `boshlangan_tolovlar` dagi raqam yozuviga mos) → takror → `tolovlar` ga yozuv (`rad` ham); `tolandi` — `pro_gacha` + 30 kun; token kerak emas | `200 { ok: true }` · `200 { takror: true }` · `400` · `401` imzo yo'q yoki mos emas |
+| `POST /men/qurilma` `{ qurilmaId }` | (token bilan, 10-dars) shu qurilma hisobning qurilmalari ro'yxatiga (`oyinchi_qurilmalari`) | `200` · `400` |
 | `POST /tolov/boshlash` | (token bilan, 4-dars) yangi to'lov raqami — `boshlangan_tolovlar` ga; summa — `PRO_NARX` | `201 { tolovRaqami, havola }` · `401` |
 | `POST /telegram/kod` | (token bilan, 8-dars) yangi bir martalik kod, 10 daqiqa | `201 { havola: 'https://t.me/<bot>?start=<kod>' }` · `503` bot sozlanmagan |
 | `DELETE /telegram` | (token bilan) «Telegram xabarlarini o'chirish»: `telegram_chat_id`, `telegram_kod`, `telegram_kod_gacha` — bo'sh | `200 { telegram: false }` |
@@ -611,6 +623,7 @@ Teglar: `m13-dars-NN-start` — dars boshidagi holat, `m13-dars-NN-done` — dar
 | `m13-dars-05-done` | 5 · to'lovni ulaymiz va buzib ko'ramiz | qolgan holatlar: `GET /men` da `oxirgiTolov` (`tolandi` · `rad` · `kutilmoqda`), ilovada «To'lov o'tmadi — qayta urinib ko'ring» va «To'lovga o'tish», «Javob kutilmoqda»; Pro tugasa keyingi «Doimiy o'yin» yaratilmaydi (e'lon qilinganlar qoladi); mashq sahifasida «Kechiktirib yuborish» (70 soniya) va «Noto'g'ri imzo» (`401`). Ikki muammo tuzatilgan (`backend/src/tolov/tolov.controller.ts`, `mashq.controller.ts`, `mobil/src/app/pro.tsx`): Pro bir marta — yozuvdan keyin, bitta tranzaksiyada · sahifada «Javob kutilmoqda», ilovada «Qayta tekshirish» va qaytganda qayta so'rash. `BUZISH.md` «To'lov» — to'rt urinish (buzildi · buzildi · buzilmadi · buzilmadi), tuzatish va qayta tekshiruv; README eslatmasi o'rnida — tuzatilganlar |
 | `m13-dars-07-done` | 7 · shartlarni ochiq aytish: oferta va maxfiylik | `lending/oferta.html` — «Pro shartlari» (mashq hujjati, olti band, «Bu hujjat yuridik maslahat emas.»; forma, to'lov tugmasi, Umami yo'q); `lending/maxfiylik.html` — «Qaysi ma'lumot?» va «Nima uchun?» ga to'lov bandi (boshqa gaplar o'zgarmagan); `lending/index.html` pastida «Pro shartlari»; to'lov taklifi ekranida «To'lovga o'tish» ostida «Pro shartlari» · «Maxfiylik siyosati» (telefon brauzerida). APK va brauzer ko'rinishi bu tegda qayta tayyorlanmagan |
 | `m13-dars-08-done` | 8 · loyiha kuni: ketayotgan foydalanuvchini qaytarish | Telegram bot (`backend/src/telegram/`): `oyinchilar.telegram_chat_id`, `telegram_kod`, `telegram_kod_gacha`; Render'da `setWebhook` (`TELEGRAM_SIR`) va `getMe`; `POST /telegram/kod` → `t.me/<bot>?start=<kod>`; `POST /telegram/webhook` (kalit sarlavhasi, faqat shaxsiy chat `/start <kod>`, `update_id` bir marta — `telegram_yangilanishlar`, faqat chat raqami); «yana e'lon qilindi» xabari keyingi «Doimiy o'yin» yaratilganda — `telegram_xabarlar`, haftasiga ≤2, bir o'yin haqida bir marta; `DELETE /telegram` — «Telegram xabarlarini o'chirish»; «Hisobni o'chirish»da Telegram yozuvlari ham; `telegramdan-ochdi` (brauzer ko'rinishi `?kanal=telegram`), sanoq sahifasida «Telegram'dan ochdi»; maxfiylik siyosatiga qator; `TELEGRAM_BOT_TOKEN`, `TELEGRAM_SIR` (`.env.example` da qiymatsiz). Yangi APK yo'q |
+| `m13-dars-10-done` | 10 · loyiha kuni: taklif havolasi va mukofot | `oyinchilar.taklif_kodi` (6 belgi, `A–Z` `0–9`, noyob; yangi hisobga va mavjudlarga bir marta), `GET /men` da `taklifKodi`; «Havolani ulashish» — `?taklif=<kod>&kanal=taklif`; lending «Taklif kodi: …»; formada «Taklif kodi (bo'lsa)» (bo'shliqsiz, katta harfga; topilmasa «Bunday taklif kodi topilmadi — …»), `taklif_qilgan_id`; `oyinchi_qurilmalari` (`POST /royxat` `qurilmaId`, `POST /men/qurilma` — kirish va ulashishda), `taklif_natijalari` (`berildi` · `bir-qurilma` · `namuna` · `nomalum` · `cheklov`); mukofot — Pro + 7 kun, haftasiga ≤2, birinchi asosiy harakatdan keyin alohida tranzaksiyada; qoida qatori ilovada, maxfiylik va ofertaga band. Yangi APK kerak (lending havolasi almashtiriladi) |
 
 ## Ortda qoldingizmi
 

@@ -21,6 +21,7 @@ import { Oyin } from './oyin.entity.js';
 import { Oyinchi } from './oyinchi.entity.js';
 import { OyinlarGateway } from './oyinlar.gateway.js';
 import { bugunToshkent, sanaTogrimi } from './sana.js';
+import { TaklifMukofoti } from './taklif/mukofot.service.js';
 import { YanaElonXabari } from './telegram/yana-elon.service.js';
 import { MehmonUchunOchiq, TokenGuard, type Sorov } from './token.guard.js';
 
@@ -43,6 +44,8 @@ export class OyinlarController {
     // Real vaqt: o'zgarish Database'ga yozib tugatilgach — oyin-ozgardi { oyinId, sabab } hamma ulangan ilovaga
     private readonly ulanishlar: OyinlarGateway,
     private readonly yanaElon: YanaElonXabari,
+    // Taklif mukofoti (13-Modul 10-dars) — e'lon va qo'shilish saqlangandan keyin, alohida Database ishida
+    private readonly mukofot: TaklifMukofoti,
   ) {}
 
   // GET /oyinlar — yagona ro'yxat yo'li: «O'yin» ekrani ham shundan o'qiydi.
@@ -142,6 +145,7 @@ export class OyinlarController {
 
     const oyin = await this.oyinlar.save({ kun, soat, maydon, kerak, tashkilotchi_id: sorov.oyinchiId!, doimiy });
     this.ulanishlar.oyinOzgardi(oyin.id, 'elon-berildi');
+    await this.mukofot.tekshir(sorov.oyinchiId!);
     return { id: oyin.id, kun: oyin.kun, soat: oyin.soat, maydon: oyin.maydon, kerak: oyin.kerak };
   }
 
@@ -175,6 +179,7 @@ export class OyinlarController {
     });
     // Tranzaksiya tugagach (yozuv Database'da) — hodisa
     this.ulanishlar.oyinOzgardi(id, 'qoshildi');
+    await this.mukofot.tekshir(men);
     return javob;
   }
 
