@@ -8,9 +8,13 @@ import { Oyin } from './oyin.entity.js';
 import { Oyinchi } from './oyinchi.entity.js';
 import { keyingiShanbaYakshanba } from './sana.js';
 
-const TASHKILOTCHI_TELEFON = '+998 90 000 00 00';
-// 9 ta namuna o'yinchi: +998 90 000 00 11 … 19 (01, 02 — darsdagi Ali va ikkinchi akkaunt uchun bo'sh)
-const OYINCHI_TELEFONLARI = Array.from({ length: 9 }, (_, i) => `+998 90 000 00 ${11 + i}`);
+// Namuna akkauntlar loginlari — ismidan (login.ts dagi qoida bilan): 7-darsdagi migratsiya eski namunalarga ham shularni beradi.
+// Hammasi namuna = true — sanoqqa kirmaydi.
+const TASHKILOTCHI_ISMI = 'Namuna tashkilotchi';
+const TASHKILOTCHI_LOGIN = 'namunatashkilotchi';
+// 9 ta namuna o'yinchi: namunaoyinchi1 … namunaoyinchi9
+const OYINCHI_ISMLARI = Array.from({ length: 9 }, (_, i) => `Namuna o'yinchi ${i + 1}`);
+const OYINCHI_LOGINLARI = Array.from({ length: 9 }, (_, i) => `namunaoyinchi${i + 1}`);
 // To'rt namuna o'yinga qo'shilganlar (yozilgan tartibida): Shanba 18:00 — 8, Shanba 20:00 — 6, Yakshanba 10:00 — 4, Yakshanba 17:00 — 9
 const QOSHILGANLAR = [8, 6, 4, 9];
 
@@ -32,12 +36,13 @@ export class NamunaMalumot implements OnApplicationBootstrap {
   }
 
   async onApplicationBootstrap() {
-    let tashkilotchi = await this.oyinchilar.findOneBy({ telefon: TASHKILOTCHI_TELEFON });
+    let tashkilotchi = await this.oyinchilar.findOneBy({ login: TASHKILOTCHI_LOGIN });
     if (!tashkilotchi) {
       tashkilotchi = await this.oyinchilar.save({
-        ism: 'Namuna tashkilotchi',
-        telefon: TASHKILOTCHI_TELEFON,
+        ism: TASHKILOTCHI_ISMI,
+        login: TASHKILOTCHI_LOGIN,
         parol_hash: await this.parolHash(),
+        namuna: true,
       });
     }
     if (!(await this.oyinlar.existsBy({ tashkilotchi_id: tashkilotchi.id }))) {
@@ -65,11 +70,11 @@ export class NamunaMalumot implements OnApplicationBootstrap {
   // 9 ta namuna o'yinchi va qo'shilishlar — kirgan o'yinchi ular qatorida emas.
   // Namuna o'yinchilar bor bo'lsa — qayta qo'shilmaydi.
   private async qoshilganlarQosh(tashkilotchiId: number) {
-    if (await this.oyinchilar.existsBy({ telefon: OYINCHI_TELEFONLARI[0] })) return;
+    if (await this.oyinchilar.existsBy({ login: OYINCHI_LOGINLARI[0] })) return;
     const oyinchilar: Oyinchi[] = [];
-    for (const [i, telefon] of OYINCHI_TELEFONLARI.entries()) {
+    for (const [i, login] of OYINCHI_LOGINLARI.entries()) {
       oyinchilar.push(
-        await this.oyinchilar.save({ ism: `Namuna o'yinchi ${i + 1}`, telefon, parol_hash: await this.parolHash() }),
+        await this.oyinchilar.save({ ism: OYINCHI_ISMLARI[i], login, parol_hash: await this.parolHash(), namuna: true }),
       );
     }
     const oyinlar = await this.oyinlar.find({

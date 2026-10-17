@@ -22,11 +22,12 @@ export class Oyin {
   @Column({ type: 'int' })
   kerak: number;
 
-  // Bog'lovchi ustun: o'yinni kim e'lon qilgani → oyinchilar.id
-  @Column({ type: 'int' })
-  tashkilotchi_id: number;
+  // Bog'lovchi ustun: o'yinni kim e'lon qilgani → oyinchilar.id.
+  // Tashkilotchi «Hisobni o'chirish»ni bossa — o'yin o'chmaydi, tashkilotchisi bo'sh qoladi (null)
+  @Column({ type: 'int', nullable: true })
+  tashkilotchi_id: number | null;
 
-  @ManyToOne(() => Oyinchi, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Oyinchi, { onDelete: 'SET NULL' })
   @JoinColumn({ name: 'tashkilotchi_id' })
   tashkilotchi: Oyinchi;
 

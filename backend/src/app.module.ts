@@ -2,9 +2,14 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 import { AppController } from './app.controller.js';
+import { HisobController } from './hisob.controller.js';
+import { Hodisa } from './hodisa.entity.js';
+import { HodisalarController, HodisalarTozalash } from './hodisalar.controller.js';
 import { Ishtirokchi } from './ishtirokchi.entity.js';
 import { KirishController } from './kirish.controller.js';
+import { telefondanLoginga } from './migratsiya.js';
 import { NamunaMalumot } from './namuna.js';
 import { OyinlarGateway } from './oyinlar.gateway.js';
 import { Oyin } from './oyin.entity.js';
@@ -21,12 +26,17 @@ import { TokenGuard } from './token.guard.js';
       useFactory: () => ({
         type: 'postgres',
         url: process.env.DATABASE_URL,
-        entities: [Oyinchi, Oyin, Ishtirokchi],
+        entities: [Oyinchi, Oyin, Ishtirokchi, Hodisa],
         // Jadvallar entity'lardan o'zi yaratiladi (README'dagi arxitektura bo'yicha)
         synchronize: true,
       }),
+      // Avval bir martalik o'tkazish (telefon → login, 12-Modul 7-dars), keyin jadvallar entity'lardan yangilanadi
+      dataSourceFactory: async (options) => {
+        await telefondanLoginga(process.env.DATABASE_URL);
+        return new DataSource(options!).initialize();
+      },
     }),
-    TypeOrmModule.forFeature([Oyinchi, Oyin, Ishtirokchi]),
+    TypeOrmModule.forFeature([Oyinchi, Oyin, Ishtirokchi, Hodisa]),
     // Token backend/.env dagi JWT_SECRET bilan imzolanadi, 30 kun amal qiladi.
     // Kalit faqat .env dan: kodda zaxira qiymat yo'q, kalit bo'lmasa Backend ishga tushmaydi.
     JwtModule.registerAsync({
@@ -37,7 +47,7 @@ import { TokenGuard } from './token.guard.js';
       },
     }),
   ],
-  controllers: [AppController, RoyxatController, KirishController, OyinlarController],
-  providers: [NamunaMalumot, TokenGuard, OyinlarGateway],
+  controllers: [AppController, RoyxatController, KirishController, OyinlarController, HisobController, HodisalarController],
+  providers: [NamunaMalumot, TokenGuard, OyinlarGateway, HodisalarTozalash],
 })
 export class AppModule {}

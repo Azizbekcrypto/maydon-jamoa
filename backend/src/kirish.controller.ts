@@ -12,16 +12,16 @@ export class KirishController {
     private readonly jwt: JwtService,
   ) {}
 
-  // POST /kirish { telefon, parol } → { token } (30 kun) · noto'g'ri bo'lsa 401 (qaysi biri — aytilmaydi).
+  // POST /kirish { login, parol } → { token } (30 kun) · noto'g'ri bo'lsa 401 (qaysi biri — aytilmaydi).
   // Parol jadvaldagi hash bilan solishtiriladi; token Database'ga yozilmaydi.
   @Post()
   @HttpCode(200)
   async kirish(@Body() body: Record<string, unknown>) {
-    const telefon = typeof body?.telefon === 'string' ? body.telefon.trim() : '';
+    const login = typeof body?.login === 'string' ? body.login.trim().toLowerCase() : '';
     const parol = typeof body?.parol === 'string' ? body.parol : '';
-    const oyinchi = telefon ? await this.oyinchilar.findOneBy({ telefon }) : null;
+    const oyinchi = login ? await this.oyinchilar.findOneBy({ login }) : null;
     if (!oyinchi || !parol || !(await compare(parol, oyinchi.parol_hash))) {
-      throw new UnauthorizedException("Telefon yoki parol noto'g'ri");
+      throw new UnauthorizedException("Login yoki parol noto'g'ri");
     }
     return { token: await this.jwt.signAsync({ sub: oyinchi.id }) };
   }
