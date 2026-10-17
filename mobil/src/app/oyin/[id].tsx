@@ -9,11 +9,14 @@ import { Son } from '@/components/son';
 import { kunNomi } from '@/kun';
 import { oyinlarniOl, useOyinlar, type Oyin } from '@/oyin';
 import { R } from '@/ranglar';
+import { useKorayotganlar, xabarYubor } from '@/ulanish';
 
 // O'yin: bitta fayl har o'yinni ochadi — id manzildan keladi (/oyin/2 → id = '2').
 // Ma'lumot GET /oyinlar dan (alohida yo'l yo'q): «8 / 10», qo'shilganlar va tugma.
 // Ekran ochilganda, pastga tortib yangilaganda va oyin-ozgardi hodisasidan keyin — «O'yinlar» bilan bitta javobdan (oyin.ts).
 // To'lgan o'yinda «Qo'shilaman» o'rnida «Navbatga yozilish»; qo'shilgan va navbatdagi o'yinchida — «O'yindan chiqish».
+// «Hozir ko'ryapti: N»: ekran ochilganda Backend'ga oyin-ochildi, yopilganda oyin-yopildi — ulanish o'yin xonasiga
+// kiradi va chiqadi; son korayotganlar-ozgardi bilan keladi (o'zim ham sanalaman, ism ko'rsatilmaydi).
 export default function OyinEkrani() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -37,8 +40,11 @@ export default function OyinEkrani() {
   useFocusEffect(
     useCallback(() => {
       yukla();
-    }, [yukla]),
+      xabarYubor('oyin-ochildi', { oyinId: Number(id) });
+      return () => xabarYubor('oyin-yopildi', { oyinId: Number(id) });
+    }, [yukla, id]),
   );
+  const korayotgan = useKorayotganlar(Number(id));
 
   async function tort() {
     setTortildi(true);
@@ -113,6 +119,7 @@ export default function OyinEkrani() {
               <Text style={s.hisob}> / {oyin.kerak}</Text>
             </View>
             <Doiralar oyin={oyin} />
+            {korayotgan !== null && <Text style={s.korayotgan}>Hozir ko'ryapti: {korayotgan}</Text>}
             {(oyin.navbatda > 0 || oyin.qoshilgan >= oyin.kerak) && (
               <Text style={s.navbat}>Navbatda: {oyin.navbatda}</Text>
             )}
@@ -194,6 +201,7 @@ const s = StyleSheet.create({
   belgi: { color: '#fff', fontSize: 16, fontWeight: '700', textAlign: 'center', lineHeight: 28 },
   tasdiq: { fontSize: 16, fontWeight: '600', color: R.matn, marginTop: 16 },
   siz: { fontSize: 12, color: R.kulrang },
+  korayotgan: { fontSize: 15, color: R.kulrang, marginTop: 12 },
   navbat: { fontSize: 15, color: R.kulrang, marginTop: 12 },
   navbatdasiz: { fontSize: 16, fontWeight: '600', color: R.matn, textAlign: 'center', padding: 8 },
   chiqish: { padding: 14, borderRadius: 12, borderWidth: 1, borderColor: '#C0392B', alignItems: 'center' },

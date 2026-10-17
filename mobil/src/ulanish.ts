@@ -20,6 +20,10 @@ let ilovaHolati: NativeEventSubscription | null = null;
 let holat: UlanishHolati = 'ulanmagan';
 const holatniKuzatuvchilar = new Set<(h: UlanishHolati) => void>();
 
+// «Hozir ko'ryapti»: Backend xonaga yuborgan son — o'yin bo'yicha (korayotganlar-ozgardi { oyinId, soni })
+const korayotganlar = new Map<number, number>();
+const korayotganlarniKuzatuvchilar = new Set<() => void>();
+
 function holatQoy(yangi: UlanishHolati) {
   holat = yangi;
   holatniKuzatuvchilar.forEach((k) => k(yangi));
@@ -48,6 +52,10 @@ export async function ulan() {
   });
   ulanish.on('disconnect', uzilishdanKeyin);
   ulanish.on('connect_error', uzilishdanKeyin);
+  ulanish.on('korayotganlar-ozgardi', (m: { oyinId: number; soni: number }) => {
+    korayotganlar.set(m.oyinId, m.soni);
+    korayotganlarniKuzatuvchilar.forEach((k) => k());
+  });
 
   // Ilova fonda turganda o'zgarish bo'lsa: fondan qaytganda ro'yxat qayta so'raladi
   let oldingi: string | null | undefined = AppState.currentState;
@@ -62,6 +70,24 @@ function qaytaSora() {
   oyinlarniOl().catch(() => {});
 }
 
+// Backend'ga hodisa yuborish (masalan, «O'yin» ekrani ochildi / yopildi). Ulanish bo'lmasa — hech narsa qilmaydi.
+export function xabarYubor(nom: string, malumot: unknown) {
+  ulanish?.emit(nom, malumot);
+}
+
+// «O'yin» ekrani uchun: shu o'yin ekranini hozir ochib turgan ulanishlar soni (hali kelmagan bo'lsa — null)
+export function useKorayotganlar(oyinId: number): number | null {
+  const [soni, setSoni] = useState(korayotganlar.get(oyinId) ?? null);
+  useEffect(() => {
+    const k = () => setSoni(korayotganlar.get(oyinId) ?? null);
+    korayotganlarniKuzatuvchilar.add(k);
+    return () => {
+      korayotganlarniKuzatuvchilar.delete(k);
+    };
+  }, [oyinId]);
+  return soni;
+}
+
 // «Hisobdan chiqish»: ulanish yopiladi. Qayta kirilganda ulan() yangi token bilan yangi ulanish ochadi.
 export function uzil() {
   ilovaHolati?.remove();
@@ -69,6 +95,7 @@ export function uzil() {
   ulanish?.removeAllListeners();
   ulanish?.disconnect();
   ulanish = null;
+  korayotganlar.clear();
   holatQoy('ulanmagan');
 }
 

@@ -1,6 +1,14 @@
 import { Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { OnGatewayConnection, OnGatewayDisconnect, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import {
+  ConnectedSocket,
+  MessageBody,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer,
+} from '@nestjs/websockets';
 import type { Server, Socket } from 'socket.io';
 
 // gateway — Backend'da ulanishlarni qabul qiladigan klass (socket.io). HTTP server bilan bitta portda turadi.
@@ -8,6 +16,14 @@ import type { Server, Socket } from 'socket.io';
 // Token ulanish ochilayotganda tekshiriladi: yo'q yoki yaroqsiz bo'lsa — ulanish yopiladi
 // (Backend yopgan ulanishga ilova o'zi qayta ulanmaydi — belgi «Ulanmagan»).
 // Hodisa `oyin-ozgardi` — { oyinId, sabab }: faqat qaysi o'yin o'zgargani va nega; yangi holatni ilova GET /oyinlar dan qayta so'raydi.
+//
+// Xona — Backend'dagi ulanishlar guruhi: hodisa faqat shu guruhdagilarga boradi. Har o'yinning o'z xonasi — `oyin-{id}`.
+// Ilova «O'yin» ekrani ochilganda `oyin-ochildi` { oyinId } yuboradi — ulanish xonaga qo'shiladi; yopilganda — `oyin-yopildi`.
+// Xonadagi ulanishlar soni o'zgarsa (ulanish uzilganda ham) — xonaga `korayotganlar-ozgardi` { oyinId, soni }.
+// Bu son Database'da yo'q — faqat Backend xotirasidagi ulanishlardan, shuning uchun hodisa sonning o'zini olib keladi.
+// Ism yuborilmaydi — faqat son; birligi — ochiq ekran (bitta odam ikki qurilmada — ikkita).
+
+const xona = (oyinId: number) => `oyin-${oyinId}`;
 
 // Real vaqt oqimi sxemasidagi besh sabab (README «Real vaqt»)
 export type OyinSababi = 'qoshildi' | 'chiqdi' | 'tasdiqladi' | 'navbatga-yozildi' | 'elon-berildi';
@@ -28,8 +44,9 @@ export class OyinlarGateway implements OnGatewayConnection, OnGatewayDisconnect 
       ulanish.disconnect();
       return;
     }
-    // Token egasi — keyingi darslarda kerak bo'ladi (xona, o'z harakati)
+    // Token egasi va shu ulanishda ochiq turgan o'yin ekranlari (uzilganda qolganlarga yangi son yuborish uchun)
     ulanish.data.oyinchiId = oyinchiId;
+    ulanish.data.ochiq = new Set<number>();
     this.log.log(`ulandi: o'yinchi ${oyinchiId}`);
   }
 
@@ -38,8 +55,35 @@ export class OyinlarGateway implements OnGatewayConnection, OnGatewayDisconnect 
     this.server.emit('oyin-ozgardi', { oyinId, sabab });
   }
 
-  handleDisconnect(ulanish: Socket) {
-    if (ulanish.data.oyinchiId) this.log.log(`uzildi: o'yinchi ${ulanish.data.oyinchiId}`);
+  @SubscribeMessage('oyin-ochildi')
+  async ochildi(@ConnectedSocket() ulanish: Socket, @MessageBody() malumot: { oyinId?: unknown }) {
+    const oyinId = Number(malumot?.oyinId);
+    if (!ulanish.data.oyinchiId || !Number.isInteger(oyinId)) return;
+    await ulanish.join(xona(oyinId));
+    ulanish.data.ochiq.add(oyinId);
+    await this.korayotganlarniYubor(oyinId);
+  }
+
+  @SubscribeMessage('oyin-yopildi')
+  async yopildi(@ConnectedSocket() ulanish: Socket, @MessageBody() malumot: { oyinId?: unknown }) {
+    const oyinId = Number(malumot?.oyinId);
+    if (!ulanish.data.oyinchiId || !Number.isInteger(oyinId)) return;
+    await ulanish.leave(xona(oyinId));
+    ulanish.data.ochiq.delete(oyinId);
+    await this.korayotganlarniYubor(oyinId);
+  }
+
+  // Ulanish uzilganda u hamma xonadan o'zi chiqadi — u ochib turgan har o'yin xonasiga yangi son
+  async handleDisconnect(ulanish: Socket) {
+    if (!ulanish.data.oyinchiId) return;
+    this.log.log(`uzildi: o'yinchi ${ulanish.data.oyinchiId}`);
+    for (const oyinId of ulanish.data.ochiq as Set<number>) await this.korayotganlarniYubor(oyinId);
+  }
+
+  // «Hozir ko'ryapti: N» — xonadagi ulanishlar soni (o'quvchining o'zi ham sanaladi)
+  private async korayotganlarniYubor(oyinId: number) {
+    const soni = (await this.server.in(xona(oyinId)).fetchSockets()).length;
+    this.server.to(xona(oyinId)).emit('korayotganlar-ozgardi', { oyinId, soni });
   }
 
   // Token yopiq so'rovlardagi kabi JWT_SECRET bilan tekshiriladi (sinxron — ulanish ochilayotgan paytning o'zida).
