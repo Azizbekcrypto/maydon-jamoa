@@ -2,6 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Son } from '@/components/son';
 import { useOyinlar } from '@/oyinlar-holati';
 import { R } from '@/ranglar';
 
@@ -37,9 +38,10 @@ export default function OyinEkrani() {
           {oyin.kun}, {oyin.soat}
         </Text>
         <Text style={s.maydon}>{oyin.maydon}</Text>
-        <Text style={s.hisob}>
-          {oyin.qoshilgan} / {oyin.kerak}
-        </Text>
+        <View style={s.hisobQator}>
+          <Son qiymat={oyin.qoshilgan} style={s.hisob} />
+          <Text style={s.hisob}> / {oyin.kerak}</Text>
+        </View>
         <View style={s.doiralar}>
           {doiralar.map((toli, i) => (
             <View key={i} style={s.doiraJoy}>
@@ -62,7 +64,8 @@ const s = StyleSheet.create({
   orqaga: { fontSize: 16, color: R.yashil, paddingVertical: 6 },
   sarlavha: { fontSize: 26, fontWeight: '700', color: R.matn, marginTop: 8 },
   maydon: { fontSize: 16, color: R.kulrang, marginTop: 4 },
-  hisob: { fontSize: 40, fontWeight: '700', color: R.matn, marginTop: 16 },
+  hisobQator: { flexDirection: 'row', alignItems: 'baseline', marginTop: 16 },
+  hisob: { fontSize: 40, fontWeight: '700', color: R.matn },
   doiralar: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 16, maxWidth: 260 },
   doiraJoy: { alignItems: 'center', width: 40 },
   doira: { width: 32, height: 32, borderRadius: 16, borderWidth: 2, borderColor: R.chiziq },

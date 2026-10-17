@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BosiladiganKarta } from '@/components/bosiladigan-karta';
 import { useOyinlar } from '@/oyinlar-holati';
 import { R } from '@/ranglar';
 
@@ -17,7 +18,7 @@ export default function Oyinlar() {
         <Text style={s.sarlavha}>O'yinlar</Text>
         <View style={s.oyinlar}>
           {oyinlar.map((o) => (
-            <Pressable key={o.id} style={s.karta} onPress={() => router.push(`/oyin/${o.id}`)}>
+            <BosiladiganKarta key={o.id} style={s.karta} onPress={() => router.push(`/oyin/${o.id}`)}>
               <Text style={s.vaqt}>
                 {o.kun}, {o.soat}
               </Text>
@@ -25,7 +26,7 @@ export default function Oyinlar() {
               <Text style={s.hisob}>
                 {o.qoshilgan} / {o.kerak}
               </Text>
-            </Pressable>
+            </BosiladiganKarta>
           ))}
         </View>
       </ScrollView>
