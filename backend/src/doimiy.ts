@@ -7,11 +7,13 @@ import { kunQosh } from './sana.js';
 // Vaqti o'tgan (Toshkent vaqti) har doimiy o'yin uchun — bir haftadan keyingi kunga, xuddi shu soat, maydon, kerakli odamlar soni
 // va tashkilotchi bilan yangi o'yin; doimiy belgisi yangisiga o'tadi, eskisida o'chadi — bitta o'yindan keyingisi bir marta yaratiladi.
 // Yangi o'yin «0 / N» dan boshlanadi (qo'shilganlar ko'chirilmaydi).
+// Pro muddati ichida (5-dars): tashkilotchining Pro'si tugagan bo'lsa — keyingi o'yin o'zi e'lon qilinmaydi, e'lon qilinganlar qoladi.
 export async function keyingiDoimiylarniYarat(oyinlar: Repository<Oyin>): Promise<Oyin[]> {
   const otganlar = await oyinlar
     .createQueryBuilder('o')
+    .innerJoin('oyinchilar', 't', 't.id = o.tashkilotchi_id')
     .where('o.doimiy = true')
-    .andWhere('o.tashkilotchi_id IS NOT NULL')
+    .andWhere('t.pro_gacha > now()')
     .andWhere(`(o.kun + o.soat::time) < (now() AT TIME ZONE 'Asia/Tashkent')`)
     .getMany();
 

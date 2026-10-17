@@ -6,4 +6,7 @@ export const PRO_TAKLIF = {
   narx: "30 kun — 15 000 so'm",
   tugma: "To'lovga o'tish",
   test: 'Test rejim: pul yechilmaydi',
+  // to'lovdan qaytgandagi holatlar (5-dars)
+  otmadi: "To'lov o'tmadi — qayta urinib ko'ring",
+  kutilmoqda: 'Javob kutilmoqda',
 };

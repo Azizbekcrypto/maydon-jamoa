@@ -7,6 +7,8 @@ import { sora } from '@/api';
 export type Men = {
   pro: boolean;
   proGacha: string | null;
+  // eng oxirgi boshlangan to'lov (5-dars): tolandi · rad · kutilmoqda (to'lov xabari hali kelmagan); to'lov boshlanmagan — null
+  oxirgiTolov: { tolovRaqami: string; holat: 'tolandi' | 'rad' | 'kutilmoqda' } | null;
 };
 
 // Oxirgi javob — ilovada bitta: «E'lon berish» va to'lov taklifi ekrani shundan o'qiydi (oyin.ts dagidek)

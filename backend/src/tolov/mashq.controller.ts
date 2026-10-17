@@ -11,8 +11,14 @@ import { ozManzil } from './manzil.js';
 // 4-darsdan sahifa faqat Backend bergan to'lov raqami bilan ishlaydi (POST /tolov/boshlash): hisob va summa raqamdan olinadi,
 // to'rt tugma yangi raqam yaratmaydi — shu raqam bilan ishlaydi. Raqam yo'q yoki noma'lum — «To'lov topilmadi.»
 
-const TURLAR = ['tolash', 'rad', 'ikki', 'imzosiz'] as const;
+const TURLAR = ['tolash', 'rad', 'ikki', 'imzosiz', 'kech', 'notogriImzo'] as const;
 type Tur = (typeof TURLAR)[number];
+
+// «Kechiktirib yuborish» (5-dars): uxlagan Backend o'rnida — xabar 70 soniya kutib yuboriladi
+const KECH_SONIYA = 70;
+// «Noto'g'ri imzo» (5-dars): xabar TOLOV_KALITI bilan emas, boshqa kalit bilan imzolanadi. Bu kalit maxfiy emas — ataylab noto'g'ri
+const NOTOGRI_KALIT = 'bu-kalit-ataylab-notogri';
+const kut = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 // 15000 → «15 000»
 const somda = (n: number) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
@@ -43,6 +49,8 @@ export class MashqTolovController {
       <div class="tugmalar">
         <button data-tur="ikki" class="ikkinchi">Ikki marta yuborish</button>
         <button data-tur="imzosiz" class="ikkinchi">Imzosiz yuborish</button>
+        <button data-tur="kech" class="ikkinchi">Kechiktirib yuborish</button>
+        <button data-tur="notogriImzo" class="ikkinchi">Noto'g'ri imzo</button>
       </div>
       <ol id="javoblar"></ol>
       <p class="kulrang">Real ishga tushirish — ota-onaning yozma roziligi va yuridik shaxs yoki YaTT (yakka tartibdagi tadbirkor) bilan; bu kursda emas.</p>`;
@@ -52,7 +60,8 @@ export class MashqTolovController {
   // POST /tolov-mashq/yubor { tur, raqam } → { tolovRaqami, javoblar: [{ holat, tana }] }
   // Xabar — bitta JSON satr { tolovRaqami, holat, summa, oyinchiId } (hisob va summa — boshlangan to'lovdan); aynan shu satr
   // TOLOV_KALITI bilan imzolanadi va aynan shu satr tana bo'lib Backend'ning o'z POST /tolov/webhook manziliga yuboriladi.
-  // ikki — bir xil tana va imzo bilan ketma-ket ikki marta · imzosiz — X-Imzo sarlavhasisiz.
+  // ikki — bir xil tana va imzo bilan ketma-ket ikki marta · imzosiz — X-Imzo sarlavhasisiz ·
+  // kech — 70 soniya kutib yuboriladi (javob ham shundan keyin) · notogriImzo — boshqa kalit bilan imzolangan.
   @Post('yubor')
   @HttpCode(200)
   async yubor(@Body() body: Record<string, unknown>) {
@@ -68,7 +77,9 @@ export class MashqTolovController {
       oyinchiId: tolov.oyinchi_id,
     });
     const sarlavhalar: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (tur !== 'imzosiz') sarlavhalar['X-Imzo'] = imzola(xabar, process.env.TOLOV_KALITI ?? '');
+    if (tur === 'notogriImzo') sarlavhalar['X-Imzo'] = imzola(xabar, NOTOGRI_KALIT);
+    else if (tur !== 'imzosiz') sarlavhalar['X-Imzo'] = imzola(xabar, process.env.TOLOV_KALITI ?? '');
+    if (tur === 'kech') await kut(KECH_SONIYA * 1000);
 
     const javoblar: { holat: number; tana: unknown }[] = [];
     for (let i = 0; i < (tur === 'ikki' ? 2 : 1); i++) {
@@ -87,7 +98,7 @@ export class MashqTolovController {
 }
 
 // Sahifa qolipi: sarlavha, test rejim qatori, ichi va tugmalar skripti (har yuborishning javobi — holat kodi va tanasi).
-// «To'lash (mashq)» javobi kelgach: { ok: true } — «To'lov o'tdi (mashq) — ilovaga qayting.», aks holda — «To'lov o'tmadi.»;
+// «To'lash (mashq)» va «Kechiktirib yuborish» javobi kelgach: { ok: true } — «To'lov o'tdi (mashq) — ilovaga qayting.», aks holda — «To'lov o'tmadi.»;
 // «Rad etish (mashq)» — «To'lov o'tmadi.». Javob 10 soniyada kelmasa — so'rov to'xtatiladi.
 function qolip(ichi: string, malumot: string): string {
   return `<!doctype html>
@@ -147,13 +158,13 @@ document.querySelectorAll('button[data-tur]').forEach(function (t) {
         ro.appendChild(li);
       });
       var birinchi = javoblar[0] || {};
-      if (tur === 'tolash') {
+      if (tur === 'tolash' || tur === 'kech') {
         if (birinchi.holat === 200 && birinchi.tana && birinchi.tana.ok) natija("To'lov o'tdi (mashq) — ilovaga qayting.", 'otdi');
         else natija("To'lov o'tmadi.", 'otmadi');
       }
       if (tur === 'rad') natija("To'lov o'tmadi.", 'otmadi');
     } catch (e) {
-      if (tur === 'tolash' || tur === 'rad') natija("To'lov o'tmadi.", 'otmadi');
+      if (tur === 'tolash' || tur === 'kech' || tur === 'rad') natija("To'lov o'tmadi.", 'otmadi');
       var li = document.createElement('li');
       li.className = 'xato';
       li.textContent = t.textContent + ' — javob kelmadi';
