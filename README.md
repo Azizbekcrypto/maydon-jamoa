@@ -242,6 +242,24 @@ Bepul Backend 15 daqiqa so'rovsiz qolsa uxlaydi — keyingi birinchi javob bir d
 
 Backend manzili: `https://maydon-jamoa-….onrender.com` (manzil — ochiq qiymat; ilovada — `mobil/.env` dagi `EXPO_PUBLIC_API_URL`).
 
+## O'rnatish fayli — APK (mobil trek, 12-Modul 6–7-darslar)
+
+APK — Android telefonga o'rnatiladigan ilova fayli; EAS Build tayyorlaydi (`mobil/` papkasida):
+
+```
+npm install --global eas-cli
+eas login
+eas build:configure
+eas build -p android --profile preview
+```
+
+`mobil/eas.json` — `preview` profili: Android uchun `buildType` — `apk`; `env` da `EXPO_PUBLIC_API_URL` — Render'dagi Backend manzili
+(`.env` fayli EAS'ga yuborilmaydi; bu qiymat maxfiy emas). Repo'dagi `https://maydon-jamoa-namuna.onrender.com` — namuna: o'z Render manzilingizga almashtiring.
+`eas build:configure` `app.json` ga loyihangiz ID'sini (`extra.eas.projectId`), birinchi build esa Android paket nomini so'rab qo'shadi — ular har akkauntda o'ziniki, repo'da yo'q.
+Kalitni (keystore) EAS o'zi yaratadi va saqlaydi. Tayyor bo'lgach — havola; o'rnatishda Android ogohlantirish ko'rsatadi: ilova do'kondan emas, to'g'ridan-to'g'ri o'rnatiladi.
+Bepul hisobda oyiga 15 tagacha Android build, navbat sekin bo'lishi mumkin. **APK o'zi yangilanmaydi** — ilova o'zgarsa, yangi fayl tayyorlanadi va lendingdagi havola almashtiriladi.
+6-dars uyga vazifasida — tekshiruv fayli: faqat o'z telefoningizga (unda hali telefon so'raydigan eski ro'yxatdan o'tish bor); odamlarga — 7-darsdan keyingi fayl.
+
 ## Prototip internetda — PWA (web-trek namunasi)
 
 `prototip/public/manifest.webmanifest` (nom, ikonkalar 192 va 512 px, `start_url`, `display: standalone`) va HTTPS manzil —
@@ -315,6 +333,7 @@ Repo'ga yoziladigan darslar: 1–10; 11 va 12 (pitch) — repo'ga yozmaydi, tegi
 | `m12-dars-04-done` | 4 · loyiha kuni: jonli xabar va eslatma | xona `oyin-{id}`: «O'yin» ochilganda `oyin-ochildi`, yopilganda `oyin-yopildi`; Backend xonaga `korayotganlar-ozgardi` `{ oyinId, soni }` (uzilganda ham) — «O'yin» ekranida «Hozir ko'ryapti: N». Jonli xabarlar (`mobil/src/ulanish.ts`, ko'rinishi `_layout.tsx`): hodisadan keyingi javob oldingisi bilan solishtiriladi; faqat o'ziga tegishli o'yin (`GET /oyinlar` ga `menTashkilotchiman`), o'z harakati uchun emas, ismsiz. Eslatma (`expo-notifications`, `oyin/[id].tsx`): «Qo'shilaman» → o'yindan bir soat oldin, chiqilganda bekor, bitta o'yinga bitta. Qayta ulanish maxsus boshqarilmaydi |
 | `m12-dars-05-start` | 5 · boshlanish | `m12-dars-04-done` + `README.md` «Real vaqt» da eslatma: «bu holatda uch muammo bor — 5-darsda topiladi». Kod — agent «bajardim» deganidan keyingi holat (chekka holatlar tekshirilmagan) |
 | `m12-dars-05-done` | 5 · buzamiz va tuzatamiz | uch muammo tuzatilgan (`mobil/src/ulanish.ts`, `src/app/oyin/[id].tsx`): qayta ulanganda ro'yxat qayta so'raladi · `oyin-ozgardi` tinglovchisi bir marta, `connect` dan tashqarida · qayta ulanganda ochiq o'yin xonasiga qayta kiradi. `BUZISH.md` — uch urinish (buzildi · buzilmadi · buzildi), tuzatish va qayta tekshiruv natijasi; README eslatmasi o'rnida — tuzatilganlar |
+| `m12-dars-06-done` | 6 · kanallar va birinchi post | `lending/index.html`: havoladagi kanal belgisi (`?kanal=guruh` · `sinf` · `instagram`; `URLSearchParams`) o'qiladi — Umami'ga `tashrif` hodisasi `{ kanal }`, belgi bo'lmasa `belgisiz`. Uyga vazifadan (mobil trek): `mobil/eas.json` — `preview` profili (Android `buildType: apk`, `env.EXPO_PUBLIC_API_URL` — namuna manzil); README «O'rnatish fayli — APK» |
 
 ## Ortda qoldingizmi
 
