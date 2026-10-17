@@ -15,6 +15,9 @@ export type Oyin = {
   // kirgan o'yinchi kelishini tasdiqlaganmi va hozir «Kelaman» bosa oladimi (qoidani Backend hisoblaydi)
   menTasdiqlaganman: boolean;
   menTasdiqlayOlaman: boolean;
+  // navbatdagilar soni va kirgan o'yinchi navbatdami
+  navbatda: number;
+  menNavbatdaman: boolean;
 };
 
 export const oyinlarniOl = () => sora<Oyin[]>('/oyinlar');

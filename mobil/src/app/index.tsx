@@ -87,6 +87,7 @@ export default function Oyinlar() {
                     {o.qoshilgan} / {o.kerak}
                     {o.qoshilgan >= o.kerak && <Text style={s.toldi}> · to'ldi</Text>}
                   </Text>
+                  {o.navbatda > 0 && <Text style={s.maydon}>Navbatda: {o.navbatda}</Text>}
                 </BosiladiganKarta>
               ))}
             </View>

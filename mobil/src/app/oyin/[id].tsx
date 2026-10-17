@@ -1,6 +1,6 @@
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { sora } from '@/api';
@@ -12,7 +12,8 @@ import { R } from '@/ranglar';
 
 // O'yin: bitta fayl har o'yinni ochadi — id manzildan keladi (/oyin/2 → id = '2').
 // Ma'lumot GET /oyinlar dan (alohida yo'l yo'q): «8 / 10», qo'shilganlar va tugma.
-// Ekran ochilganda va pastga tortib yangilaganda qayta so'raladi. To'lgan o'yinda «Qo'shilaman» o'rnida «O'yin to'ldi».
+// Ekran ochilganda va pastga tortib yangilaganda qayta so'raladi.
+// To'lgan o'yinda «Qo'shilaman» o'rnida «Navbatga yozilish»; qo'shilgan va navbatdagi o'yinchida — «O'yindan chiqish».
 export default function OyinEkrani() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -45,19 +46,26 @@ export default function OyinEkrani() {
     setTortildi(false);
   }
 
-  // «Qo'shilaman» → POST /oyinlar/:id/qoshilish. Javob kelguncha tugma o'chiq — ikki marta bosilmaydi.
-  // 409 bo'lsa («O'yin to'ldi», «Siz bu o'yinga qo'shilgansiz») — Backend xabari tugma ostida.
-  async function qoshil() {
+  // «Qo'shilaman» → …/qoshilish · «Navbatga yozilish» → …/navbat · «O'yindan chiqish» → …/chiqish.
+  // Javob kelguncha tugmalar o'chiq — ikki marta bosilmaydi. 409 bo'lsa — Backend xabari tugma ostida.
+  async function harakat(yol: 'qoshilish' | 'navbat' | 'chiqish') {
     setXabar('');
     setKutish(true);
     try {
-      await sora(`/oyinlar/${id}/qoshilish`, { method: 'POST' });
+      await sora(`/oyinlar/${id}/${yol}`, { method: 'POST' });
     } catch (e) {
       setXabar((e as Error).message);
     } finally {
       await yukla();
       setKutish(false);
     }
+  }
+
+  function chiq() {
+    Alert.alert('Rostdan chiqasizmi?', undefined, [
+      { text: "Yo'q", style: 'cancel' },
+      { text: 'Ha', style: 'destructive', onPress: () => harakat('chiqish') },
+    ]);
   }
 
   // «Kelaman» → POST /oyinlar/:id/tasdiq. Tugma faqat menTasdiqlayOlaman bo'lsa chiqadi, lekin ruxsatni baribir
@@ -104,6 +112,9 @@ export default function OyinEkrani() {
               <Text style={s.hisob}> / {oyin.kerak}</Text>
             </View>
             <Doiralar oyin={oyin} />
+            {(oyin.navbatda > 0 || oyin.qoshilgan >= oyin.kerak) && (
+              <Text style={s.navbat}>Navbatda: {oyin.navbatda}</Text>
+            )}
             {oyin.tasdiqlagan !== null && (
               <Text style={s.tasdiq}>
                 Kelishini tasdiqladi: {oyin.tasdiqlagan} / {oyin.qoshilgan}
@@ -115,17 +126,24 @@ export default function OyinEkrani() {
       {oyin && (
         <View style={s.past}>
           {!!xabar && <Text style={s.xato}>{xabar}</Text>}
-          {oyin.menQoshilganman ? (
+          {oyin.menNavbatdaman ? (
+            <Text style={s.navbatdasiz}>Navbatdasiz</Text>
+          ) : oyin.menQoshilganman ? (
             <Tugma matn="Qo'shildingiz" onPress={() => {}} ochiq />
           ) : oyin.qoshilgan >= oyin.kerak ? (
-            <Tugma matn="O'yin to'ldi" onPress={() => {}} ochiq />
+            <Tugma matn="Navbatga yozilish" onPress={() => harakat('navbat')} ochiq={kutish} />
           ) : (
-            <Tugma matn="Qo'shilaman" onPress={qoshil} ochiq={kutish} />
+            <Tugma matn="Qo'shilaman" onPress={() => harakat('qoshilish')} ochiq={kutish} />
           )}
           {oyin.menTasdiqlaganman ? (
             <Tugma matn="Tasdiqladingiz" onPress={() => {}} ochiq />
           ) : (
             oyin.menTasdiqlayOlaman && <Tugma matn="Kelaman" onPress={tasdiqla} ochiq={kutish} />
+          )}
+          {(oyin.menQoshilganman || oyin.menNavbatdaman) && (
+            <Pressable style={s.chiqish} disabled={kutish} onPress={chiq}>
+              <Text style={s.chiqishMatn}>O'yindan chiqish</Text>
+            </Pressable>
           )}
           {!!tasdiqXabar && <Text style={s.xato}>{tasdiqXabar}</Text>}
         </View>
@@ -175,6 +193,10 @@ const s = StyleSheet.create({
   belgi: { color: '#fff', fontSize: 16, fontWeight: '700', textAlign: 'center', lineHeight: 28 },
   tasdiq: { fontSize: 16, fontWeight: '600', color: R.matn, marginTop: 16 },
   siz: { fontSize: 12, color: R.kulrang },
+  navbat: { fontSize: 15, color: R.kulrang, marginTop: 12 },
+  navbatdasiz: { fontSize: 16, fontWeight: '600', color: R.matn, textAlign: 'center', padding: 8 },
+  chiqish: { padding: 14, borderRadius: 12, borderWidth: 1, borderColor: '#C0392B', alignItems: 'center' },
+  chiqishMatn: { color: '#C0392B', fontSize: 16, fontWeight: '600' },
   past: { padding: 20, gap: 10 },
   xato: { color: '#C0392B', fontSize: 15, textAlign: 'center' },
 });

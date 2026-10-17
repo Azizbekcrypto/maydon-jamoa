@@ -99,6 +99,21 @@ Ekran o'zi yangilanishi hozircha yo'q (WebSocket — roadmap'da «keyinroq», 12
 | Backend | NestJS va TypeORM, Render |
 | Database | Neon (PostgreSQL) |
 
+## Backend yo'llari
+
+Yopiq yo'llar (`/oyinlar` bilan boshlanganlari) — faqat token bilan (`Authorization: Bearer <token>`), tokensiz `401`.
+
+| Yo'l | Nima qiladi | Javoblar |
+|---|---|---|
+| `POST /royxat` `{ ism, telefon, parol }` | o'yinchi `oyinchilar` ga, parol — faqat hash (`parol_hash`) | `201` · `400` bo'sh · `409` «Bu telefon ro'yxatdan o'tgan» |
+| `POST /kirish` `{ telefon, parol }` | token (30 kun) | `200 { token }` · `401` «Telefon yoki parol noto'g'ri» |
+| `GET /oyinlar` | yagona ro'yxat yo'li, eng yangi e'lon tepada: `id, kun, soat, maydon, kerak, qoshilgan, menQoshilganman, tasdiqlagan, menTasdiqlaganman, menTasdiqlayOlaman, navbatda, menNavbatdaman` | `200` |
+| `POST /oyinlar` `{ kun, soat, maydon, kerak }` | e'lon; tashkilotchi — token egasi | `201` · `400` «Yozilmagan: …» |
+| `POST /oyinlar/:id/qoshilish` | `qoshildi` | `201` · `409` «O'yin to'ldi» / «Siz bu o'yinga qo'shilgansiz» |
+| `POST /oyinlar/:id/tasdiq` | `keladi` — faqat o'yin kuni (Toshkent vaqti) va qo'shilgan o'yinchiga | `201` · `403` «Tasdiq faqat o'yin kuni» / «Siz bu o'yinga qo'shilmagansiz» |
+| `POST /oyinlar/:id/navbat` | `navbatda` — faqat to'lgan o'yinga | `201` · `409` |
+| `POST /oyinlar/:id/chiqish` | `chiqdi`; qo'shilgan chiqsa — navbatdagi birinchi `qoshildi` | `201` · `409` |
+
 ## Ishga tushirish
 
 Ikki terminal kerak: Backend va ilova. Avval `.env` fayllari (`.env.example` dan nusxa oling, qiymatlarni o'zingiznikiga almashtiring):
@@ -196,7 +211,13 @@ Telefonda: Android Chrome — «⋮» → «Install and create shortcut»; iPhon
 ## Darslar va teglar
 
 Teglar: `m11-dars-NN-start` — dars boshidagi holat, `m11-dars-NN-done` — dars oxiridagi holat.
-`m11-dars-07-start` — boshlang'ich holat (`main`); keyingi dars boshi — oldingi dars oxiri. Yechim commitlari — `yechim` tarmog'ida.
+`m11-dars-07-start` — boshlang'ich holat (`main`: shu README va `.gitignore`); keyingi dars boshi — oldingi dars oxiri
+(`m11-dars-08-start` = `m11-dars-07-done` va hokazo). Yechim commitlari — `yechim` tarmog'ida.
+Kod yoziladigan darslar: 7, 8, 9, 10, 11, 12, 13, 14.
+
+`m11-dars-07-start` · `m11-dars-07-done` · `m11-dars-08-start` · `m11-dars-08-done` · `m11-dars-09-start` · `m11-dars-09-done` ·
+`m11-dars-10-start` · `m11-dars-10-done` · `m11-dars-11-start` · `m11-dars-11-done` · `m11-dars-12-start` · `m11-dars-12-done` ·
+`m11-dars-13-start` · `m11-dars-13-done` · `m11-dars-14-start` · `m11-dars-14-done`
 
 | Teg | Dars | Nima bor |
 |---|---|---|
@@ -207,6 +228,7 @@ Teglar: `m11-dars-NN-start` — dars boshidagi holat, `m11-dars-NN-done` — dar
 | `m11-dars-11-done` | 11 · 1-asosiy funksiya: o'yin e'loni va qo'shilish | `POST /oyinlar` (`kun`, `soat`, `maydon`, `kerak`; tashkilotchi — token egasi, formada «kim» yo'q; bo'sh maydon bo'lsa `400` «Yozilmagan: …»; yangi e'lon «0 / N»); `POST /oyinlar/:id/qoshilish` → `ishtirokchilar` ga `qoshildi` (to'lgan o'yinda `409` «O'yin to'ldi», takror — `409` «Siz bu o'yinga qo'shilgansiz»; (`oyin_id`, `oyinchi_id`) — Database kaliti); `GET /oyinlar` da `qoshilgan` (`qoshildi` + `keladi`) va `menQoshilganman`; namuna: 9 ta namuna o'yinchi (`+998 90 000 00 11` … `19`), qo'shilganlar 8 · 6 · 4 · 9. Ilovada: «E'lon berish» Backend'ga (kun — bugundan 7 kun ichidan), «8 / 10» Backend'dan, «Qo'shilaman» → «Qo'shildingiz», ekran ochilganda va pastga tortilganda qayta so'raladi, to'lgan o'yin kartasida «to'ldi», «O'yin» ekranida «O'yin to'ldi» |
 | `m11-dars-12-done` | 12 · 2-asosiy funksiya: o'yin kuni tasdiq | `POST /oyinlar/:id/tasdiq` → holat `keladi`; ruxsatni Backend beradi: faqat o'yin kuni («bugun» — Toshkent vaqti) va faqat qo'shilgan o'yinchiga, aks holda `403` «Tasdiq faqat o'yin kuni» yoki «Siz bu o'yinga qo'shilmagansiz» (tokensiz `401`); `GET /oyinlar` da `tasdiqlagan` (faqat o'yinni e'lon qilganga, boshqalarga `null`), `menTasdiqlaganman`, `menTasdiqlayOlaman` (…/tasdiq dagi o'sha qoida). Ilovada: «Kelaman» faqat ruxsat bor joyda → «Tasdiqladingiz» (qayta ochilganda ham); tashkilotchida «Kelishini tasdiqladi: 7 / 9», tasdiqlaganlar doirasi yashil ✓ — ekran ochilganda va pastga tortilganda |
 | `m11-dars-13-done` | 13 · sinov tuzatishi | sinovdagi eng muhim to'xtash (3 kishidan 3 tasi Shanba 18:00 dagi o'yinni topishda to'xtadi) tuzatilgan: «O'yinlar» kun va soat bo'yicha, har kun o'z sarlavhasi bilan — faqat ilovada (`mobil/src/app/index.tsx`), `GET /oyinlar` tartibi o'zgarmagan; `SINOV.md` — vazifa, «Vazifani bajardi: 2 / 3», to'xtashlar jadvali (tuzatildi · keyin) va qayta sinov |
+| `m11-dars-14-done` | 14 · 3-asosiy funksiya: chiqish va navbat | `POST /oyinlar/:id/navbat` — faqat to'lgan o'yinga (`navbatda`; to'lmagan bo'lsa `409`), `POST /oyinlar/:id/chiqish` — qo'shilgan yoki navbatdagi o'yinchi `chiqdi`; qo'shilgan chiqsa, navbatga birinchi yozilgan (`yaratilgan` bo'yicha) `qoshildi` bo'ladi; qo'shilish, navbat va chiqish — bitta ish (tranzaksiya, o'yin qatori qulflanadi): oxirgi joyga ikki so'rov bir lahzada kelsa ham bitta odam yoziladi, ikkinchisi kutadi va `409` «O'yin to'ldi» oladi; qayta yozilganda — o'sha bitta qator; `GET /oyinlar` da `navbatda`, `menNavbatdaman`. Ilovada: to'lgan o'yinda «Navbatga yozilish», «Navbatdasiz», «O'yindan chiqish» → «Rostdan chiqasizmi?» (Yo'q · Ha), kartada «Navbatda: N», «O'yin» ekranida ham pastga tortib yangilash |
 
 ## Ortda qoldingizmi
 
