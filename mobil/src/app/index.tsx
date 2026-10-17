@@ -81,6 +81,7 @@ export default function Oyinlar() {
           <Text style={s.sarlavha}>O'yinlar</Text>
           <UlanishBelgisi />
         </View>
+        <UlanishIzohi />
         {!oyinlar && !xato && <ActivityIndicator color={R.yashil} />}
         {!!xato && <Text style={s.xato}>O'yinlarni yuklab bo'lmadi: {xato}</Text>}
         {kunlarBoyicha(oyinlar ?? []).map((guruh) => (
@@ -116,6 +117,18 @@ const BELGI = {
   ulanmagan: { matn: 'Ulanmagan', rang: R.kulrang },
 } as const;
 
+// Ulanish holatlari (README «Ulanish holatlari»): ulangan — o'zgarishlar o'zi ko'rinadi;
+// ulanmoqda — ro'yxat ekranda qoladi, lekin eskirgan bo'lishi mumkin; ulanmagan — pastga tortib yangilash ishlaydi
+function UlanishIzohi() {
+  const h = useUlanishHolati();
+  if (h === 'ulangan') return null;
+  return (
+    <Text style={s.izoh}>
+      {h === 'ulanmoqda' ? "Ro'yxat eskirgan bo'lishi mumkin" : 'Yangilash uchun pastga torting'}
+    </Text>
+  );
+}
+
 function UlanishBelgisi() {
   const b = BELGI[useUlanishHolati()];
   return (
@@ -133,6 +146,7 @@ const s = StyleSheet.create({
   chiqish: { fontSize: 14, color: R.kulrang },
   ichi: { padding: 20, paddingTop: 4 },
   sarlavhaQator: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+  izoh: { fontSize: 14, color: R.kulrang, marginTop: -10, marginBottom: 14 },
   sarlavha: { fontSize: 26, fontWeight: '700', color: R.matn },
   belgi: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   nuqta: { width: 8, height: 8, borderRadius: 4 },
