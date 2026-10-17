@@ -18,6 +18,8 @@ export type UlanishHolati = 'ulangan' | 'ulanmoqda' | 'ulanmagan';
 
 let ulanish: Socket | null = null;
 let ilovaHolati: NativeEventSubscription | null = null;
+// Hozir ochiq turgan «O'yin» ekrani (yo'q bo'lsa — null)
+let ochiqOyin: number | null = null;
 let holat: UlanishHolati = 'ulanmagan';
 const holatniKuzatuvchilar = new Set<(h: UlanishHolati) => void>();
 
@@ -45,13 +47,20 @@ export async function ulan() {
 
   ulanish = io(API, { auth: { token } });
   holatQoy('ulanmoqda');
+  // connect birinchi ulanishda VA har qayta ulanishda ishlaydi — shuning uchun ichida tinglovchi qo'shilmaydi
+  // (aks holda har qayta ulanishda yana bittasi qo'shilib, bitta hodisa ikki marta ishlaydi — takror hodisa).
+  // Ichida faqat: qayta so'rash (uzilish paytida yuborilgan hodisa keyin kelmaydi) va ochiq o'yin xonasiga qayta kirish
+  // (uzilganda ulanish hamma xonadan chiqqan).
   ulanish.on('connect', () => {
     holatQoy('ulangan');
-    ulanish?.on('oyin-ozgardi', async () => {
-      const oldingi = oxirgiRoyxat();
-      const yangi = await qaytaSora();
-      if (oldingi && yangi) jonliXabarlar(oldingi, yangi).forEach(jonliXabarQosh);
-    });
+    qaytaSora();
+    if (ochiqOyin !== null) ulanish?.emit('oyin-ochildi', { oyinId: ochiqOyin });
+  });
+  // Tinglovchi bir marta — connect dan tashqarida
+  ulanish.on('oyin-ozgardi', async () => {
+    const oldingi = oxirgiRoyxat();
+    const yangi = await qaytaSora();
+    if (oldingi && yangi) jonliXabarlar(oldingi, yangi).forEach(jonliXabarQosh);
   });
   ulanish.on('disconnect', uzilishdanKeyin);
   ulanish.on('connect_error', uzilishdanKeyin);
@@ -140,9 +149,16 @@ export function useJonliXabarlar(): JonliXabar[] {
   return x;
 }
 
-// Backend'ga hodisa yuborish (masalan, «O'yin» ekrani ochildi / yopildi). Ulanish bo'lmasa — hech narsa qilmaydi.
-export function xabarYubor(nom: string, malumot: unknown) {
-  ulanish?.emit(nom, malumot);
+// «O'yin» ekrani ochildi / yopildi: Backend o'yin xonasiga qo'shadi / chiqaradi («Hozir ko'ryapti»).
+// Ochiq o'yin eslab qolinadi — qayta ulanganda o'sha xonaga qayta kiriladi.
+export function oyinniOch(oyinId: number) {
+  ochiqOyin = oyinId;
+  ulanish?.emit('oyin-ochildi', { oyinId });
+}
+
+export function oyinniYop(oyinId: number) {
+  if (ochiqOyin === oyinId) ochiqOyin = null;
+  ulanish?.emit('oyin-yopildi', { oyinId });
 }
 
 // «O'yin» ekrani uchun: shu o'yin ekranini hozir ochib turgan ulanishlar soni (hali kelmagan bo'lsa — null)

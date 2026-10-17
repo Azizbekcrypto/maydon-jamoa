@@ -24,8 +24,8 @@ function kunlarBoyicha(oyinlar: Oyin[]): { kun: string; oyinlar: Oyin[] }[] {
 }
 
 // O'yinlar: ro'yxat Backend'dan (GET /oyinlar, token bilan). Token bo'lmasa — «Kirish». To'lgan o'yinda son yonida «to'ldi».
-// «8 / 10» — real vaqt nuqtasi: ekran ochilganda, pastga tortib yangilaganda va oyin-ozgardi hodisasidan keyin
-// (ulanish.ts qayta so'raydi, ro'yxat shu javobdan o'zi yangilanadi — pastga tortmasdan).
+// «8 / 10» — real vaqt nuqtasi: ekran ochilganda, pastga tortib yangilaganda, oyin-ozgardi hodisasidan keyin va
+// qayta ulanganda (uzilish paytidagi hodisa kelmaydi) — ulanish.ts qayta so'raydi, ro'yxat shu javobdan o'zi yangilanadi.
 // Token o'qilgach ilova Backend'ga doimiy ulanadi; sarlavha yonida — ulanish belgisi.
 export default function Oyinlar() {
   const router = useRouter();

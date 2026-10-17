@@ -10,7 +10,7 @@ import { Son } from '@/components/son';
 import { kunNomi } from '@/kun';
 import { oyinlarniOl, useOyinlar, type Oyin } from '@/oyin';
 import { R } from '@/ranglar';
-import { useKorayotganlar, xabarYubor } from '@/ulanish';
+import { oyinniOch, oyinniYop, useKorayotganlar } from '@/ulanish';
 
 // Eslatma (rejalashtirilgan, expo-notifications): «Qo'shilaman» muvaffaqiyatli bo'lganda ilova eslatmani
 // o'yindan bir soat oldinga qo'yadi — sarlavha «Maydon Jamoa», matn «Bugun, 18:00 · Mahalla maydoni».
@@ -61,6 +61,7 @@ const eslatmaBekor = (oyinId: number) => Notifications.cancelScheduledNotificati
 // To'lgan o'yinda «Qo'shilaman» o'rnida «Navbatga yozilish»; qo'shilgan va navbatdagi o'yinchida — «O'yindan chiqish».
 // «Hozir ko'ryapti: N»: ekran ochilganda Backend'ga oyin-ochildi, yopilganda oyin-yopildi — ulanish o'yin xonasiga
 // kiradi va chiqadi; son korayotganlar-ozgardi bilan keladi (o'zim ham sanalaman, ism ko'rsatilmaydi).
+// Ochiq o'yin ulanish.ts da eslab qolinadi: qayta ulanganda ilova shu xonaga qayta kiradi.
 export default function OyinEkrani() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -84,8 +85,8 @@ export default function OyinEkrani() {
   useFocusEffect(
     useCallback(() => {
       yukla();
-      xabarYubor('oyin-ochildi', { oyinId: Number(id) });
-      return () => xabarYubor('oyin-yopildi', { oyinId: Number(id) });
+      oyinniOch(Number(id));
+      return () => oyinniYop(Number(id));
     }, [yukla, id]),
   );
   const korayotgan = useKorayotganlar(Number(id));
