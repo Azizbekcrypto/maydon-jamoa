@@ -1,0 +1,171 @@
+:root {
+  --yashil: #2e9e4f;
+  --matn: #1d2329;
+  --kulrang: #6b7580;
+  --chiziq: #d9dee3;
+  --fon: #f5f7f8;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: var(--matn);
+  background: var(--fon);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.ilova {
+  max-width: 960px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: #fff;
+}
+
+.ilova-nomi {
+  padding: 14px 20px;
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--yashil);
+  border-bottom: 1px solid var(--chiziq);
+}
+
+.ekran {
+  padding: 16px 20px 24px;
+}
+
+h1 {
+  margin: 8px 0 16px;
+  font-size: 24px;
+}
+
+/* O'yinlar ro'yxati: kartalar yonma-yon */
+.oyinlar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.karta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid var(--chiziq);
+  border-radius: 12px;
+  background: #fff;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.karta-vaqt {
+  font-weight: 600;
+}
+
+.karta-maydon {
+  color: var(--kulrang);
+}
+
+.karta-hisob {
+  font-weight: 700;
+  color: var(--yashil);
+}
+
+.tugma {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  border: 0;
+  border-radius: 12px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tugma.asosiy {
+  background: var(--yashil);
+  color: #fff;
+}
+
+.tugma:disabled {
+  background: var(--chiziq);
+  color: var(--kulrang);
+  cursor: default;
+}
+
+.orqaga {
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--yashil);
+  cursor: pointer;
+}
+
+.maydon {
+  margin: 0 0 8px;
+  color: var(--kulrang);
+}
+
+.hisob {
+  margin: 0 0 16px;
+  font-size: 36px;
+  font-weight: 700;
+}
+
+.doiralar {
+  display: grid;
+  grid-template-columns: repeat(5, 40px);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.doira-joy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.doira {
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--chiziq);
+  border-radius: 50%;
+}
+
+.doira.toli {
+  background: var(--yashil);
+  border-color: var(--yashil);
+}
+
+.siz {
+  font-size: 12px;
+  color: var(--kulrang);
+}
+
+.forma {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.forma label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--kulrang);
+}
+
+.forma input {
+  padding: 12px;
+  border: 1px solid var(--chiziq);
+  border-radius: 10px;
+  font: inherit;
+  color: var(--matn);
+}
