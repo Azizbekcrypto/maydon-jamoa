@@ -22,6 +22,12 @@ import { TokenGuard, type Sorov } from './token.guard.js';
 // «8 / 10» dagi 8 — shu o'yinda holati qoshildi yoki keladi bo'lgan qatorlar (navbatda, chiqdi sanalmaydi)
 export const QOSHILGAN = ['qoshildi', 'keladi'];
 
+// Tasdiq qoidasi (bitta joyda — …/tasdiq ham, GET /oyinlar dagi menTasdiqlayOlaman ham shundan):
+// o'yin kuni (Toshkent vaqti) va o'yinga qo'shilgan
+function tasdiqRuxsati(kun: string, holat: string, bugun: string): boolean {
+  return kun === bugun && QOSHILGAN.includes(holat);
+}
+
 @Controller('oyinlar')
 @UseGuards(TokenGuard)
 export class OyinlarController {
@@ -32,8 +38,11 @@ export class OyinlarController {
 
   // GET /oyinlar — faqat token bilan (tokensiz 401). Yagona ro'yxat yo'li: «O'yin» ekrani ham shundan o'qiydi.
   // Eng yangi e'lon tepada: yaratilgan bo'yicha kamayib.
-  // → [{ id, kun: '2026-10-11', soat: '17:00', maydon, kerak, qoshilgan, menQoshilganman, tasdiqlagan }]
+  // → [{ id, kun: '2026-10-11', soat: '17:00', maydon, kerak, qoshilgan, menQoshilganman,
+  //      tasdiqlagan, menTasdiqlaganman, menTasdiqlayOlaman }]
   // tasdiqlagan — kelishini tasdiqlaganlar (keladi) soni; faqat o'yinni e'lon qilgan o'yinchiga, boshqalarga — null.
+  // menTasdiqlayOlaman — POST …/tasdiq dagi o'sha qoida (o'yin kuni, qo'shilgan) va hali tasdiqlamagan:
+  // «Kelaman» faqat shunda chiqadi, ilova sanani o'zi solishtirmaydi.
   @Get()
   async royxat(@Req() sorov: Sorov) {
     const men = sorov.oyinchiId!;
@@ -53,13 +62,17 @@ export class OyinlarController {
     const meniki = new Map(
       (await this.ishtirokchilar.find({ where: { oyinchi_id: men } })).map((i) => [i.oyin_id, i.holat]),
     );
+    const bugun = bugunToshkent();
     return oyinlar.map(({ tashkilotchi_id, ...o }) => {
       const son = sonlar.get(o.id);
+      const holat = meniki.get(o.id) ?? '';
       return {
         ...o,
         qoshilgan: Number(son?.qoshilgan ?? 0),
-        menQoshilganman: QOSHILGAN.includes(meniki.get(o.id) ?? ''),
+        menQoshilganman: QOSHILGAN.includes(holat),
         tasdiqlagan: tashkilotchi_id === men ? Number(son?.tasdiqlagan ?? 0) : null,
+        menTasdiqlaganman: holat === 'keladi',
+        menTasdiqlayOlaman: tasdiqRuxsati(o.kun, holat, bugun) && holat !== 'keladi',
       };
     });
   }
@@ -126,7 +139,9 @@ export class OyinlarController {
     if (oyin.kun !== bugunToshkent()) throw new ForbiddenException("Tasdiq faqat o'yin kuni");
 
     const qator = await this.ishtirokchilar.findOneBy({ oyin_id: id, oyinchi_id: men });
-    if (!qator || !QOSHILGAN.includes(qator.holat)) throw new ForbiddenException("Siz bu o'yinga qo'shilmagansiz");
+    if (!tasdiqRuxsati(oyin.kun, qator?.holat ?? '', bugunToshkent())) {
+      throw new ForbiddenException("Siz bu o'yinga qo'shilmagansiz");
+    }
 
     await this.ishtirokchilar.update({ oyin_id: id, oyinchi_id: men }, { holat: 'keladi' });
     return { holat: 'keladi' };
