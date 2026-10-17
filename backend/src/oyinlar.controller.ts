@@ -3,6 +3,7 @@ import {
   Body,
   ConflictException,
   Controller,
+  ForbiddenException,
   Get,
   NotFoundException,
   Param,
@@ -15,7 +16,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Ishtirokchi } from './ishtirokchi.entity.js';
 import { Oyin } from './oyin.entity.js';
-import { sanaTogrimi } from './sana.js';
+import { bugunToshkent, sanaTogrimi } from './sana.js';
 import { TokenGuard, type Sorov } from './token.guard.js';
 
 // «8 / 10» dagi 8 — shu o'yinda holati qoshildi yoki keladi bo'lgan qatorlar (navbatda, chiqdi sanalmaydi)
@@ -106,5 +107,22 @@ export class OyinlarController {
       throw e;
     }
     return { holat: 'qoshildi' };
+  }
+
+  // POST /oyinlar/:id/tasdiq → 201 { holat: 'keladi' } — o'yin kuni «Kelaman».
+  // Ruxsatni Backend beradi (har so'rovda): faqat o'yin kuni («bugun» — Toshkent vaqti) va faqat o'yinga qo'shilgan
+  // o'yinchiga (holati qoshildi yoki keladi). Aks holda 403 va sabab — jadval o'zgarmaydi. Token yo'q — 401.
+  @Post(':id/tasdiq')
+  async tasdiq(@Req() sorov: Sorov, @Param('id', ParseIntPipe) id: number) {
+    const men = sorov.oyinchiId!;
+    const oyin = await this.oyinlar.findOneBy({ id });
+    if (!oyin) throw new NotFoundException("O'yin topilmadi");
+    if (oyin.kun !== bugunToshkent()) throw new ForbiddenException("Tasdiq faqat o'yin kuni");
+
+    const qator = await this.ishtirokchilar.findOneBy({ oyin_id: id, oyinchi_id: men });
+    if (!qator || !QOSHILGAN.includes(qator.holat)) throw new ForbiddenException("Siz bu o'yinga qo'shilmagansiz");
+
+    await this.ishtirokchilar.update({ oyin_id: id, oyinchi_id: men }, { holat: 'keladi' });
+    return { holat: 'keladi' };
   }
 }

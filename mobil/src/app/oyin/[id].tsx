@@ -20,6 +20,9 @@ export default function OyinEkrani() {
   const [xabar, setXabar] = useState('');
   const [kutish, setKutish] = useState(false);
   const [tortildi, setTortildi] = useState(false);
+  // «Kelaman»: shu ekranda tasdiqlandimi va Backend rad etgan bo'lsa — sababi
+  const [tasdiqladim, setTasdiqladim] = useState(false);
+  const [tasdiqXabar, setTasdiqXabar] = useState('');
 
   const yukla = useCallback(async () => {
     try {
@@ -52,6 +55,22 @@ export default function OyinEkrani() {
       await sora(`/oyinlar/${id}/qoshilish`, { method: 'POST' });
     } catch (e) {
       setXabar((e as Error).message);
+    } finally {
+      await yukla();
+      setKutish(false);
+    }
+  }
+
+  // «Kelaman» → POST /oyinlar/:id/tasdiq. Ruxsatni Backend beradi: faqat o'yin kuni va faqat qo'shilgan o'yinchiga;
+  // aks holda 403 va sabab («Tasdiq faqat o'yin kuni» yoki «Siz bu o'yinga qo'shilmagansiz») — tugma ostida.
+  async function tasdiqla() {
+    setTasdiqXabar('');
+    setKutish(true);
+    try {
+      await sora(`/oyinlar/${id}/tasdiq`, { method: 'POST' });
+      setTasdiqladim(true);
+    } catch (e) {
+      setTasdiqXabar((e as Error).message);
     } finally {
       await yukla();
       setKutish(false);
@@ -100,6 +119,12 @@ export default function OyinEkrani() {
           ) : (
             <Tugma matn="Qo'shilaman" onPress={qoshil} ochiq={kutish} />
           )}
+          {tasdiqladim ? (
+            <Tugma matn="Tasdiqladingiz" onPress={() => {}} ochiq />
+          ) : (
+            <Tugma matn="Kelaman" onPress={tasdiqla} ochiq={kutish} />
+          )}
+          {!!tasdiqXabar && <Text style={s.xato}>{tasdiqXabar}</Text>}
         </View>
       )}
     </SafeAreaView>
