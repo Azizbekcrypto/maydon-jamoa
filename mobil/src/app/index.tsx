@@ -1,98 +1,51 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { useOyinlar } from '@/oyinlar-holati';
+import { R } from '@/ranglar';
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+// O'yinlar: kartalar (kun, soat, maydon, «8 / 10»), pastda «E'lon berish»
+export default function Oyinlar() {
+  const router = useRouter();
+  const { oyinlar } = useOyinlar();
+
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
+    <SafeAreaView style={s.ekran}>
+      <Text style={s.nom}>Maydon Jamoa</Text>
+      <ScrollView contentContainerStyle={s.ichi}>
+        <Text style={s.sarlavha}>O'yinlar</Text>
+        <View style={s.oyinlar}>
+          {oyinlar.map((o) => (
+            <Pressable key={o.id} style={s.karta} onPress={() => router.push(`/oyin/${o.id}`)}>
+              <Text style={s.vaqt}>
+                {o.kun}, {o.soat}
+              </Text>
+              <Text style={s.maydon}>{o.maydon}</Text>
+              <Text style={s.hisob}>
+                {o.qoshilgan} / {o.kerak}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </ScrollView>
+      <Pressable style={s.tugma} onPress={() => router.push('/elon')}>
+        <Text style={s.tugmaMatn}>E'lon berish</Text>
+      </Pressable>
+    </SafeAreaView>
   );
 }
 
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
-  },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
-  },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
-  },
+const s = StyleSheet.create({
+  ekran: { flex: 1, backgroundColor: R.fon },
+  nom: { paddingHorizontal: 20, paddingVertical: 12, fontSize: 18, fontWeight: '700', color: R.yashil },
+  ichi: { padding: 20, paddingTop: 4 },
+  sarlavha: { fontSize: 26, fontWeight: '700', color: R.matn, marginBottom: 16 },
+  oyinlar: { gap: 12 },
+  karta: { padding: 14, borderWidth: 1, borderColor: R.chiziq, borderRadius: 12, gap: 4 },
+  vaqt: { fontSize: 16, fontWeight: '600', color: R.matn },
+  maydon: { fontSize: 15, color: R.kulrang },
+  hisob: { fontSize: 16, fontWeight: '700', color: R.yashil },
+  tugma: { margin: 20, padding: 16, borderRadius: 12, backgroundColor: R.yashil, alignItems: 'center' },
+  tugmaMatn: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });
