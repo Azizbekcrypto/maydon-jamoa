@@ -32,30 +32,36 @@ export class OyinlarController {
 
   // GET /oyinlar — faqat token bilan (tokensiz 401). Yagona ro'yxat yo'li: «O'yin» ekrani ham shundan o'qiydi.
   // Eng yangi e'lon tepada: yaratilgan bo'yicha kamayib.
-  // → [{ id, kun: '2026-10-11', soat: '17:00', maydon, kerak, qoshilgan, menQoshilganman }]
+  // → [{ id, kun: '2026-10-11', soat: '17:00', maydon, kerak, qoshilgan, menQoshilganman, tasdiqlagan }]
+  // tasdiqlagan — kelishini tasdiqlaganlar (keladi) soni; faqat o'yinni e'lon qilgan o'yinchiga, boshqalarga — null.
   @Get()
   async royxat(@Req() sorov: Sorov) {
     const men = sorov.oyinchiId!;
     const oyinlar = await this.oyinlar.find({
-      select: { id: true, kun: true, soat: true, maydon: true, kerak: true },
+      select: { id: true, kun: true, soat: true, maydon: true, kerak: true, tashkilotchi_id: true },
       order: { yaratilgan: 'DESC', id: 'DESC' },
     });
-    const sanoq: { oyin_id: number; qoshilgan: string }[] = await this.ishtirokchilar
+    const sanoq: { oyin_id: number; qoshilgan: string; tasdiqlagan: string }[] = await this.ishtirokchilar
       .createQueryBuilder('i')
       .select('i.oyin_id', 'oyin_id')
       .addSelect('COUNT(*)', 'qoshilgan')
+      .addSelect(`COUNT(*) FILTER (WHERE i.holat = 'keladi')`, 'tasdiqlagan')
       .where('i.holat IN (:...holat)', { holat: QOSHILGAN })
       .groupBy('i.oyin_id')
       .getRawMany();
-    const qoshilgan = new Map(sanoq.map((q) => [q.oyin_id, Number(q.qoshilgan)]));
+    const sonlar = new Map(sanoq.map((q) => [q.oyin_id, q]));
     const meniki = new Map(
       (await this.ishtirokchilar.find({ where: { oyinchi_id: men } })).map((i) => [i.oyin_id, i.holat]),
     );
-    return oyinlar.map((o) => ({
-      ...o,
-      qoshilgan: qoshilgan.get(o.id) ?? 0,
-      menQoshilganman: QOSHILGAN.includes(meniki.get(o.id) ?? ''),
-    }));
+    return oyinlar.map(({ tashkilotchi_id, ...o }) => {
+      const son = sonlar.get(o.id);
+      return {
+        ...o,
+        qoshilgan: Number(son?.qoshilgan ?? 0),
+        menQoshilganman: QOSHILGAN.includes(meniki.get(o.id) ?? ''),
+        tasdiqlagan: tashkilotchi_id === men ? Number(son?.tasdiqlagan ?? 0) : null,
+      };
+    });
   }
 
   // POST /oyinlar { kun: '2026-10-11', soat: '19:00', maydon, kerak } → 201 — yangi e'lon.

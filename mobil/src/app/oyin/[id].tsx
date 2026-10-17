@@ -106,6 +106,11 @@ export default function OyinEkrani() {
               <Text style={s.hisob}> / {oyin.kerak}</Text>
             </View>
             <Doiralar oyin={oyin} />
+            {oyin.tasdiqlagan !== null && (
+              <Text style={s.tasdiq}>
+                Kelishini tasdiqladi: {oyin.tasdiqlagan} / {oyin.qoshilgan}
+              </Text>
+            )}
           </>
         )}
       </ScrollView>
@@ -133,13 +138,22 @@ export default function OyinEkrani() {
 
 // Qo'shilganlar — ismsiz doiralar; jami doira = nechta odam kerak.
 // O'yinchi qo'shilgan bo'lsa, oxirgi to'la doira ostida «Siz».
+// Tashkilotchida: kelishini tasdiqlaganlar doirasi yashil ✓, qolgan qo'shilganlar — kulrang.
 function Doiralar({ oyin }: { oyin: Oyin }) {
   const soni = Math.max(oyin.kerak, oyin.qoshilgan);
+  const tashkilotchi = oyin.tasdiqlagan !== null;
   return (
     <View style={s.doiralar}>
       {Array.from({ length: soni }, (_, i) => (
         <View key={i} style={s.doiraJoy}>
-          <View style={[s.doira, i < oyin.qoshilgan && s.toli]} />
+          <View
+            style={[
+              s.doira,
+              i < oyin.qoshilgan && (tashkilotchi ? s.qoshilgan : s.toli),
+              tashkilotchi && i < (oyin.tasdiqlagan ?? 0) && s.toli,
+            ]}>
+            {tashkilotchi && i < (oyin.tasdiqlagan ?? 0) && <Text style={s.belgi}>✓</Text>}
+          </View>
           {oyin.menQoshilganman && i === oyin.qoshilgan - 1 && <Text style={s.siz}>Siz</Text>}
         </View>
       ))}
@@ -159,6 +173,9 @@ const s = StyleSheet.create({
   doiraJoy: { alignItems: 'center', width: 40 },
   doira: { width: 32, height: 32, borderRadius: 16, borderWidth: 2, borderColor: R.chiziq },
   toli: { backgroundColor: R.yashil, borderColor: R.yashil },
+  qoshilgan: { backgroundColor: R.kulrang, borderColor: R.kulrang },
+  belgi: { color: '#fff', fontSize: 16, fontWeight: '700', textAlign: 'center', lineHeight: 28 },
+  tasdiq: { fontSize: 16, fontWeight: '600', color: R.matn, marginTop: 16 },
   siz: { fontSize: 12, color: R.kulrang },
   past: { padding: 20, gap: 10 },
   xato: { color: '#C0392B', fontSize: 15, textAlign: 'center' },

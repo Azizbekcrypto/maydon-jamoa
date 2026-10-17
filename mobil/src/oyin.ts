@@ -10,6 +10,8 @@ export type Oyin = {
   // qoshildi yoki keladi bo'lganlar — «8 / 10» dagi 8
   qoshilgan: number;
   menQoshilganman: boolean;
+  // kelishini tasdiqlaganlar (keladi) soni — faqat tashkilotchiga keladi, boshqalarga null
+  tasdiqlagan: number | null;
 };
 
 export const oyinlarniOl = () => sora<Oyin[]>('/oyinlar');
