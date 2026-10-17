@@ -179,6 +179,18 @@ h1 {
   color: var(--matn);
 }
 
+/* Telefon kengligida (600 px dan tor oyna): o'yin kartalari bitta ustunda, har biri to'liq enida.
+   Kompyuterda — avvalgidek yonma-yon. */
+@media (max-width: 600px) {
+  .oyinlar {
+    flex-direction: column;
+  }
+
+  .ekran {
+    padding: 12px 16px 20px;
+  }
+}
+
 /* 2) Son o'zgarganda bir lahza kattalashadi va 0,3 s da silliq qaytadi */
 .son {
   display: inline-block;
