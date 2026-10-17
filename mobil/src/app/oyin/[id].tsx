@@ -7,17 +7,19 @@ import { sora } from '@/api';
 import { Tugma } from '@/components/forma';
 import { Son } from '@/components/son';
 import { kunNomi } from '@/kun';
-import { oyinlarniOl, type Oyin } from '@/oyin';
+import { oyinlarniOl, useOyinlar, type Oyin } from '@/oyin';
 import { R } from '@/ranglar';
 
 // O'yin: bitta fayl har o'yinni ochadi — id manzildan keladi (/oyin/2 → id = '2').
 // Ma'lumot GET /oyinlar dan (alohida yo'l yo'q): «8 / 10», qo'shilganlar va tugma.
-// Ekran ochilganda va pastga tortib yangilaganda qayta so'raladi.
+// Ekran ochilganda, pastga tortib yangilaganda va oyin-ozgardi hodisasidan keyin — «O'yinlar» bilan bitta javobdan (oyin.ts).
 // To'lgan o'yinda «Qo'shilaman» o'rnida «Navbatga yozilish»; qo'shilgan va navbatdagi o'yinchida — «O'yindan chiqish».
 export default function OyinEkrani() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [oyin, setOyin] = useState<Oyin | null | undefined>(undefined);
+  const oyinlar = useOyinlar();
+  // undefined — javob hali kelmagan · null — bunday o'yin yo'q
+  const oyin: Oyin | null | undefined = oyinlar ? (oyinlar.find((o) => String(o.id) === id) ?? null) : undefined;
   const [xabar, setXabar] = useState('');
   const [kutish, setKutish] = useState(false);
   const [tortildi, setTortildi] = useState(false);
@@ -26,12 +28,11 @@ export default function OyinEkrani() {
 
   const yukla = useCallback(async () => {
     try {
-      const oyinlar = await oyinlarniOl();
-      setOyin(oyinlar.find((o) => String(o.id) === id) ?? null);
+      await oyinlarniOl();
     } catch (e) {
       setXabar((e as Error).message);
     }
-  }, [id]);
+  }, []);
 
   useFocusEffect(
     useCallback(() => {

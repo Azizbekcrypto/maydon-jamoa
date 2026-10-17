@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+
 import { sora } from '@/api';
 
 // GET /oyinlar javobidagi bitta o'yin. «O'yin» ekrani ham shu ro'yxatdan o'qiydi (alohida yo'l yo'q).
@@ -20,4 +22,28 @@ export type Oyin = {
   menNavbatdaman: boolean;
 };
 
-export const oyinlarniOl = () => sora<Oyin[]>('/oyinlar');
+// Oxirgi GET /oyinlar javobi — ilovada bitta: «O'yinlar» va «O'yin» shu javobdan o'qiydi.
+// Bitta so'rov ochiq turgan ikkala ekranni birga yangilaydi.
+let oxirgi: Oyin[] | null = null;
+const kuzatuvchilar = new Set<(o: Oyin[]) => void>();
+
+export const oxirgiRoyxat = () => oxirgi;
+
+export async function oyinlarniOl(): Promise<Oyin[]> {
+  const royxat = await sora<Oyin[]>('/oyinlar');
+  oxirgi = royxat;
+  kuzatuvchilar.forEach((k) => k(royxat));
+  return royxat;
+}
+
+// Ekran uchun: oxirgi javob va har yangi javob (ekran yopilganda kuzatuvchi olib tashlanadi — ko'payib ketmaydi)
+export function useOyinlar(): Oyin[] | null {
+  const [royxat, setRoyxat] = useState(oxirgi);
+  useEffect(() => {
+    kuzatuvchilar.add(setRoyxat);
+    return () => {
+      kuzatuvchilar.delete(setRoyxat);
+    };
+  }, []);
+  return royxat;
+}

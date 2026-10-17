@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { tokenOchir, tokenOl } from '@/api';
 import { BosiladiganKarta } from '@/components/bosiladigan-karta';
 import { kunNomi } from '@/kun';
-import { oyinlarniOl, type Oyin } from '@/oyin';
+import { oyinlarniOl, useOyinlar, type Oyin } from '@/oyin';
 import { R } from '@/ranglar';
 import { ulan, useUlanishHolati, uzil } from '@/ulanish';
 
@@ -23,13 +23,13 @@ function kunlarBoyicha(oyinlar: Oyin[]): { kun: string; oyinlar: Oyin[] }[] {
   return guruhlar;
 }
 
-// O'yinlar: ro'yxat Backend'dan (GET /oyinlar, token bilan).
-// «8 / 10» — real vaqt nuqtasi: ekran ochilganda va pastga tortib yangilaganda qayta so'raladi
-// (ekran o'zi hali yangilanmaydi). Token bo'lmasa — «Kirish». To'lgan o'yinda son yonida «to'ldi».
-// Token o'qilgach ilova Backend'ga doimiy ulanadi (ulanish.ts); sarlavha yonida — ulanish belgisi.
+// O'yinlar: ro'yxat Backend'dan (GET /oyinlar, token bilan). Token bo'lmasa — «Kirish». To'lgan o'yinda son yonida «to'ldi».
+// «8 / 10» — real vaqt nuqtasi: ekran ochilganda, pastga tortib yangilaganda va oyin-ozgardi hodisasidan keyin
+// (ulanish.ts qayta so'raydi, ro'yxat shu javobdan o'zi yangilanadi — pastga tortmasdan).
+// Token o'qilgach ilova Backend'ga doimiy ulanadi; sarlavha yonida — ulanish belgisi.
 export default function Oyinlar() {
   const router = useRouter();
-  const [oyinlar, setOyinlar] = useState<Oyin[] | null>(null);
+  const oyinlar = useOyinlar();
   const [xato, setXato] = useState('');
   const [tortildi, setTortildi] = useState(false);
 
@@ -41,7 +41,7 @@ export default function Oyinlar() {
     // Ulanish bor bo'lsa — qayta ochilmaydi (ekran necha marta ochilsa ham bitta)
     ulan();
     try {
-      setOyinlar(await oyinlarniOl());
+      await oyinlarniOl();
       setXato('');
     } catch (e) {
       setXato((e as Error).message);
