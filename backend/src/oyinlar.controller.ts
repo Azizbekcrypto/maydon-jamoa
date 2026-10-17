@@ -39,7 +39,8 @@ export class OyinlarController {
   // GET /oyinlar — faqat token bilan (tokensiz 401). Yagona ro'yxat yo'li: «O'yin» ekrani ham shundan o'qiydi.
   // Eng yangi e'lon tepada: yaratilgan bo'yicha kamayib.
   // → [{ id, kun: '2026-10-11', soat: '17:00', maydon, kerak, qoshilgan, menQoshilganman,
-  //      tasdiqlagan, menTasdiqlaganman, menTasdiqlayOlaman }]
+  //      tasdiqlagan, menTasdiqlaganman, menTasdiqlayOlaman, navbatda, menNavbatdaman }]
+  // navbatda — navbatdagilar soni; menNavbatdaman — kirgan o'yinchi navbatdami.
   // tasdiqlagan — kelishini tasdiqlaganlar (keladi) soni; faqat o'yinni e'lon qilgan o'yinchiga, boshqalarga — null.
   // menTasdiqlayOlaman — POST …/tasdiq dagi o'sha qoida (o'yin kuni, qo'shilgan) va hali tasdiqlamagan:
   // «Kelaman» faqat shunda chiqadi, ilova sanani o'zi solishtirmaydi.
@@ -50,14 +51,15 @@ export class OyinlarController {
       select: { id: true, kun: true, soat: true, maydon: true, kerak: true, tashkilotchi_id: true },
       order: { yaratilgan: 'DESC', id: 'DESC' },
     });
-    const sanoq: { oyin_id: number; qoshilgan: string; tasdiqlagan: string }[] = await this.ishtirokchilar
-      .createQueryBuilder('i')
-      .select('i.oyin_id', 'oyin_id')
-      .addSelect('COUNT(*)', 'qoshilgan')
-      .addSelect(`COUNT(*) FILTER (WHERE i.holat = 'keladi')`, 'tasdiqlagan')
-      .where('i.holat IN (:...holat)', { holat: QOSHILGAN })
-      .groupBy('i.oyin_id')
-      .getRawMany();
+    const sanoq: { oyin_id: number; qoshilgan: string; tasdiqlagan: string; navbatda: string }[] =
+      await this.ishtirokchilar
+        .createQueryBuilder('i')
+        .select('i.oyin_id', 'oyin_id')
+        .addSelect(`COUNT(*) FILTER (WHERE i.holat IN ('qoshildi', 'keladi'))`, 'qoshilgan')
+        .addSelect(`COUNT(*) FILTER (WHERE i.holat = 'keladi')`, 'tasdiqlagan')
+        .addSelect(`COUNT(*) FILTER (WHERE i.holat = 'navbatda')`, 'navbatda')
+        .groupBy('i.oyin_id')
+        .getRawMany();
     const sonlar = new Map(sanoq.map((q) => [q.oyin_id, q]));
     const meniki = new Map(
       (await this.ishtirokchilar.find({ where: { oyinchi_id: men } })).map((i) => [i.oyin_id, i.holat]),
@@ -73,6 +75,8 @@ export class OyinlarController {
         tasdiqlagan: tashkilotchi_id === men ? Number(son?.tasdiqlagan ?? 0) : null,
         menTasdiqlaganman: holat === 'keladi',
         menTasdiqlayOlaman: tasdiqRuxsati(o.kun, holat, bugun) && holat !== 'keladi',
+        navbatda: Number(son?.navbatda ?? 0),
+        menNavbatdaman: holat === 'navbatda',
       };
     });
   }
@@ -105,6 +109,7 @@ export class OyinlarController {
   // POST /oyinlar/:id/qoshilish → 201 { holat: 'qoshildi' } — ishtirokchilar ga qator.
   // O'yin to'lgan bo'lsa — 409 «O'yin to'ldi»; bu o'yinchi oldin qo'shilgan bo'lsa — 409 «Siz bu o'yinga qo'shilgansiz».
   // Ikki marta bosilsa ham bitta qator: (oyin_id, oyinchi_id) — Database kaliti, ikkinchisi 409.
+  // Oldin chiqqan (yoki navbatdagi) o'yinchi — o'sha qatori qoshildi bo'ladi, yangi qator yozilmaydi.
   @Post(':id/qoshilish')
   async qoshilish(@Req() sorov: Sorov, @Param('id', ParseIntPipe) id: number) {
     const men = sorov.oyinchiId!;
@@ -117,15 +122,68 @@ export class OyinlarController {
     const soni = await this.ishtirokchilar.countBy({ oyin_id: id, holat: In(QOSHILGAN) });
     if (soni >= oyin.kerak) throw new ConflictException("O'yin to'ldi");
 
+    await this.yoz(this.ishtirokchilar, id, men, 'qoshildi', !!qator);
+    return { holat: 'qoshildi' };
+  }
+
+  // POST /oyinlar/:id/navbat → 201 { holat: 'navbatda' } — faqat to'lgan o'yinga (to'lmagan bo'lsa — 409).
+  // Navbat tartibi — yaratilgan: birinchi yozilgan birinchi qo'shiladi (qayta yozilsa — navbat oxiriga).
+  @Post(':id/navbat')
+  async navbat(@Req() sorov: Sorov, @Param('id', ParseIntPipe) id: number) {
+    const men = sorov.oyinchiId!;
+    const oyin = await this.oyinlar.findOneBy({ id });
+    if (!oyin) throw new NotFoundException("O'yin topilmadi");
+
+    const qator = await this.ishtirokchilar.findOneBy({ oyin_id: id, oyinchi_id: men });
+    if (qator && QOSHILGAN.includes(qator.holat)) throw new ConflictException("Siz bu o'yinga qo'shilgansiz");
+    if (qator?.holat === 'navbatda') throw new ConflictException('Siz navbatdasiz');
+
+    const soni = await this.ishtirokchilar.countBy({ oyin_id: id, holat: In(QOSHILGAN) });
+    if (soni < oyin.kerak) throw new ConflictException("O'yin to'lmagan — «Qo'shilaman» ni bosing");
+
+    await this.yoz(this.ishtirokchilar, id, men, 'navbatda', !!qator);
+    return { holat: 'navbatda' };
+  }
+
+  // POST /oyinlar/:id/chiqish → 201 { holat: 'chiqdi' } — qo'shilgan yoki navbatdagi o'yinchi chiqadi.
+  // Qo'shilgan o'yinchi chiqsa va navbatda odam bo'lsa — navbatga eng birinchi yozilgan o'yinchi qoshildi bo'ladi.
+  @Post(':id/chiqish')
+  async chiqish(@Req() sorov: Sorov, @Param('id', ParseIntPipe) id: number) {
+    const men = sorov.oyinchiId!;
+    const oyin = await this.oyinlar.findOneBy({ id });
+    if (!oyin) throw new NotFoundException("O'yin topilmadi");
+
+    const qator = await this.ishtirokchilar.findOneBy({ oyin_id: id, oyinchi_id: men });
+    if (!qator || qator.holat === 'chiqdi') throw new ConflictException("Siz bu o'yinda yo'qsiz");
+
+    await this.ishtirokchilar.update({ oyin_id: id, oyinchi_id: men }, { holat: 'chiqdi' });
+    if (QOSHILGAN.includes(qator.holat)) {
+      const navbatdagi = await this.ishtirokchilar.findOne({
+        where: { oyin_id: id, holat: 'navbatda' },
+        order: { yaratilgan: 'ASC' },
+      });
+      if (navbatdagi) {
+        await this.ishtirokchilar.update({ oyin_id: id, oyinchi_id: navbatdagi.oyinchi_id }, { holat: 'qoshildi' });
+      }
+    }
+    return { holat: 'chiqdi' };
+  }
+
+  // Qator yozish: shu o'yinda bu o'yinchining qatori bo'lsa — holati va vaqti yangilanadi (bitta qator), bo'lmasa — yangi qator.
+  // Ikki marta tez bosilsa, ikkinchi insert Database kalitiga uriladi — 409.
+  private async yoz(jadval: Repository<Ishtirokchi>, oyin_id: number, oyinchi_id: number, holat: string, bor: boolean) {
+    if (bor) {
+      await jadval.update({ oyin_id, oyinchi_id }, { holat, yaratilgan: new Date() });
+      return;
+    }
     try {
-      await this.ishtirokchilar.insert({ oyin_id: id, oyinchi_id: men, holat: 'qoshildi' });
+      await jadval.insert({ oyin_id, oyinchi_id, holat });
     } catch (e) {
       if ((e as { code?: string }).code === '23505') {
         throw new ConflictException("Siz bu o'yinga qo'shilgansiz");
       }
       throw e;
     }
-    return { holat: 'qoshildi' };
   }
 
   // POST /oyinlar/:id/tasdiq → 201 { holat: 'keladi' } — o'yin kuni «Kelaman».
