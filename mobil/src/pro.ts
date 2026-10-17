@@ -9,4 +9,5 @@ export const PRO_TAKLIF = {
   // to'lovdan qaytgandagi holatlar (5-dars)
   otmadi: "To'lov o'tmadi — qayta urinib ko'ring",
   kutilmoqda: 'Javob kutilmoqda',
+  qayta: 'Qayta tekshirish',
 };

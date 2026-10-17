@@ -99,7 +99,7 @@ export class MashqTolovController {
 
 // Sahifa qolipi: sarlavha, test rejim qatori, ichi va tugmalar skripti (har yuborishning javobi — holat kodi va tanasi).
 // «To'lash (mashq)» va «Kechiktirib yuborish» javobi kelgach: { ok: true } — «To'lov o'tdi (mashq) — ilovaga qayting.», aks holda — «To'lov o'tmadi.»;
-// «Rad etish (mashq)» — «To'lov o'tmadi.». Javob 10 soniyada kelmasa — so'rov to'xtatiladi.
+// «Rad etish (mashq)» — «To'lov o'tmadi.». Javob 10 soniyada kelmasa — «Javob kutilmoqda» (natijani ilova GET /men dan ko'radi).
 function qolip(ichi: string, malumot: string): string {
   return `<!doctype html>
 <html lang="uz">
@@ -121,6 +121,7 @@ function qolip(ichi: string, malumot: string): string {
   #natija { font-size: 18px; font-weight: 600; }
   #natija.otdi { color: #2E9E4F; }
   #natija.otmadi { color: #C0392B; }
+  #natija.kutilmoqda { color: #1D2329; }
   .kulrang { color: #6B7580; font-size: 14px; margin: 8px 0; }
   #javoblar { padding-left: 20px; font-family: ui-monospace, monospace; font-size: 14px; }
   .xato { color: #C0392B; font-size: 18px; }
@@ -164,7 +165,8 @@ document.querySelectorAll('button[data-tur]').forEach(function (t) {
       }
       if (tur === 'rad') natija("To'lov o'tmadi.", 'otmadi');
     } catch (e) {
-      if (tur === 'tolash' || tur === 'kech' || tur === 'rad') natija("To'lov o'tmadi.", 'otmadi');
+      // Javob 10 soniyada kelmadi — bu «o'tmadi» emas: xabar hali yo'lda bo'lishi mumkin (5-dars tuzatishi)
+      if (tur === 'tolash' || tur === 'kech' || tur === 'rad') natija('Javob kutilmoqda', 'kutilmoqda');
       var li = document.createElement('li');
       li.className = 'xato';
       li.textContent = t.textContent + ' — javob kelmadi';

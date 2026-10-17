@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -15,7 +15,9 @@ import { R } from '@/ranglar';
 // (brauzer ko'rinishida — yangi oynada): «Mashq to'lov» sahifasi. Ilovaga qaytganda GET /men qayta so'raladi —
 // Pro yoqilgan bo'lsa, ekran yopiladi va «E'lon berish»da belgi va «Pro: {sana}gacha» ko'rinadi.
 // To'lovdan qaytganda (5-dars) — shu to'lovning natijasi GET /men dagi oxirgiTolov dan: tolandi — Pro (ekran yopiladi);
-// rad — «To'lov o'tmadi — qayta urinib ko'ring» va «To'lovga o'tish»; natija hali yo'q — «Javob kutilmoqda».
+// rad — «To'lov o'tmadi — qayta urinib ko'ring» va «To'lovga o'tish»; natija hali yo'q — «Javob kutilmoqda» va ostida «Qayta tekshirish».
+// Natija ilova har qaytganda va «Qayta tekshirish» bosilganda qayta so'raladi (5-dars tuzatishi: avval qaytganda bir marta so'ralardi —
+// kech kelgan to'lov xabaridan keyin ilova «Javob kutilmoqda»da qolib ketardi).
 export default function ProTaklif() {
   const router = useRouter();
   const [xabar, setXabar] = useState('');
@@ -24,20 +26,23 @@ export default function ProTaklif() {
   // To'lov sahifasi ochilgan — qaytganda natija so'raladi
   const tolovOchiq = useRef(false);
 
+  const natijaniSora = useCallback(async () => {
+    try {
+      const men = await menniOl();
+      if (men.pro && men.oxirgiTolov?.holat !== 'rad') return router.back();
+      const h = men.oxirgiTolov?.holat;
+      setNatija(h === 'rad' || h === 'kutilmoqda' ? h : null);
+    } catch {
+      // keyingi qaytishda yoki «Qayta tekshirish»da yana so'raladi
+    }
+  }, [router]);
+
   useEffect(() => {
     const obuna = AppState.addEventListener('change', (holat) => {
-      if (holat !== 'active' || !tolovOchiq.current) return;
-      tolovOchiq.current = false;
-      menniOl()
-        .then((men) => {
-          if (men.pro && men.oxirgiTolov?.holat !== 'rad') return router.back();
-          const h = men.oxirgiTolov?.holat;
-          setNatija(h === 'rad' || h === 'kutilmoqda' ? h : null);
-        })
-        .catch(() => {});
+      if (holat === 'active' && tolovOchiq.current) natijaniSora();
     });
     return () => obuna.remove();
-  }, [router]);
+  }, [natijaniSora]);
 
   async function tolovgaOt() {
     setXabar('');
@@ -66,7 +71,14 @@ export default function ProTaklif() {
       </View>
       <View style={s.past}>
         {natija === 'rad' && <Text style={s.xato}>{PRO_TAKLIF.otmadi}</Text>}
-        {natija === 'kutilmoqda' && <Text style={s.kutilmoqda}>{PRO_TAKLIF.kutilmoqda}</Text>}
+        {natija === 'kutilmoqda' && (
+          <>
+            <Text style={s.kutilmoqda}>{PRO_TAKLIF.kutilmoqda}</Text>
+            <Pressable style={s.qayta} onPress={natijaniSora}>
+              <Text style={s.qaytaMatn}>{PRO_TAKLIF.qayta}</Text>
+            </Pressable>
+          </>
+        )}
         {!!xabar && <Text style={s.xato}>{xabar}</Text>}
         <Tugma matn={PRO_TAKLIF.tugma} onPress={tolovgaOt} ochiq={kutish} />
         <Text style={s.test}>{PRO_TAKLIF.test}</Text>
@@ -85,5 +97,7 @@ const s = StyleSheet.create({
   past: { padding: 20, gap: 10 },
   xato: { color: '#C0392B', fontSize: 15, textAlign: 'center' },
   kutilmoqda: { fontSize: 16, fontWeight: '600', color: R.matn, textAlign: 'center' },
+  qayta: { padding: 12, borderRadius: 12, borderWidth: 1, borderColor: R.yashil, alignItems: 'center' },
+  qaytaMatn: { color: R.yashil, fontSize: 16, fontWeight: '600' },
   test: { fontSize: 14, color: R.kulrang, textAlign: 'center' },
 });

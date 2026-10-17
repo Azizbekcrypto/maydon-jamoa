@@ -53,7 +53,8 @@ export class TolovController {
   // Tartib: 1) imzo — yo'q, shakli noto'g'ri yoki mos emas → 401, hech narsa yozilmaydi · 2) maydonlar → 400 ·
   // hisob va summa xabardan emas — boshlangan_tolovlar dagi shu raqam yozuvidan (yo'q yoki mos emas → 400) ·
   // 3) shu to'lov raqami bor → 200 { takror: true } · 4) yozish → 200 { ok: true } (rad ham yoziladi).
-  // tolandi — Pro PRO_KUN kunga uzayadi (Pro bo'lmasa hozirdan, bo'lsa muddat oxiridan); yozuv va Pro — bitta Database ishida.
+  // Yangi yozilgan tolandi — Pro PRO_KUN kunga uzayadi (Pro bo'lmasa hozirdan, bo'lsa muddat oxiridan); yozuv va Pro — bitta tranzaksiyada,
+  // takrorga Pro o'zgarmaydi.
   @Post('webhook')
   @HttpCode(200)
   async webhook(@Req() sorov: RawBodyRequest<Request>, @Headers('x-imzo') imzo: string | undefined) {
@@ -80,12 +81,6 @@ export class TolovController {
 
     try {
       return await this.db.transaction(async (m) => {
-        if (holat === 'tolandi') {
-          await m.query(
-            `UPDATE oyinchilar SET pro_gacha = GREATEST(COALESCE(pro_gacha, now()), now()) + make_interval(days => $2) WHERE id = $1`,
-            [boshlangan.oyinchi_id, PRO_KUN],
-          );
-        }
         if (await m.getRepository(Tolov).existsBy({ tolov_raqami: tolovRaqami })) return { takror: true };
         await m.getRepository(Tolov).insert({
           tolov_raqami: tolovRaqami,
@@ -93,6 +88,14 @@ export class TolovController {
           summa: boshlangan.summa,
           holat,
         });
+        // Pro faqat yangi yozilgan to'lovdan keyin uzayadi (5-dars tuzatishi: avval bu qator takror tekshiruvidan oldin edi —
+        // ikki marta kelgan xabar Pro'ni ikki marta uzaytirardi). Yozuv va Pro — bitta tranzaksiyada.
+        if (holat === 'tolandi') {
+          await m.query(
+            `UPDATE oyinchilar SET pro_gacha = GREATEST(COALESCE(pro_gacha, now()), now()) + make_interval(days => $2) WHERE id = $1`,
+            [boshlangan.oyinchi_id, PRO_KUN],
+          );
+        }
         return { ok: true };
       });
     } catch (e) {
