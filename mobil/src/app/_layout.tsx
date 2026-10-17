@@ -5,7 +5,7 @@ import { AppState, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { tokenOl } from '@/api';
-import { uchKunlikniQoy } from '@/eslatma';
+import { eslatmaBosilishiniSana, uchKunlikniQoy } from '@/eslatma';
 import { hodisaYoz } from '@/hodisa';
 import { R } from '@/ranglar';
 import { useJonliXabarlar } from '@/ulanish';
@@ -29,12 +29,17 @@ export default function Layout() {
       hodisaYoz('ochdi');
     }
     uchKunlikniYangila().catch(() => {});
+    // Eslatma bosilib ochilganini sanash (9-dars)
+    const eslatmaObunasi = eslatmaBosilishiniSana();
     let oldingi: string | null | undefined = AppState.currentState;
     const obuna = AppState.addEventListener('change', (yangi) => {
       if (oldingi === 'background' && yangi === 'active') uchKunlikniYangila().catch(() => {});
       oldingi = yangi;
     });
-    return () => obuna.remove();
+    return () => {
+      obuna.remove();
+      eslatmaObunasi();
+    };
   }, []);
 
   return (

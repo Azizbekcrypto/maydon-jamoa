@@ -5,7 +5,8 @@ import { ol, saqla } from '@/saqlash';
 // Har qadam — POST /hodisalar { nom, qurilma_id }. Faqat qadam nomi va qurilma ID: ism, login va token yuborilmaydi.
 // Qurilma ID — birinchi ochilishda yaratiladigan tasodifiy harf va raqamlar, telefonda saqlanadi (brauzer ko'rinishida — brauzerda):
 // bitta qurilmadagi ilovani ajratadi, odamning ismini ham, loginini ham bildirmaydi.
-export type Qadam = 'ochdi' | 'royxatdan-otdi' | 'qoshildi' | 'tasdiqladi';
+// eslatmadan-ochdi (9-dars) — qadam emas, sanoq yozuvi: ilovaning istalgan eslatmasi bosilib ilova ochildi.
+export type Qadam = 'ochdi' | 'royxatdan-otdi' | 'qoshildi' | 'tasdiqladi' | 'eslatmadan-ochdi';
 
 const KALIT = 'qurilma_id';
 let qurilmaId: string | null = null;

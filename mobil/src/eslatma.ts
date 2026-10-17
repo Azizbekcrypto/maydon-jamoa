@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
+import { hodisaYoz } from '@/hodisa';
 import type { Oyin } from '@/oyin';
 import { ochir, ol, saqla } from '@/saqlash';
 
@@ -15,6 +16,7 @@ import { ochir, ol, saqla } from '@/saqlash';
 //    Haftalik chegara: o'sha haftada (dushanbadan yakshanbagacha) ilovaning ikkita eslatmasi bo'lsa (o'yin eslatmasi ham
 //    sanaladi) — uch kunlik qo'yilmaydi: hafta ikkitaga to'lsa, ilova o'zidan qo'shmaydi.
 // Qo'yilgan eslatmalarning vaqti telefonda saqlanadi — haftalik hisob shundan.
+// Eslatma bosilib ilova ochilsa (fonda ham, butunlay yopiq bo'lsa ham) — sanoq yozuvi eslatmadan-ochdi, bitta bosishga bitta.
 // «Eslatmalar» o'chirgichi (9-dars): o'chirilsa — hammasi bekor va yangisi qo'yilmaydi; yoqilsa — hozirgi ma'lumotdan qaytadan.
 // Brauzer ko'rinishida eslatma yo'q (expo-notifications web'da ishlamaydi) — ilova ishlayveradi.
 
@@ -147,4 +149,26 @@ export async function eslatmalarniYoq(yoqiq: boolean, oyinlar: Oyin[] | null) {
   }
   for (const o of oyinlar ?? []) if (o.menQoshilganman) await oyinEslatmasiniQoy(o);
   await uchKunlikniQoy();
+}
+
+// Eslatma bosilib ilova ochildi → hodisaYoz('eslatmadan-ochdi'). Bitta bosishga bitta yozuv: javob (eslatma identifier va
+// vaqti) eslab qolinadi va oxirgi javob tozalanadi — ilova qayta ochilganda o'sha bosish yana sanalmaydi.
+const sanalgan = new Set<string>();
+
+function eslatmaBosildi(javob: Notifications.NotificationResponse | null) {
+  if (!javob || javob.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) return;
+  const kalit = `${javob.notification.request.identifier}:${javob.notification.date}`;
+  if (sanalgan.has(kalit)) return;
+  sanalgan.add(kalit);
+  hodisaYoz('eslatmadan-ochdi');
+  Notifications.clearLastNotificationResponseAsync().catch(() => {});
+}
+
+// Ilova ochiladigan joyda (_layout.tsx) bir marta: butunlay yopiq ilova eslatmadan ochilgan bo'lsa — oxirgi javob,
+// ilova ochiq yoki fonda bo'lsa — tinglovchi
+export function eslatmaBosilishiniSana(): () => void {
+  if (!ESLATMA_BOR) return () => {};
+  Notifications.getLastNotificationResponseAsync().then(eslatmaBosildi).catch(() => {});
+  const obuna = Notifications.addNotificationResponseReceivedListener(eslatmaBosildi);
+  return () => obuna.remove();
 }

@@ -71,7 +71,7 @@ Saqlanadigan ma'lumotlar: o'yinchilar · o'yinlar · kim qaysi o'yinga qo'shilga
 | Ustun | Nima saqlaydi |
 |---|---|
 | `id` | yozuv raqami (Database o'zi to'ldiradi) |
-| `nom` | qadam: `ochdi` · `royxatdan-otdi` · `qoshildi` · `tasdiqladi` |
+| `nom` | qadam: `ochdi` · `royxatdan-otdi` · `qoshildi` · `tasdiqladi`; sanoq yozuvi `eslatmadan-ochdi` (9-dars) |
 | `qurilma_id` | qurilma ID — ilova birinchi ochilganda yaratgan tasodifiy harf va raqamlar: odamning ismini ham, loginini ham bildirmaydi |
 | `yaratilgan` | yozuv vaqti (Database o'zi to'ldiradi) |
 
@@ -161,6 +161,11 @@ Topilgan uch muammo tuzatilgan: qayta ulanganda ro'yxat qayta so'raladi · `oyin
   ilovani uch kun ochmagan odamga chiqadi (yopiq ilova yangi e'lonni bilmaydi — matn taklif qiladi); faqat hisobga kirgan foydalanuvchiga, «Hisobdan chiqish»da bekor.
   Haftalik chegara: o'sha haftada (dushanbadan yakshanbagacha) ilovaning ikkita eslatmasi bo'lsa (o'yin eslatmasi ham sanaladi) — qo'yilmaydi; qo'yilgan eslatmalar vaqti telefonda saqlanadi.
   Haftalik chegara kodda bor, telefonda tekshirilmagan (bir hafta kerak).
+- **Eslatma sanog'i va o'chirgich** (9-dars) — ilovaning istalgan eslatmasi bosilib ilova ochilsa (fonda ham, butunlay yopiq bo'lsa ham) — sanoq yozuvi `eslatmadan-ochdi`
+  (bitta bosishga bitta; bitta ochilish ikki yozuv beradi: `ochdi` va `eslatmadan-ochdi`). Sanoq sahifasida qadamlar ostida — «eslatmadan ochdi» (turli qurilmalar):
+  bu son eslatma bosilganini aytadi, eslatmasiz ham ocharmidi — buni aytmaydi. «O'yinlar» tepasida «Eslatmalar» o'chirgichi (sukutda yoqiq, tanlov telefonda):
+  o'chirilsa — hamma rejalashtirilgan eslatma bekor; yoqilsa — qo'shilgan, hali boshlanmagan o'yinlar va uch kunlik eslatma qaytadan.
+  Telefonda ruxsat berilmagan bo'lsa — ostida «Telefon sozlamalarida eslatmalarga ruxsat berilmagan».
 
 ## Backend yo'llari
 
@@ -173,8 +178,8 @@ Bitta istisno — mehmon ko'rinishi (12-Modul 8-dars): `GET /oyinlar` tokensiz h
 | `POST /royxat` `{ ism, login, parol }` | o'yinchi `oyinchilar` ga (`namuna = false`), parol — faqat hash (`parol_hash`); telefon so'ralmaydi | `201` · `400` bo'sh yoki login qoidaga mos emas · `409` «Bu login band» |
 | `POST /kirish` `{ login, parol }` | token (30 kun) | `200 { token }` · `401` «Login yoki parol noto'g'ri» |
 | `DELETE /hisob` | «Hisobni o'chirish»: akkaunt va uning `ishtirokchilar` dagi yozuvlari o'chadi; e'lon qilgan o'yinlari qoladi (tashkilotchisi bo'sh); qo'shilgan o'yinlarida navbatdagi kiradi | `200` |
-| `POST /hodisalar` `{ nom, qurilma_id }` | qadamlar sanog'i; token kerak emas (yuborilmaydi); yozilgach sanoq sahifalariga `sanoq-ozgardi` | `201` · `400` nom to'rt qadamdan biri emas |
-| `GET /hodisalar/sanoq` (`?dan=` vaqt) | faqat maxfiy kalit bilan — sarlavha `X-Sanoq-Kaliti` (`SANOQ_KALITI`): `{ qadamlar: [{ nom, soni }], royxatdanOtgan }` — har qadamda turli qurilmalar, ro'yxatdan o'tgan `namuna = false` akkauntlar; `?dan=` — shu vaqtdan keyingi yozuvlar | `200` · `401` kalitsiz yoki noto'g'ri |
+| `POST /hodisalar` `{ nom, qurilma_id }` | qadamlar sanog'i (va 9-darsdan sanoq yozuvi `eslatmadan-ochdi`); token kerak emas (yuborilmaydi); yozilgach sanoq sahifalariga `sanoq-ozgardi` | `201` · `400` nom ruxsat etilganlardan emas |
+| `GET /hodisalar/sanoq` (`?dan=` vaqt) | faqat maxfiy kalit bilan — sarlavha `X-Sanoq-Kaliti` (`SANOQ_KALITI`): `{ qadamlar: [{ nom, soni }], eslatmadanOchdi, royxatdanOtgan }` — har qadamda turli qurilmalar, ro'yxatdan o'tgan `namuna = false` akkauntlar; `?dan=` — shu vaqtdan keyingi yozuvlar | `200` · `401` kalitsiz yoki noto'g'ri |
 | `GET /oyinlar` | yagona ro'yxat yo'li, eng yangi e'lon tepada: `id, kun, soat, maydon, kerak, qoshilgan, menQoshilganman, tasdiqlagan, menTasdiqlaganman, menTasdiqlayOlaman, navbatda, menNavbatdaman, menTashkilotchiman` | `200` |
 | `POST /oyinlar` `{ kun, soat, maydon, kerak }` | e'lon; tashkilotchi — token egasi | `201` · `400` «Yozilmagan: …» |
 | `POST /oyinlar/:id/qoshilish` | `qoshildi` | `201` · `409` «O'yin to'ldi» / «Siz bu o'yinga qo'shilgansiz» |
@@ -405,6 +410,7 @@ Repo'ga yoziladigan darslar: 1–10; 11 va 12 (pitch) — repo'ga yozmaydi, tegi
 | `m12-dars-06-done` | 6 · kanallar va birinchi post | `lending/index.html`: havoladagi kanal belgisi (`?kanal=guruh` · `sinf` · `instagram`; `URLSearchParams`) o'qiladi — Umami'ga `tashrif` hodisasi `{ kanal }`, belgi bo'lmasa `belgisiz`. Uyga vazifadan (mobil trek): `mobil/eas.json` — `preview` profili (Android `buildType: apk`, `env.EXPO_PUBLIC_API_URL` — namuna manzil); README «O'rnatish fayli — APK» |
 | `m12-dars-07-done` | 7 · 50 foydalanuvchiga reja va ishga tushirish | `oyinchilar`: `telefon` → `login` (3–20 harf va raqam, «Bu login band»), `namuna`, `yaratilgan`; bir martalik migratsiya (`backend/src/migratsiya.ts`: mavjud akkauntlar ismidan namuna login oladi, `namuna = true`, `telefon` ustuni olib tashlanadi); `POST /royxat { ism, login, parol }`, `POST /kirish { login, parol }`; `DELETE /hisob` — «Hisobni o'chirish» («Rostdan o'chirasizmi?»; e'lon qilgan o'yinlar qoladi — tashkilotchisi bo'sh; «Hisobdan chiqish» va «Hisobni o'chirish»da eslatmalar bekor); `hodisalar` jadvali, `POST /hodisalar`, `hodisaYoz` to'rt joyda (qurilma ID; 60 kun). Forma ostida gap va «Maxfiylik siyosati». `lending/maxfiylik.html` (to'rt savol), lendingda ikki havola (manzillar — namuna). Brauzer ko'rinishi: token `localStorage` da, eslatma yo'q, `app.json` `web.output: single`, `public/_redirects`; socket.io ham `WEB_ORIGIN` ga ruxsat. README — sanoq SQL |
 | `m12-dars-08-done` | 8 · qadamlar bo'yicha sanoq va tuzatish | `GET /hodisalar/sanoq` — faqat maxfiy kalit bilan (sarlavha `X-Sanoq-Kaliti` = `SANOQ_KALITI`, aks holda `401`): to'rt qadam — turli qurilmalar soni, ro'yxatdan o'tgan `namuna = false` akkauntlar, `?dan=`; `lending/sanoq.html` — kalit faqat sahifa holatida, o'zi yangilanadi (socket.io: kalit bilan faqat `sanoq` xonasiga, `POST /hodisalar` dan keyin `sanoq-ozgardi`); `oyin-ozgardi` — faqat ilova ulanishlariga; `WEB_ORIGIN` — bir nechta manzil (vergul). Tuzatish — mehmon ko'rinishi: `GET /oyinlar` tokensiz ham (faqat `id, kun, soat, maydon, kerak, qoshilgan`); ilova kirmagan odamga «O'yinlar»ni tepada «Kirish» bilan ko'rsatadi, «Qo'shilaman» → «Ro'yxatdan o'tish», real vaqt ulanishi — faqat kirganlarga |
+| `m12-dars-09-done` | 9 · loyiha kuni: qaytaradigan eslatma | jonli xabar «Shanba, 18:00 — 2 joy qoldi» (o'zi qo'shilmagan o'yinda bir yoki ikki joy, yangi hodisasiz, bir xil son uchun bir marta); uch kunlik eslatma (`mobil/src/eslatma.ts`: ilova ochilganda oldingisi bekor, uch kundan keyin 17:00 «Hafta oxiriga o'yin bormi? E'lonlarni ko'ring»; faqat kirganga; haftalik chegara — ikkita); `eslatmadan-ochdi` (istalgan eslatma bosilib ochilganda, bitta bosishga bitta) — `POST /hodisalar` qabul qiladi, `GET /hodisalar/sanoq` da `eslatmadanOchdi`, sanoq sahifasida yangi qator; «Eslatmalar» o'chirgichi (ruxsat yo'q bo'lsa — qator); maxfiylik: «Ilova eslatmadan ochilgani ham qurilma ID bilan sanaladi.» |
 
 ## Ortda qoldingizmi
 

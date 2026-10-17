@@ -29,6 +29,8 @@
     <section id="sonlar" hidden>
       <ol id="qadamlar" class="qadamlar"></ol>
       <p class="kulrang">har qadamda turli qurilmalar</p>
+      <ol class="qadamlar"><li><span>eslatmadan ochdi</span><b id="eslatmadan">…</b></li></ol>
+      <p class="kulrang">eslatma bosilib ilova ochilgan qurilmalar — eslatmasiz ham ocharmidi, buni aytmaydi</p>
       <p class="akkauntlar">Ro'yxatdan o'tgan akkauntlar: <b id="royxat">…</b></p>
       <p class="kulrang">namuna va tekshiruv akkauntlarisiz · <span id="holat">ulanmoqda…</span></p>
     </section>
@@ -62,6 +64,7 @@
         li.lastChild.textContent = q.soni;
         return li;
       }));
+      $('eslatmadan').textContent = d.eslatmadanOchdi;
       $('royxat').textContent = d.royxatdanOtgan;
     }
 

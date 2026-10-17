@@ -23,6 +23,10 @@ import { sanoqKalitiTogrimi } from './sanoq.js';
 // Nomlar kichik harf va chiziqcha bilan, bo'lib o'tgan ish ma'nosida.
 export const QADAMLAR = ['ochdi', 'royxatdan-otdi', 'qoshildi', 'tasdiqladi'];
 
+// Sanoq yozuvi (9-dars): ilovaning istalgan eslatmasi bosilib ilova ochilgani — qadam emas, qadamlar ostidagi alohida qator.
+// Bitta ochilish ikki yozuv beradi: ochdi va eslatmadan-ochdi — ataylab.
+export const ESLATMADAN_OCHDI = 'eslatmadan-ochdi';
+const QABUL = [...QADAMLAR, ESLATMADAN_OCHDI];
 const SAQLASH_KUN = 60; // qadamlar yozuvi — 60 kun
 
 @Controller('hodisalar')
@@ -34,12 +38,12 @@ export class HodisalarController {
   ) {}
 
   // POST /hodisalar { nom, qurilma_id } → 201 — token kerak emas va yuborilmaydi: ism, login, token yozilmaydi.
-  // nom faqat QADAMLAR dan biri, aks holda 400.
+  // nom faqat QADAMLAR dan biri yoki eslatmadan-ochdi, aks holda 400.
   @Post()
   async yoz(@Body() body: Record<string, unknown>) {
     const nom = typeof body?.nom === 'string' ? body.nom : '';
     const qurilmaId = typeof body?.qurilma_id === 'string' ? body.qurilma_id.trim() : '';
-    if (!QADAMLAR.includes(nom)) throw new BadRequestException(`Qadam nomi: ${QADAMLAR.join(', ')}`);
+    if (!QABUL.includes(nom)) throw new BadRequestException(`Nom: ${QABUL.join(', ')}`);
     if (!/^[a-zA-Z0-9]{8,64}$/.test(qurilmaId)) throw new BadRequestException("qurilma_id — 8–64 harf va raqam");
     await this.hodisalar.insert({ nom, qurilma_id: qurilmaId });
     // Yozuv saqlanib tugadi — ochiq sanoq sahifalari sonlarni qayta so'raydi
@@ -50,6 +54,7 @@ export class HodisalarController {
   // GET /hodisalar/sanoq — faqat maxfiy kalit bilan: so'rov sarlavhasida `X-Sanoq-Kaliti` (backend/.env dagi SANOQ_KALITI);
   // kalit yo'q yoki mos emas — 401. Javob — faqat sonlar (ism, login, qurilma ID yo'q):
   // { qadamlar: [{ nom, soni }] — QADAMLAR tartibida, har birida turli qurilma_id lar soni,
+  //   eslatmadanOchdi — eslatma bosilib ilova ochilgan turli qurilmalar soni (9-dars),
   //   royxatdanOtgan — oyinchilar dagi namuna = false akkauntlar soni }.
   // ?dan=2026-10-20T12:00:00Z — shu vaqtdan keyingi yozuvlar bo'yicha (royxatdanOtgan — shu vaqtdan keyin o'tganlar).
   @Get('sanoq')
@@ -71,7 +76,11 @@ export class HodisalarController {
       .where('o.namuna = false')
       .andWhere(danVaqt ? 'o.yaratilgan >= :dan' : '1 = 1', { dan: danVaqt })
       .getCount();
-    return { qadamlar: QADAMLAR.map((nom) => ({ nom, soni: sonlar.get(nom) ?? 0 })), royxatdanOtgan };
+    return {
+      qadamlar: QADAMLAR.map((nom) => ({ nom, soni: sonlar.get(nom) ?? 0 })),
+      eslatmadanOchdi: sonlar.get(ESLATMADAN_OCHDI) ?? 0,
+      royxatdanOtgan,
+    };
   }
 }
 

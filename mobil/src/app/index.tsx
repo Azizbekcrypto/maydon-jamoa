@@ -1,11 +1,11 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { sora, tokenOchir, tokenOl } from '@/api';
 import { BosiladiganKarta } from '@/components/bosiladigan-karta';
-import { hammasiniBekor } from '@/eslatma';
+import { ESLATMA_BOR, eslatmalarniYoq, eslatmalarYoqiqmi, hammasiniBekor, ruxsatBormi } from '@/eslatma';
 import { kunNomi } from '@/kun';
 import { oyinlarniOl, useOyinlar, type Oyin } from '@/oyin';
 import { R } from '@/ranglar';
@@ -103,6 +103,7 @@ export default function Oyinlar() {
           </View>
         )}
       </View>
+      {!mehmon && ESLATMA_BOR && <EslatmalarOchirgichi oyinlar={oyinlar} />}
       <ScrollView
         contentContainerStyle={s.ichi}
         refreshControl={<RefreshControl refreshing={tortildi} onRefresh={tort} tintColor={R.yashil} colors={[R.yashil]} />}>
@@ -146,6 +147,38 @@ const BELGI = {
   ulanmagan: { matn: 'Ulanmagan', rang: R.kulrang },
 } as const;
 
+// «Eslatmalar» o'chirgichi (9-dars) — sozlama, «Hisobdan chiqish» yonida; sukutda yoqiq, tanlov telefonda saqlanadi.
+// O'chirilsa — rejalashtirilgan hamma eslatma bekor, yangisi qo'yilmaydi; yoqilsa — hozirgi ma'lumotdan qaytadan.
+// Ilova o'chirgichi va telefon ruxsati — ikki alohida holat: ruxsat yo'q bo'lsa — ostida qator.
+function EslatmalarOchirgichi({ oyinlar }: { oyinlar: Oyin[] | null }) {
+  const [yoqiq, setYoqiq] = useState(true);
+  const [ruxsat, setRuxsat] = useState(true);
+
+  useFocusEffect(
+    useCallback(() => {
+      eslatmalarYoqiqmi().then(setYoqiq);
+      ruxsatBormi().then(setRuxsat);
+    }, []),
+  );
+
+  function almashtir(yangi: boolean) {
+    setYoqiq(yangi);
+    eslatmalarniYoq(yangi, oyinlar)
+      .then(() => ruxsatBormi().then(setRuxsat))
+      .catch(() => {});
+  }
+
+  return (
+    <View style={s.sozlamaJoy}>
+      <View style={s.sozlama}>
+        <Text style={s.sozlamaMatn}>Eslatmalar</Text>
+        <Switch value={yoqiq} onValueChange={almashtir} trackColor={{ true: R.yashil }} />
+      </View>
+      {!ruxsat && <Text style={s.ruxsat}>Telefon sozlamalarida eslatmalarga ruxsat berilmagan</Text>}
+    </View>
+  );
+}
+
 // Ulanish holatlari (README «Ulanish holatlari»): ulangan — o'zgarishlar o'zi ko'rinadi;
 // ulanmoqda — ro'yxat ekranda qoladi, lekin eskirgan bo'lishi mumkin; ulanmagan — pastga tortib yangilash ishlaydi
 function UlanishIzohi() {
@@ -172,7 +205,11 @@ const s = StyleSheet.create({
   ekran: { flex: 1, backgroundColor: R.fon },
   tepa: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12 },
   nom: { fontSize: 18, fontWeight: '700', color: R.yashil },
-  hisobTugmalar: { flexDirection: 'row', gap: 16 },
+  hisobTugmalar: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  sozlamaJoy: { marginHorizontal: 20, paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: R.chiziq },
+  sozlama: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  sozlamaMatn: { fontSize: 15, color: R.matn },
+  ruxsat: { fontSize: 13, color: '#C0392B', paddingBottom: 6 },
   chiqish: { fontSize: 14, color: R.kulrang },
   kirish: { fontSize: 16, fontWeight: '600', color: R.yashil },
   ochirish: { fontSize: 14, color: '#C0392B' },

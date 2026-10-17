@@ -7,7 +7,7 @@ export class Hodisa {
   @PrimaryGeneratedColumn()
   id: number;
 
-  // Qadam nomi: ochdi · royxatdan-otdi · qoshildi · tasdiqladi
+  // Qadam nomi: ochdi · royxatdan-otdi · qoshildi · tasdiqladi; sanoq yozuvi eslatmadan-ochdi (9-dars)
   @Column({ type: 'varchar', length: 40 })
   nom: string;
 
