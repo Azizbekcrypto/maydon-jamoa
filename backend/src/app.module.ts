@@ -10,7 +10,7 @@ import { HodisalarController, HodisalarTozalash } from './hodisalar.controller.j
 import { Ishtirokchi } from './ishtirokchi.entity.js';
 import { KirishController } from './kirish.controller.js';
 import { MenController } from './men/men.controller.js';
-import { telefondanLoginga } from './migratsiya.js';
+import { doimiyTakrorlarniTozala, telefondanLoginga } from './migratsiya.js';
 import { NamunaMalumot } from './namuna.js';
 import { OyinlarGateway } from './oyinlar.gateway.js';
 import { Oyin } from './oyin.entity.js';
@@ -46,6 +46,7 @@ import { Tolov } from './tolov/tolov.entity.js';
       // Avval bir martalik o'tkazish (telefon → login, 12-Modul 7-dars), keyin jadvallar entity'lardan yangilanadi
       dataSourceFactory: async (options) => {
         await telefondanLoginga(process.env.DATABASE_URL);
+        await doimiyTakrorlarniTozala(process.env.DATABASE_URL);
         return new DataSource(options!).initialize();
       },
     }),

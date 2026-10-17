@@ -11,6 +11,28 @@ import { ismdanLogin } from './login.js';
 
 const log = new Logger('Migratsiya');
 
+// 13-Modul 12-dars: «Doimiy o'yin» cheklovidan oldin — oldin ikki marta yaratilgan keyingi o'yinlar bo'lsa, (tashkilotchi, maydon, kun, soat)
+// bo'yicha birinchisidan boshqalarida doimiy belgisi olib tashlanadi (o'yinlar o'chirilmaydi) — aks holda noyob indeks yaratilmaydi.
+export async function doimiyTakrorlarniTozala(url: string | undefined) {
+  const ds = await new DataSource({ type: 'postgres', url }).initialize();
+  try {
+    const [ustun] = await ds.query(
+      `SELECT 1 FROM information_schema.columns WHERE table_name = 'oyinlar' AND column_name = 'doimiy'`,
+    );
+    if (!ustun) return;
+    const qatorlar: unknown[] = await ds.query(
+      `UPDATE oyinlar o SET doimiy = false FROM oyinlar b
+       WHERE o.doimiy AND b.doimiy AND b.id < o.id AND b.tashkilotchi_id = o.tashkilotchi_id
+         AND b.maydon = o.maydon AND b.kun = o.kun AND b.soat = o.soat
+       RETURNING o.id`,
+    );
+    const soni = Array.isArray(qatorlar[0]) ? (qatorlar[0] as unknown[]).length : qatorlar.length;
+    if (soni) log.log(`Takror «Doimiy o'yin» belgisi olib tashlandi: ${soni} ta o'yin`);
+  } finally {
+    await ds.destroy();
+  }
+}
+
 export async function telefondanLoginga(url: string | undefined) {
   const ds = await new DataSource({ type: 'postgres', url }).initialize();
   try {

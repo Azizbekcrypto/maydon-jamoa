@@ -17,22 +17,30 @@ export async function keyingiDoimiylarniYarat(oyinlar: Repository<Oyin>): Promis
     .andWhere(`(o.kun + o.soat::time) < (now() AT TIME ZONE 'Asia/Tashkent')`)
     .getMany();
 
+  // 12-dars tuzatishi: ikki telefon bir vaqtda «O'yinlar»ni ochganda ikkala so'rov ham eski o'yinni ko'rib, keyingisini
+  // ikki marta yaratardi (va Telegram xabari ikki marta ketardi). Endi Database cheklovi (oyin.entity.ts) ikkinchisini to'xtatadi:
+  // INSERT … ON CONFLICT DO NOTHING — ikkinchi urinish jimgina o'tkaziladi, «yaratildi» faqat yutgan so'rovda (xabar ham faqat unda).
   const yaratilganlar: { eski: Oyin; yangi: Oyin }[] = [];
   for (const eski of otganlar) {
     const yangi = await oyinlar.manager.transaction(async (m) => {
-      const jadval = m.getRepository(Oyin);
-      const o = await jadval.save({
+      const o = {
         kun: kunQosh(eski.kun, 7),
         soat: eski.soat,
         maydon: eski.maydon,
         kerak: eski.kerak,
         tashkilotchi_id: eski.tashkilotchi_id,
         doimiy: true,
-      });
-      await jadval.update({ id: eski.id }, { doimiy: false });
-      return o;
+      };
+      const qator: { id: number }[] = await m.query(
+        `INSERT INTO oyinlar (kun, soat, maydon, kerak, tashkilotchi_id, doimiy) VALUES ($1, $2, $3, $4, $5, true)
+         ON CONFLICT (tashkilotchi_id, maydon, kun, soat) WHERE doimiy = true DO NOTHING RETURNING id`,
+        [o.kun, o.soat, o.maydon, o.kerak, o.tashkilotchi_id],
+      );
+      if (!qator.length) return null;
+      await m.getRepository(Oyin).update({ id: eski.id }, { doimiy: false });
+      return { ...o, id: qator[0].id } as Oyin;
     });
-    yaratilganlar.push({ eski, yangi });
+    if (yangi) yaratilganlar.push({ eski, yangi });
   }
   return yaratilganlar;
 }

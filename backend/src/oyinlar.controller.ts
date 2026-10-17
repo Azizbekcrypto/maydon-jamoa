@@ -143,7 +143,14 @@ export class OyinlarController {
       if (!proBormi(tashkilotchi?.pro_gacha)) throw new ForbiddenException("«Doimiy o'yin» — faqat Pro'da");
     }
 
-    const oyin = await this.oyinlar.save({ kun, soat, maydon, kerak, tashkilotchi_id: sorov.oyinchiId!, doimiy });
+    let oyin: Oyin;
+    try {
+      oyin = await this.oyinlar.save({ kun, soat, maydon, kerak, tashkilotchi_id: sorov.oyinchiId!, doimiy });
+    } catch (e) {
+      // 12-dars cheklovi: shu tashkilotchida shu maydon, kun va soatda «Doimiy o'yin» bor
+      if ((e as { code?: string }).code === '23505') throw new ConflictException("Bu «Doimiy o'yin» shu kun va soatda bor");
+      throw e;
+    }
     this.ulanishlar.oyinOzgardi(oyin.id, 'elon-berildi');
     await this.mukofot.tekshir(sorov.oyinchiId!);
     return { id: oyin.id, kun: oyin.kun, soat: oyin.soat, maydon: oyin.maydon, kerak: oyin.kerak };

@@ -1,8 +1,11 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Oyinchi } from './oyinchi.entity.js';
 
 // E'lon qilingan o'yin
+// Database cheklovi (13-Modul 12-dars): doimiy = true qatorlarda tashkilotchi, maydon, kun va soat birga noyob —
+// bitta «Doimiy o'yin» seriyasida bitta sana uchun bitta o'yin (ikki so'rov bir vaqtda keyingi o'yinni yaratmoqchi bo'lsa ham)
 @Entity('oyinlar')
+@Index('oyinlar_doimiy_bir_marta', ['tashkilotchi_id', 'maydon', 'kun', 'soat'], { unique: true, where: 'doimiy = true' })
 export class Oyin {
   @PrimaryGeneratedColumn()
   id: number;
