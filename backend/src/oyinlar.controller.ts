@@ -106,6 +106,17 @@ export class OyinlarController {
     return { id: oyin.id, kun: oyin.kun, soat: oyin.soat, maydon: oyin.maydon, kerak: oyin.kerak };
   }
 
+  // Bitta ish: joyni tekshirish va yozish bitta tranzaksiyada. O'yin qatori qulflanadi (SELECT … FOR UPDATE):
+  // shu o'yinga kelgan ikkinchi so'rov birinchisi tugashini kutib turadi, keyin yangi sonni ko'radi.
+  // Ikki kishi bir vaqtda bosganda ham bitta joyga ikki odam yozilmaydi.
+  private bittaIsh<T>(id: number, ish: (jadval: Repository<Ishtirokchi>, oyin: Oyin) => Promise<T>): Promise<T> {
+    return this.oyinlar.manager.transaction(async (m) => {
+      const oyin = await m.getRepository(Oyin).findOne({ where: { id }, lock: { mode: 'pessimistic_write' } });
+      if (!oyin) throw new NotFoundException("O'yin topilmadi");
+      return ish(m.getRepository(Ishtirokchi), oyin);
+    });
+  }
+
   // POST /oyinlar/:id/qoshilish → 201 { holat: 'qoshildi' } — ishtirokchilar ga qator.
   // O'yin to'lgan bo'lsa — 409 «O'yin to'ldi»; bu o'yinchi oldin qo'shilgan bo'lsa — 409 «Siz bu o'yinga qo'shilgansiz».
   // Ikki marta bosilsa ham bitta qator: (oyin_id, oyinchi_id) — Database kaliti, ikkinchisi 409.
@@ -113,17 +124,16 @@ export class OyinlarController {
   @Post(':id/qoshilish')
   async qoshilish(@Req() sorov: Sorov, @Param('id', ParseIntPipe) id: number) {
     const men = sorov.oyinchiId!;
-    const oyin = await this.oyinlar.findOneBy({ id });
-    if (!oyin) throw new NotFoundException("O'yin topilmadi");
+    return this.bittaIsh(id, async (jadval, oyin) => {
+      const qator = await jadval.findOneBy({ oyin_id: id, oyinchi_id: men });
+      if (qator && QOSHILGAN.includes(qator.holat)) throw new ConflictException("Siz bu o'yinga qo'shilgansiz");
 
-    const qator = await this.ishtirokchilar.findOneBy({ oyin_id: id, oyinchi_id: men });
-    if (qator && QOSHILGAN.includes(qator.holat)) throw new ConflictException("Siz bu o'yinga qo'shilgansiz");
+      const soni = await jadval.countBy({ oyin_id: id, holat: In(QOSHILGAN) });
+      if (soni >= oyin.kerak) throw new ConflictException("O'yin to'ldi");
 
-    const soni = await this.ishtirokchilar.countBy({ oyin_id: id, holat: In(QOSHILGAN) });
-    if (soni >= oyin.kerak) throw new ConflictException("O'yin to'ldi");
-
-    await this.yoz(this.ishtirokchilar, id, men, 'qoshildi', !!qator);
-    return { holat: 'qoshildi' };
+      await this.yoz(jadval, id, men, 'qoshildi', !!qator);
+      return { holat: 'qoshildi' };
+    });
   }
 
   // POST /oyinlar/:id/navbat → 201 { holat: 'navbatda' } — faqat to'lgan o'yinga (to'lmagan bo'lsa — 409).
@@ -131,42 +141,41 @@ export class OyinlarController {
   @Post(':id/navbat')
   async navbat(@Req() sorov: Sorov, @Param('id', ParseIntPipe) id: number) {
     const men = sorov.oyinchiId!;
-    const oyin = await this.oyinlar.findOneBy({ id });
-    if (!oyin) throw new NotFoundException("O'yin topilmadi");
+    return this.bittaIsh(id, async (jadval, oyin) => {
+      const qator = await jadval.findOneBy({ oyin_id: id, oyinchi_id: men });
+      if (qator && QOSHILGAN.includes(qator.holat)) throw new ConflictException("Siz bu o'yinga qo'shilgansiz");
+      if (qator?.holat === 'navbatda') throw new ConflictException('Siz navbatdasiz');
 
-    const qator = await this.ishtirokchilar.findOneBy({ oyin_id: id, oyinchi_id: men });
-    if (qator && QOSHILGAN.includes(qator.holat)) throw new ConflictException("Siz bu o'yinga qo'shilgansiz");
-    if (qator?.holat === 'navbatda') throw new ConflictException('Siz navbatdasiz');
+      const soni = await jadval.countBy({ oyin_id: id, holat: In(QOSHILGAN) });
+      if (soni < oyin.kerak) throw new ConflictException("O'yin to'lmagan — «Qo'shilaman» ni bosing");
 
-    const soni = await this.ishtirokchilar.countBy({ oyin_id: id, holat: In(QOSHILGAN) });
-    if (soni < oyin.kerak) throw new ConflictException("O'yin to'lmagan — «Qo'shilaman» ni bosing");
-
-    await this.yoz(this.ishtirokchilar, id, men, 'navbatda', !!qator);
-    return { holat: 'navbatda' };
+      await this.yoz(jadval, id, men, 'navbatda', !!qator);
+      return { holat: 'navbatda' };
+    });
   }
 
   // POST /oyinlar/:id/chiqish → 201 { holat: 'chiqdi' } — qo'shilgan yoki navbatdagi o'yinchi chiqadi.
-  // Qo'shilgan o'yinchi chiqsa va navbatda odam bo'lsa — navbatga eng birinchi yozilgan o'yinchi qoshildi bo'ladi.
+  // Qo'shilgan o'yinchi chiqsa va navbatda odam bo'lsa — navbatga eng birinchi yozilgan o'yinchi qoshildi bo'ladi
+  // (shu ishning ichida: bo'shagan joyni boshqa so'rov olib qo'ymaydi).
   @Post(':id/chiqish')
   async chiqish(@Req() sorov: Sorov, @Param('id', ParseIntPipe) id: number) {
     const men = sorov.oyinchiId!;
-    const oyin = await this.oyinlar.findOneBy({ id });
-    if (!oyin) throw new NotFoundException("O'yin topilmadi");
+    return this.bittaIsh(id, async (jadval) => {
+      const qator = await jadval.findOneBy({ oyin_id: id, oyinchi_id: men });
+      if (!qator || qator.holat === 'chiqdi') throw new ConflictException("Siz bu o'yinda yo'qsiz");
 
-    const qator = await this.ishtirokchilar.findOneBy({ oyin_id: id, oyinchi_id: men });
-    if (!qator || qator.holat === 'chiqdi') throw new ConflictException("Siz bu o'yinda yo'qsiz");
-
-    await this.ishtirokchilar.update({ oyin_id: id, oyinchi_id: men }, { holat: 'chiqdi' });
-    if (QOSHILGAN.includes(qator.holat)) {
-      const navbatdagi = await this.ishtirokchilar.findOne({
-        where: { oyin_id: id, holat: 'navbatda' },
-        order: { yaratilgan: 'ASC' },
-      });
-      if (navbatdagi) {
-        await this.ishtirokchilar.update({ oyin_id: id, oyinchi_id: navbatdagi.oyinchi_id }, { holat: 'qoshildi' });
+      await jadval.update({ oyin_id: id, oyinchi_id: men }, { holat: 'chiqdi' });
+      if (QOSHILGAN.includes(qator.holat)) {
+        const navbatdagi = await jadval.findOne({
+          where: { oyin_id: id, holat: 'navbatda' },
+          order: { yaratilgan: 'ASC' },
+        });
+        if (navbatdagi) {
+          await jadval.update({ oyin_id: id, oyinchi_id: navbatdagi.oyinchi_id }, { holat: 'qoshildi' });
+        }
       }
-    }
-    return { holat: 'chiqdi' };
+      return { holat: 'chiqdi' };
+    });
   }
 
   // Qator yozish: shu o'yinda bu o'yinchining qatori bo'lsa — holati va vaqti yangilanadi (bitta qator), bo'lmasa — yangi qator.
