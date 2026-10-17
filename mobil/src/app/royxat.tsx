@@ -1,17 +1,21 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { sora } from '@/api';
 import { Maydoncha, Tugma } from '@/components/forma';
+import { hodisaYoz } from '@/hodisa';
+import { MAXFIYLIK } from '@/lending';
 import { R } from '@/ranglar';
 
-// Ro'yxatdan o'tish: POST /royxat { ism, telefon, parol } → keyin «Kirish» ochiladi (token bu yerda berilmaydi)
+// Ro'yxatdan o'tish: POST /royxat { ism, login, parol } → keyin «Kirish» ochiladi (token bu yerda berilmaydi).
+// Telefon raqami so'ralmaydi — mahsulotga kerak emas (SMS yuborilmaydi). Login — o'zi tanlagan nom, band bo'lsa «Bu login band».
+// Muvaffaqiyatli bo'lsa — qadam royxatdan-otdi.
 export default function Royxat() {
   const router = useRouter();
   const [ism, setIsm] = useState('');
-  const [telefon, setTelefon] = useState('');
+  const [login, setLogin] = useState('');
   const [parol, setParol] = useState('');
   const [xabar, setXabar] = useState('');
   const [kutish, setKutish] = useState(false);
@@ -20,7 +24,8 @@ export default function Royxat() {
     setXabar('');
     setKutish(true);
     try {
-      await sora('/royxat', { method: 'POST', body: { ism, telefon, parol } });
+      await sora('/royxat', { method: 'POST', body: { ism, login, parol } });
+      hodisaYoz('royxatdan-otdi');
       router.replace('/kirish');
     } catch (e) {
       setXabar((e as Error).message);
@@ -36,15 +41,20 @@ export default function Royxat() {
         <Text style={s.sarlavha}>Ro'yxatdan o'tish</Text>
         <Maydoncha nom="Ism" value={ism} onChangeText={setIsm} placeholder="Ali" />
         <Maydoncha
-          nom="Telefon"
-          value={telefon}
-          onChangeText={setTelefon}
-          placeholder="+998 90 000 00 01"
-          keyboardType="phone-pad"
+          nom="Login"
+          value={login}
+          onChangeText={setLogin}
+          placeholder="ali"
+          autoCapitalize="none"
+          autoCorrect={false}
         />
         <Maydoncha nom="Parol" value={parol} onChangeText={setParol} secureTextEntry />
+        <Text style={s.gap}>Ism — o'yinchilar ko'radigan nom, familiya shart emas. Loginni boshqa o'yinchilar ko'rmaydi.</Text>
+        <Pressable onPress={() => Linking.openURL(MAXFIYLIK)}>
+          <Text style={s.siyosat}>Maxfiylik siyosati</Text>
+        </Pressable>
         {!!xabar && <Text style={s.xato}>{xabar}</Text>}
-        <Tugma matn="Ro'yxatdan o'tish" onPress={yubor} ochiq={kutish || !ism.trim() || !telefon.trim() || !parol} />
+        <Tugma matn="Ro'yxatdan o'tish" onPress={yubor} ochiq={kutish || !ism.trim() || !login.trim() || !parol} />
         <Pressable onPress={() => router.replace('/kirish')}>
           <Text style={s.havola}>Kirish</Text>
         </Pressable>
@@ -59,5 +69,7 @@ const s = StyleSheet.create({
   nom: { fontSize: 18, fontWeight: '700', color: R.yashil },
   sarlavha: { fontSize: 26, fontWeight: '700', color: R.matn },
   xato: { color: '#C0392B', fontSize: 15 },
+  gap: { fontSize: 14, color: R.kulrang },
+  siyosat: { fontSize: 14, color: R.yashil, textDecorationLine: 'underline' },
   havola: { color: R.yashil, fontSize: 16, textAlign: 'center', padding: 8 },
 });

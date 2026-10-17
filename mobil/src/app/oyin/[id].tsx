@@ -1,15 +1,17 @@
 import * as Notifications from 'expo-notifications';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { sora } from '@/api';
 import { Tugma } from '@/components/forma';
 import { Son } from '@/components/son';
+import { hodisaYoz } from '@/hodisa';
 import { kunNomi } from '@/kun';
 import { oyinlarniOl, useOyinlar, type Oyin } from '@/oyin';
 import { R } from '@/ranglar';
+import { tasdiqSora } from '@/tasdiq';
 import { oyinniOch, oyinniYop, useKorayotganlar } from '@/ulanish';
 
 // Eslatma (rejalashtirilgan, expo-notifications): «Qo'shilaman» muvaffaqiyatli bo'lganda ilova eslatmani
@@ -107,6 +109,8 @@ export default function OyinEkrani() {
       await sora(`/oyinlar/${id}/${yol}`, { method: 'POST' });
       // Eslatma — Backend javobi muvaffaqiyatli bo'lgandan keyin; eslatma xatosi asosiy ishni buzmaydi
       if (yol === 'qoshilish' && oyin) eslatmaQoy(oyin).catch(() => {});
+      // Qadamlar sanog'i: «Qo'shilaman» muvaffaqiyatli bo'lganda — qoshildi
+      if (yol === 'qoshilish') hodisaYoz('qoshildi');
       if (yol === 'chiqish') eslatmaBekor(Number(id)).catch(() => {});
     } catch (e) {
       setXabar((e as Error).message);
@@ -117,10 +121,7 @@ export default function OyinEkrani() {
   }
 
   function chiq() {
-    Alert.alert('Rostdan chiqasizmi?', undefined, [
-      { text: "Yo'q", style: 'cancel' },
-      { text: 'Ha', style: 'destructive', onPress: () => harakat('chiqish') },
-    ]);
+    tasdiqSora('Rostdan chiqasizmi?', () => harakat('chiqish'));
   }
 
   // «Kelaman» → POST /oyinlar/:id/tasdiq. Tugma faqat menTasdiqlayOlaman bo'lsa chiqadi, lekin ruxsatni baribir
@@ -130,6 +131,7 @@ export default function OyinEkrani() {
     setKutish(true);
     try {
       await sora(`/oyinlar/${id}/tasdiq`, { method: 'POST' });
+      hodisaYoz('tasdiqladi');
     } catch (e) {
       setTasdiqXabar((e as Error).message);
     } finally {

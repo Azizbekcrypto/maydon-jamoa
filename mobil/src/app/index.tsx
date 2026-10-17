@@ -1,13 +1,15 @@
+import * as Notifications from 'expo-notifications';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { tokenOchir, tokenOl } from '@/api';
+import { sora, tokenOchir, tokenOl } from '@/api';
 import { BosiladiganKarta } from '@/components/bosiladigan-karta';
 import { kunNomi } from '@/kun';
 import { oyinlarniOl, useOyinlar, type Oyin } from '@/oyin';
 import { R } from '@/ranglar';
+import { tasdiqSora } from '@/tasdiq';
 import { ulan, useUlanishHolati, uzil } from '@/ulanish';
 
 // Sinov tuzatishi (13-dars): o'yinlar kun va soat bo'yicha, har kun o'z sarlavhasi bilan («Shanba», «Yakshanba»).
@@ -60,19 +62,39 @@ export default function Oyinlar() {
     setTortildi(false);
   }
 
+  // «Hisobdan chiqish»: ulanish yopiladi, token o'chadi, shu telefondagi rejalashtirilgan eslatmalar bekor bo'ladi
   async function hisobdanChiq() {
     uzil();
+    await Notifications.cancelAllScheduledNotificationsAsync().catch(() => {});
     await tokenOchir();
     router.replace('/kirish');
+  }
+
+  // «Hisobni o'chirish» → «Rostdan o'chirasizmi?» → DELETE /hisob: akkaunt va qatnashuv yozuvlari o'chadi
+  // (e'lon qilgan o'yinlar qoladi — tashkilotchisi bo'sh); keyin — xuddi «Hisobdan chiqish».
+  function hisobniOchir() {
+    tasdiqSora("Rostdan o'chirasizmi?", async () => {
+      try {
+        await sora('/hisob', { method: 'DELETE' });
+        await hisobdanChiq();
+      } catch (e) {
+        setXato((e as Error).message);
+      }
+    });
   }
 
   return (
     <SafeAreaView style={s.ekran}>
       <View style={s.tepa}>
         <Text style={s.nom}>Maydon Jamoa</Text>
-        <Pressable onPress={hisobdanChiq}>
-          <Text style={s.chiqish}>Hisobdan chiqish</Text>
-        </Pressable>
+        <View style={s.hisobTugmalar}>
+          <Pressable onPress={hisobdanChiq}>
+            <Text style={s.chiqish}>Hisobdan chiqish</Text>
+          </Pressable>
+          <Pressable onPress={hisobniOchir}>
+            <Text style={s.ochirish}>Hisobni o'chirish</Text>
+          </Pressable>
+        </View>
       </View>
       <ScrollView
         contentContainerStyle={s.ichi}
@@ -143,7 +165,9 @@ const s = StyleSheet.create({
   ekran: { flex: 1, backgroundColor: R.fon },
   tepa: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12 },
   nom: { fontSize: 18, fontWeight: '700', color: R.yashil },
+  hisobTugmalar: { flexDirection: 'row', gap: 16 },
   chiqish: { fontSize: 14, color: R.kulrang },
+  ochirish: { fontSize: 14, color: '#C0392B' },
   ichi: { padding: 20, paddingTop: 4 },
   sarlavhaQator: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
   izoh: { fontSize: 14, color: R.kulrang, marginTop: -10, marginBottom: 14 },

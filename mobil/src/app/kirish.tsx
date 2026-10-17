@@ -7,10 +7,10 @@ import { sora, tokenSaqla } from '@/api';
 import { Maydoncha, Tugma } from '@/components/forma';
 import { R } from '@/ranglar';
 
-// Kirish: POST /kirish { telefon, parol } → token telefonda expo-secure-store ga saqlanadi → «O'yinlar»
+// Kirish: POST /kirish { login, parol } → token telefonda expo-secure-store ga saqlanadi → «O'yinlar»
 export default function Kirish() {
   const router = useRouter();
-  const [telefon, setTelefon] = useState('');
+  const [login, setLogin] = useState('');
   const [parol, setParol] = useState('');
   const [xabar, setXabar] = useState('');
   const [kutish, setKutish] = useState(false);
@@ -19,7 +19,7 @@ export default function Kirish() {
     setXabar('');
     setKutish(true);
     try {
-      const { token } = await sora<{ token: string }>('/kirish', { method: 'POST', body: { telefon, parol } });
+      const { token } = await sora<{ token: string }>('/kirish', { method: 'POST', body: { login, parol } });
       await tokenSaqla(token);
       router.replace('/');
     } catch (e) {
@@ -34,16 +34,10 @@ export default function Kirish() {
       <ScrollView contentContainerStyle={s.ichi} keyboardShouldPersistTaps="handled">
         <Text style={s.nom}>Maydon Jamoa</Text>
         <Text style={s.sarlavha}>Kirish</Text>
-        <Maydoncha
-          nom="Telefon"
-          value={telefon}
-          onChangeText={setTelefon}
-          placeholder="+998 90 000 00 01"
-          keyboardType="phone-pad"
-        />
+        <Maydoncha nom="Login" value={login} onChangeText={setLogin} placeholder="ali" autoCapitalize="none" autoCorrect={false} />
         <Maydoncha nom="Parol" value={parol} onChangeText={setParol} secureTextEntry />
         {!!xabar && <Text style={s.xato}>{xabar}</Text>}
-        <Tugma matn="Kirish" onPress={kir} ochiq={kutish || !telefon.trim() || !parol} />
+        <Tugma matn="Kirish" onPress={kir} ochiq={kutish || !login.trim() || !parol} />
         <Pressable onPress={() => router.replace('/royxat')}>
           <Text style={s.havola}>Ro'yxatdan o'tish</Text>
         </Pressable>

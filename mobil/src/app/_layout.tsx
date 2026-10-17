@@ -1,15 +1,26 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { hodisaYoz } from '@/hodisa';
 import { R } from '@/ranglar';
 import { useJonliXabarlar } from '@/ulanish';
 
 // Ekranlar Stack'da: yangi ekran ustiga suriladi, «‹ O'yinlar» uni olib tashlaydi.
 // Sarlavhani har ekran o'zi chizadi, shuning uchun Stack sarlavhasi yashirilgan.
 // Hamma ekranlar tepasida — jonli xabarlar (ulanish.ts): bir necha soniya turadi va o'zi yo'qoladi.
+// Qadamlar sanog'i: ilova ochilganda — ochdi (bitta ochilishga bitta).
+let ochdiYozildi = false;
+
 export default function Layout() {
+  useEffect(() => {
+    if (ochdiYozildi) return;
+    ochdiYozildi = true;
+    hodisaYoz('ochdi');
+  }, []);
+
   return (
     <>
       <StatusBar style="dark" />
