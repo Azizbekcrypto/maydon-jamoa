@@ -1,5 +1,5 @@
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -35,6 +35,10 @@ export default function OyinEkrani() {
   const oyin: Oyin | null | undefined = oyinlar ? (oyinlar.find((o) => String(o.id) === id) ?? null) : undefined;
   const [xabar, setXabar] = useState('');
   const [kutish, setKutish] = useState(false);
+  // Bosish javobi (14-Modul 4-dars): «Qo'shilaman» bosilgan zahoti «Qo'shilmoqda…» — javob kelguncha
+  const [qoshilmoqda, setQoshilmoqda] = useState(false);
+  // So'rov ketgan payt — ekran hali yangilanmagan bo'lsa ham ikkinchi bosish ikkinchi so'rov yubormaydi
+  const yuborilmoqda = useRef(false);
   const [tortildi, setTortildi] = useState(false);
   // «Kelaman»: Backend rad etgan bo'lsa — sababi
   const [tasdiqXabar, setTasdiqXabar] = useState('');
@@ -70,9 +74,13 @@ export default function OyinEkrani() {
 
   // «Qo'shilaman» → …/qoshilish · «Navbatga yozilish» → …/navbat · «O'yindan chiqish» → …/chiqish.
   // Javob kelguncha tugmalar o'chiq — ikki marta bosilmaydi. 409 bo'lsa — Backend xabari tugma ostida.
+  // «Qo'shilaman»: bosilishi bilan «Qo'shilmoqda…» va kutish belgisi; javob kelgach — «Qo'shildingiz», xatoda — yana «Qo'shilaman».
   async function harakat(yol: 'qoshilish' | 'navbat' | 'chiqish') {
+    if (yuborilmoqda.current) return;
+    yuborilmoqda.current = true;
     setXabar('');
     setKutish(true);
+    if (yol === 'qoshilish') setQoshilmoqda(true);
     try {
       await sora(`/oyinlar/${id}/${yol}`, { method: 'POST' });
       // Qadamlar sanog'i: «Qo'shilaman» muvaffaqiyatli bo'lganda — qoshildi
@@ -89,6 +97,8 @@ export default function OyinEkrani() {
     } finally {
       await yukla();
       setKutish(false);
+      setQoshilmoqda(false);
+      yuborilmoqda.current = false;
     }
   }
 
@@ -180,7 +190,12 @@ export default function OyinEkrani() {
           ) : oyin.qoshilgan >= oyin.kerak ? (
             <Tugma matn="Navbatga yozilish" onPress={() => harakat('navbat')} ochiq={kutish} />
           ) : (
-            <Tugma matn="Qo'shilaman" onPress={() => harakat('qoshilish')} ochiq={kutish} />
+            <Tugma
+              matn={qoshilmoqda ? "Qo'shilmoqda…" : "Qo'shilaman"}
+              onPress={() => harakat('qoshilish')}
+              ochiq={kutish}
+              kutmoqda={qoshilmoqda}
+            />
           )}
           {oyin.menTasdiqlaganman ? (
             <Tugma matn="Tasdiqladingiz" onPress={() => {}} ochiq />
