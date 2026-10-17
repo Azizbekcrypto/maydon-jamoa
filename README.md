@@ -3,7 +3,8 @@
 «Maydon Jamoa» — mahalladagi mini-futbol uchun jamoa yig'adigan mahsulot: tashkilotchi o'yin e'lon qiladi
 (kun, soat, maydon, nechta odam kerak), boshqa o'yinchilar «Qo'shilaman» ni bosadi; e'londa «8 / 10» — qo'shilganlar / kerak.
 
-Bu repo — 11, 12 va 13-Modul Mentor misoli: prototip, ilova va Backend'ni 11-Modulda qurasiz, 12-Modulda — lending, real vaqt, eslatma va birinchi foydalanuvchilar, 13-Modulda — pul: Pro va test rejimdagi to'lov.
+Bu repo — 11, 12, 13 va 14-Modul Mentor misoli: prototip, ilova va Backend'ni 11-Modulda qurasiz, 12-Modulda — lending, real vaqt, eslatma va birinchi foydalanuvchilar, 13-Modulda — pul: Pro va test rejimdagi to'lov,
+14-Modulda — himoyaga tayyorgarlik: yangi funksiya qo'shilmaydi, demo yo'li sayqallanadi, demo tayyorlanadi va buzib tekshiriladi.
 
 ## Talab (7-dars)
 
@@ -341,6 +342,29 @@ Qurilmalar — `oyinchi_qurilmalari` (`oyinchi_id`, `qurilma_id` jufti noyob; es
 «Havolani ulashish» ostida kulrang qator: «Siz taklif qilgan yangi o'yinchi o'yinga qo'shilsa yoki o'yin e'lon qilsa — Pro'ga 7 kun qo'shiladi (haftasiga ko'pi bilan 2 marta).»
 Maxfiylik siyosatida — taklif ma'lumoti qatori; ofertada (`lending/oferta.html`) — 7-band «Taklif mukofoti» (qoida va berilmaydigan to'rt holat). Havola faqat tanish doiraga — bosim yo'q.
 
+## Demo (14-Modul)
+
+Demo — Demo Day'da hakamlar oldida laptop brauzerida (ilovaning brauzer ko'rinishi) proyektorga; telefon — ikkinchi qurilma (ikkinchi o'yinchi).
+14-Modulda yangi funksiya qo'shilmaydi: kod faqat demo yo'lida o'zgaradi (4-dars — sayqal, 7-dars — demo tekshiruvi tuzatishlari).
+
+### Sayqal — demo yo'lidagi uch joy (4-dars)
+
+Hakam ko'radigan 1–2 daqiqadagi uch joy — faqat ilovada (`mobil/`), Backend o'zgarmagan:
+
+| Joy | Ekran va fayl | Nima bo'ladi |
+|---|---|---|
+| bosish javobi | «O'yin» — `mobil/src/app/oyin/[id].tsx`, tugma `mobil/src/components/forma.tsx` | «Qo'shilaman» bosilishi bilan, javobni kutmasdan — «Qo'shilmoqda…», yonida kichik kutish belgisi, tugma o'chiq; so'rov ketgan payt ikkinchi bosish ikkinchi qo'shilish so'rovini yubormaydi. Javob kelgach — «Qo'shildingiz», xatoda — yana «Qo'shilaman» va Backend xabari |
+| yuklanish holati | «O'yinlar» — `mobil/src/app/index.tsx` | ro'yxat yuklanayotganda — ikkita kulrang karta (joy egallovchi: o'yin kartasi o'lchamida, soat, maydon va son o'rnida kulrang chiziqlar, harakatsiz), ostida kutish yozuvi «O'yinlar yuklanmoqda — bu bir daqiqagacha cho'zilishi mumkin.» (Backend uyg'onayotgan bo'lishi mumkin) |
+| muvaffaqiyat | «O'yin» — son, `mobil/src/components/son.tsx` | o'z qo'shilishi muvaffaqiyatli bo'lganda «8 / 10» → «9 / 10» — son bir lahza kattalashib qaytadi, bir marta (`Animated`, 0,3 soniya); jonli son (boshqa o'yinchi) o'zgarganda — animatsiyasiz |
+
+Harakatni kamaytirish (`mobil/src/hooks/use-harakat-kam.ts`: `AccessibilityInfo.isReduceMotionEnabled()` va `reduceMotionChanged`; brauzer ko'rinishida — `prefers-reduced-motion`):
+son kattalashmaydi, karta bosilganda kichraymaydi, «Qo'shilmoqda…» yonidagi aylanuvchi belgi yashirinadi — yozuv, kulrang kartalar va yangi son ko'rinib turadi.
+Animatsiya uchun yangi kutubxona yo'q — loyihadagi `Animated` (React Native).
+
+Tekshirish (brauzer ko'rinishi, kompyuterda — `npx expo start` → `w`): DevTools → Network → «Slow 4G» — uch joy ko'rinadimi;
+DevTools → Rendering → «Emulate CSS media feature prefers-reduced-motion» → `reduce` — harakat o'chadi, holat qoladi. Emulyatsiya faqat shu oynada ishlaydi.
+Tekshiruv — real odamlar qo'shilmagan o'yinda (namuna o'yin «Shanba, 18:00»), har bosishdan keyin «O'yindan chiqish».
+
 ## Backend yo'llari
 
 Yopiq yo'llar (`/oyinlar` va `/hisob`) — faqat token bilan (`Authorization: Bearer <token>`), tokensiz `401`.
@@ -429,6 +453,7 @@ Terminaldagi QR'ni skanerlang: Android'da — Expo Go'dagi «Scan QR code», iPh
 QR odatda telefon va kompyuter bitta Wi-Fi'da bo'lsa ochiladi; ochilmasa — `npm i -g @expo/ngrok`, keyin `npx expo start --tunnel` (sekinroq).
 Expo Go'dagi ilova kodi kompyuterdagi `npx expo start` dan keladi: u to'xtasa, telefonda ham ochilmaydi; o'yinlar esa `EXPO_PUBLIC_API_URL` dagi Backend'dan.
 Ilovada: «Ro'yxatdan o'tish» (Ism · Login · Parol, masalan `Ali` · `ali`; telefon so'ralmaydi) → «Kirish» (login va parol) → «O'yinlar».
+«O'yinlar» yuklanayotganda — ikkita kulrang karta va kutish yozuvi (14-Modul 4-dars; Render'dagi bepul Backend uyg'onayotganda bir daqiqagacha).
 Kirmagan odam (mehmon ko'rinishi) ham «O'yinlar»ni ko'radi — tepada «Kirish»; «Qo'shilaman» → «Ro'yxatdan o'tish»; ro'yxat ekran ochilganda va pastga tortganda yangilanadi.
 «O'yinlar» sarlavhasi yonida (kirgan o'yinchida) — ulanish belgisi: «Ulangan» (Backend'ga doimiy ulangan) · «Ulanmoqda…» (ulanish yo'q, ilova o'zi urinmoqda — masalan, uchish rejimida) · «Ulanmagan» (ilova urinmayapti — token yaroqsiz yoki hisobdan chiqilgan).
 Ikkinchi o'yinchini tekshirish: «Hisobdan chiqish» → boshqa login bilan ro'yxatdan o'ting (masalan `ali2`; login band bo'lsa — «Bu login band»).
@@ -632,6 +657,17 @@ Repo'ga yozmaydigan darslarda (1, 2 · 6 · 9 · 11 — PM) `-done` = `-start`. 
 | `m13-dars-10-done` | 10 · loyiha kuni: taklif havolasi va mukofot | `oyinchilar.taklif_kodi` (6 belgi, `A–Z` `0–9`, noyob; yangi hisobga va mavjudlarga bir marta), `GET /men` da `taklifKodi`; «Havolani ulashish» — `?taklif=<kod>&kanal=taklif`; lending «Taklif kodi: …»; formada «Taklif kodi (bo'lsa)» (bo'shliqsiz, katta harfga; topilmasa «Bunday taklif kodi topilmadi — …»), `taklif_qilgan_id`; `oyinchi_qurilmalari` (`POST /royxat` `qurilmaId`, `POST /men/qurilma` — kirish va ulashishda), `taklif_natijalari` (`berildi` · `bir-qurilma` · `namuna` · `nomalum` · `cheklov`); mukofot — Pro + 7 kun, haftasiga ≤2, birinchi asosiy harakatdan keyin alohida tranzaksiyada; qoida qatori ilovada, maxfiylik va ofertaga band. Yangi APK kerak (lending havolasi almashtiriladi) |
 | `m13-dars-12-done` | 12 · loyiha kuni: barqarorlashtirish | besh tekshiruv (kirish va ro'yxat · asosiy harakat · to'lov oqimi · taklif havolasi · Telegram xabari): 1–4 buzilmadi, 5 buzildi — ikki telefon bir vaqtda «O'yinlar»ni ochganda keyingi «Doimiy o'yin» ikki marta yaratilib, Telegram xabari ikki marta ketdi. Tuzatish (`backend/` — `oyin.entity.ts`, `doimiy.ts`, `migratsiya.ts`): Database cheklovi, ikkinchi urinish jimgina o'tkaziladi; qayta tekshiruvda takrorlanmadi. `XATOLAR.md` (usul · natija · holat; buzilmagan va tekshirilmagan yo'llar). Yangi versiya — `git push` bilan Render; `mobil/`, `lending/` o'zgarmagan — APK va brauzer ko'rinishi qayta chiqarilmaydi |
 
+### 14-Modul
+
+Teglar: `m14-dars-NN-start` — dars boshidagi holat, `m14-dars-NN-done` — dars oxiridagi holat. Repo'ga yoziladigan darslar — 4 (sayqal), 6 (demo tayyorgarligi), 7 (demo tekshiruvi);
+qolganlari (pitch, video-portfolio, xatlar) repo'ga yozmaydi.
+`m14-dars-04-start` — `m13-dars-12-done` ustiga «O'yinlar» kutish yozuvi (11-Modul 15-dars Mentor qadami).
+
+| Teg | Dars | Nima bor |
+|---|---|---|
+| `m14-dars-04-start` | 4 · boshlanish | `m13-dars-12-done` + «O'yinlar» yuklanayotganda kutish belgisi va kutish yozuvi «O'yinlar yuklanmoqda — bu bir daqiqagacha cho'zilishi mumkin.»; «Qo'shilaman» — sayqalsiz |
+| `m14-dars-04-done` | 4 · loyiha kuni: demo uchun sayqal | demo yo'lidagi uch joy (`mobil/`, Backend o'zgarmagan): bosish javobi — «Qo'shilmoqda…» va kutish belgisi, tugma o'chiq, ikkinchi so'rov yo'q · joy egallovchi — ikkita kulrang karta, ostida kutish yozuvi · muvaffaqiyat — o'z qo'shilishida son bir marta kattalashib qaytadi, jonli son — animatsiyasiz; harakatni kamaytirish — son kattalashmaydi, kutish belgisi yashirinadi. Yangi versiya — brauzer ko'rinishi (`npx expo export -p web` → `netlify deploy --prod --dir dist`); APK bu tegda qayta tayyorlanmagan (demo — brauzerda). README «Demo (14-Modul)» |
+
 ## Ortda qoldingizmi
 
 ```
@@ -646,3 +682,4 @@ Mentor misolini o'z repo'ngizdan tashqarida, alohida yangi papkada ochib, qanday
 (5-darsda — `m13-dars-05-start`: agent «to'lov ishlaydi» deganidan keyingi kod; 12-darsda — `m13-dars-12-start`). `backend/.env` va `mobil/.env` ga o'z qiymatlaringizni yozasiz
 (`.env.example` dan nusxa); `mobil/src/lending.ts`, `mobil/eas.json`, `lending/index.html`, `lending/sanoq.html` va `backend/src/telegram/manzil.ts` dagi manzillar — namuna;
 `TOLOV_KALITI`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_SIR` — o'zingizniki (Telegram — o'z yangi botingiz).
+14-Modul teglari — `git checkout -f m14-dars-NN-done` (repo'ga yoziladigan darslar: 4, 6, 7).
