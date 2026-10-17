@@ -1,5 +1,5 @@
-import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -12,25 +12,28 @@ import { R } from '@/ranglar';
 type Oyin = { id: number; kun: string; soat: string; maydon: string; kerak: number };
 
 // O'yinlar: ro'yxat Backend'dan (GET /oyinlar, token bilan), eng yangi e'lon tepada.
-// Ilova ochilganda token bo'lmasa — «Kirish».
+// Ekran ochilganda so'raladi (E'lon berishdan qaytganda ham — yangi e'lon tepada). Token bo'lmasa — «Kirish».
 export default function Oyinlar() {
   const router = useRouter();
   const [oyinlar, setOyinlar] = useState<Oyin[] | null>(null);
   const [xato, setXato] = useState('');
 
-  useEffect(() => {
-    (async () => {
-      if (!(await tokenOl())) {
-        router.replace('/kirish');
-        return;
-      }
-      try {
-        setOyinlar(await sora<Oyin[]>('/oyinlar'));
-      } catch (e) {
-        setXato((e as Error).message);
-      }
-    })();
-  }, [router]);
+  useFocusEffect(
+    useCallback(() => {
+      (async () => {
+        if (!(await tokenOl())) {
+          router.replace('/kirish');
+          return;
+        }
+        try {
+          setOyinlar(await sora<Oyin[]>('/oyinlar'));
+          setXato('');
+        } catch (e) {
+          setXato((e as Error).message);
+        }
+      })();
+    }, [router]),
+  );
 
   async function hisobdanChiq() {
     await tokenOchir();

@@ -1,26 +1,40 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { useOyinlar } from '@/oyinlar-holati';
+import { sora } from '@/api';
+import { Maydoncha, Tugma } from '@/components/forma';
+import { keyingiKunlar } from '@/kun';
 import { R } from '@/ranglar';
 
-// E'lon berish: kun · soat · maydon · nechta odam → «Yuborish» → O'yinlar
+// E'lon berish: kun · soat · maydon · nechta odam → «Yuborish» → POST /oyinlar (token bilan) → «O'yinlar».
+// «Kim» so'ralmaydi — tashkilotchini Backend tokendan oladi. Biror maydon bo'sh bo'lsa, Backend 400 qaytaradi va
+// ilova nima yetmaganini aytadi.
 export default function Elon() {
   const router = useRouter();
-  const { elonBer } = useOyinlar();
+  const kunlar = keyingiKunlar();
   const [kun, setKun] = useState('');
   const [soat, setSoat] = useState('');
   const [maydon, setMaydon] = useState('');
   const [kerak, setKerak] = useState('');
+  const [xabar, setXabar] = useState('');
+  const [kutish, setKutish] = useState(false);
 
-  const toliq = kun.trim() && soat.trim() && maydon.trim() && Number(kerak) > 0;
-
-  function yubor() {
-    if (!toliq) return;
-    elonBer({ kun: kun.trim(), soat: soat.trim(), maydon: maydon.trim(), kerak: Number(kerak) });
-    router.back();
+  async function yubor() {
+    setXabar('');
+    setKutish(true);
+    try {
+      await sora('/oyinlar', {
+        method: 'POST',
+        body: { kun, soat: soat.trim(), maydon: maydon.trim(), kerak: kerak.trim() === '' ? '' : Number(kerak) },
+      });
+      router.back();
+    } catch (e) {
+      setXabar((e as Error).message);
+    } finally {
+      setKutish(false);
+    }
   }
 
   return (
@@ -30,31 +44,28 @@ export default function Elon() {
           <Text style={s.orqaga}>‹ O'yinlar</Text>
         </Pressable>
         <Text style={s.sarlavha}>E'lon berish</Text>
-        <Maydoncha nom="Kun" qiymat={kun} onChange={setKun} namuna="Yakshanba" />
-        <Maydoncha nom="Soat" qiymat={soat} onChange={setSoat} namuna="19:00" />
-        <Maydoncha nom="Maydon" qiymat={maydon} onChange={setMaydon} namuna="Maktab maydoni" />
-        <Maydoncha nom="Nechta odam" qiymat={kerak} onChange={setKerak} namuna="10" raqam />
+        <View style={s.qator}>
+          <Text style={s.yorliq}>Kun</Text>
+          <View style={s.kunlar}>
+            {kunlar.map((k, i) => (
+              <Pressable key={k.sana} style={[s.kun, kun === k.sana && s.kunTanlangan]} onPress={() => setKun(k.sana)}>
+                <Text style={[s.kunMatn, kun === k.sana && s.kunMatnTanlangan]}>
+                  {k.nom}
+                  {i === 0 ? ' · bugun' : ''}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+        <Maydoncha nom="Soat" value={soat} onChangeText={setSoat} placeholder="19:00" />
+        <Maydoncha nom="Maydon" value={maydon} onChangeText={setMaydon} placeholder="Maktab maydoni" />
+        <Maydoncha nom="Nechta odam" value={kerak} onChangeText={setKerak} placeholder="10" keyboardType="number-pad" />
+        {!!xabar && <Text style={s.xato}>{xabar}</Text>}
       </ScrollView>
-      <Pressable style={[s.tugma, !toliq && s.ochiq]} disabled={!toliq} onPress={yubor}>
-        <Text style={[s.tugmaMatn, !toliq && s.ochiqMatn]}>Yuborish</Text>
-      </Pressable>
+      <View style={s.past}>
+        <Tugma matn="Yuborish" onPress={yubor} ochiq={kutish} />
+      </View>
     </SafeAreaView>
-  );
-}
-
-function Maydoncha(p: { nom: string; qiymat: string; onChange: (v: string) => void; namuna: string; raqam?: boolean }) {
-  return (
-    <View style={s.qator}>
-      <Text style={s.yorliq}>{p.nom}</Text>
-      <TextInput
-        style={s.kiritish}
-        value={p.qiymat}
-        onChangeText={p.onChange}
-        placeholder={p.namuna}
-        placeholderTextColor={R.kulrang}
-        keyboardType={p.raqam ? 'number-pad' : 'default'}
-      />
-    </View>
   );
 }
 
@@ -65,9 +76,11 @@ const s = StyleSheet.create({
   sarlavha: { fontSize: 26, fontWeight: '700', color: R.matn },
   qator: { gap: 6 },
   yorliq: { fontSize: 15, color: R.kulrang },
-  kiritish: { borderWidth: 1, borderColor: R.chiziq, borderRadius: 10, padding: 12, fontSize: 16, color: R.matn },
-  tugma: { margin: 20, padding: 16, borderRadius: 12, backgroundColor: R.yashil, alignItems: 'center' },
-  tugmaMatn: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  ochiq: { backgroundColor: R.chiziq },
-  ochiqMatn: { color: R.kulrang },
+  kunlar: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  kun: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 18, borderWidth: 1, borderColor: R.chiziq },
+  kunTanlangan: { backgroundColor: R.yashil, borderColor: R.yashil },
+  kunMatn: { fontSize: 15, color: R.matn },
+  kunMatnTanlangan: { color: '#fff' },
+  xato: { color: '#C0392B', fontSize: 15 },
+  past: { padding: 20 },
 });

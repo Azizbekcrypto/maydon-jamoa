@@ -18,3 +18,10 @@ export function keyingiShanbaYakshanba(hozir = new Date()): { shanba: string; ya
   const shanba = kunQosh(bugun, (6 - haftaKuni + 7) % 7);
   return { shanba, yakshanba: kunQosh(shanba, 1) };
 }
+
+// '2026-10-11' — haqiqiy sanami
+export function sanaTogrimi(kun: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(kun)) return false;
+  const d = new Date(`${kun}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === kun;
+}
