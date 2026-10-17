@@ -27,6 +27,18 @@ export class Oyinchi {
   @Column({ type: 'timestamptz', nullable: true })
   pro_gacha: Date | null;
 
+  // Telegram chat raqami (13-Modul 8-dars) — faqat xabar yuborish uchun; o'yinchi botda «Start»ni o'zi bosganda yoziladi,
+  // «Telegram xabarlarini o'chirish»da o'chadi. Katta son (52 bitgacha) — bigint, to'liq saqlanadi; ilovaga yuborilmaydi
+  @Column({ type: 'bigint', nullable: true })
+  telegram_chat_id: string | null;
+
+  // Bir martalik kod (16 harf-raqam) va amal qilish muddati (10 daqiqa): «Telegram'da xabar olish» → t.me/<bot>?start=<kod>
+  @Column({ type: 'varchar', length: 16, nullable: true, unique: true })
+  telegram_kod: string | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  telegram_kod_gacha: Date | null;
+
   // Ro'yxatdan o'tgan vaqt (Database o'zi to'ldiradi)
   @CreateDateColumn({ type: 'timestamptz' })
   yaratilgan: Date;

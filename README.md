@@ -43,6 +43,8 @@ Saqlanadigan ma'lumotlar: o'yinchilar · o'yinlar · kim qaysi o'yinga qo'shilga
 | `login` | kirish uchun o'zi tanlagan nom (3–20 belgi, harf va raqam; kichik harfda; takrorlanmaydi) — boshqa o'yinchilar ko'rmaydi. 12-Modul 7-darsgacha bu yerda `telefon` edi |
 | `parol_hash` | hash — paroldan yasalgan satr: undan parolni qaytarib bo'lmaydi (parolning o'zi saqlanmaydi) |
 | `namuna` | `true` — namuna va tekshiruv akkauntlari (sanoqqa kirmaydi); ro'yxatdan o'tish formasi har doim `false` yozadi |
+| `telegram_chat_id` | Telegram chat raqami (13-Modul 8-dars) — faqat xabar yuborish uchun; botda «Start» bosilganda yoziladi, «Telegram xabarlarini o'chirish»da o'chadi; ilovaga yuborilmaydi |
+| `telegram_kod` · `telegram_kod_gacha` | bir martalik kod (16 harf-raqam) va muddati (10 daqiqa) — `t.me/<bot>?start=<kod>`; ishlatilgach o'chadi |
 | `pro_gacha` | Pro muddati (13-Modul 4-dars) — shu vaqtgacha Pro; bo'sh — Pro yo'q. Muddat tugagach Pro o'zi to'xtaydi, avtomatik to'lov yo'q |
 | `yaratilgan` | ro'yxatdan o'tgan vaqt (Database o'zi to'ldiradi) |
 
@@ -97,6 +99,9 @@ Saqlanadigan ma'lumotlar: o'yinchilar · o'yinlar · kim qaysi o'yinga qo'shilga
 | `oyinchi_id` | to'lovni boshlagan tashkilotchi → `oyinchilar.id` |
 | `summa` | so'mda (`PRO_NARX`) |
 | `yaratilgan` | qachon boshlangan |
+
+**`telegram_yangilanishlar`** — ishlangan Telegram so'rovlari (`update_id`, `yaratilgan`; 8-dars): Telegram javob olmasa so'rovni qayta yuboradi —
+bir xil `update_id` ikkinchi marta ishlanmaydi. Xabar matni, ism va Telegram nomi yozilmaydi.
 
 Bog'lovchi ustunlar — boshqa jadvaldagi qatorni ko'rsatadigan ustun: `oyinlar.tashkilotchi_id` → `oyinchilar` ·
 `ishtirokchilar.oyin_id` → `oyinlar` · `ishtirokchilar.oyinchi_id` → `oyinchilar`.
@@ -265,6 +270,25 @@ SELECT tolov_raqami, holat FROM tolovlar ORDER BY yaratilgan DESC;
 
 `tolovlar` dagi qatorlar — mashq (`m-…`): real to'lov yo'q, sanoqqa kirmaydi.
 
+## Telegram xabari (13-Modul 8-dars)
+
+Ilova o'zi oldindan qo'ygan eslatma ilova yopiq paytda yangi e'lon bor-yo'qligini bilmaydi (12-Modul); Backend biladigan haqiqiy o'zgarish haqida — **Telegram bot** orqali.
+Bot — **yangi bot** (@BotFather: `/newbot`): botda bitta webhook, 7-Moduldagi botingiz boshqa Backend'ga ulangan. Bot odamga birinchi bo'lib yoza olmaydi — odam botda «Start»ni o'zi bosadi.
+
+- **Ulanish:** ilovada «Hisobdan chiqish» yonida sozlama qatori **«Telegram'da xabar olish»** (ostida «Siz qatnashgan «Doimiy o'yin» yana e'lon qilinsa — Telegram'da xabar; haftasiga ko'pi bilan ikkita»)
+  → `POST /telegram/kod` → bir martalik kod bilan havola `https://t.me/<bot>?start=<kod>` (16 belgi, 10 daqiqa, bir marta) → botda «Start» → `POST /telegram/webhook`:
+  `X-Telegram-Bot-Api-Secret-Token` = `TELEGRAM_SIR` bo'lmasa — `401`; faqat shaxsiy chatdagi `/start <kod>`; kod amal qilsa — `oyinchilar.telegram_chat_id` yoziladi, kod o'chadi
+  (bitta Database ishida) va bot javobi: «Ulandi. Siz qatnashgan «Doimiy o'yin» yana e'lon qilinsa, shu yerga yozaman. O'chirish — ilovada.»
+  Kod yo'q, eskirgan yoki ishlatilgan — «Havola eskirgan. Ilovada «Telegram'da xabar olish»ni qayta bosing.»; boshqa xabar — «Bu bot ilovadan ulanadi: ilovada «Telegram'da xabar olish»ni bosing.»
+  Ulangan bo'lsa — qatorda «Telegram ulangan» (`GET /men` dagi `telegram`).
+- **Webhook o'rnatish:** Backend Render'da ishga tushganda (`RENDER_EXTERNAL_URL` bo'lsa) — `setWebhook` (`{ochiq manzil}/telegram/webhook`, `secret_token` = `TELEGRAM_SIR`) va `getMe` (botning
+  foydalanuvchi nomi); laptopda o'rnatilmaydi. Xato bo'lsa Backend ishlayveradi, xato logga — token va kalitsiz (`backend/src/telegram/`).
+- **Shaxsiy ma'lumot:** Telegram so'rovidan faqat chat raqami olinadi; ism, Telegram nomi va xabar matni saqlanmaydi va logga yozilmaydi. Telegram'ga javob — `200` (`401` dan tashqari);
+  bir xil `update_id` ikkinchi marta kelsa — qayta ishlanmaydi (`telegram_yangilanishlar`).
+
+Tekshirish: Neon'da `SELECT id, telegram_chat_id IS NOT NULL AS ulangan FROM oyinchilar WHERE id = {hisob raqami};` (chat raqamining o'zi chiqmaydi) ·
+`git grep -n "TELEGRAM_"` — faqat nomlar.
+
 ## Backend yo'llari
 
 Yopiq yo'llar (`/oyinlar` va `/hisob`) — faqat token bilan (`Authorization: Bearer <token>`), tokensiz `401`.
@@ -279,7 +303,7 @@ Bitta istisno — mehmon ko'rinishi (12-Modul 8-dars): `GET /oyinlar` tokensiz h
 | `POST /hodisalar` `{ nom, qurilma_id }` | qadamlar sanog'i (va 9-darsdan sanoq yozuvi `eslatmadan-ochdi`); token kerak emas (yuborilmaydi); yozilgach sanoq sahifalariga `sanoq-ozgardi` | `201` · `400` nom ruxsat etilganlardan emas |
 | `GET /hodisalar/sanoq` (`?dan=` vaqt) | faqat maxfiy kalit bilan — sarlavha `X-Sanoq-Kaliti` (`SANOQ_KALITI`): `{ qadamlar: [{ nom, soni }], eslatmadanOchdi, royxatdanOtgan }` — har qadamda turli qurilmalar, ro'yxatdan o'tgan `namuna = false` akkauntlar; `?dan=` — shu vaqtdan keyingi yozuvlar | `200` · `401` kalitsiz yoki noto'g'ri |
 | `GET /oyinlar` | (13-Modul 4-dars: avval vaqti o'tgan «Doimiy o'yin»ning keyingi haftadagi o'yini yaratiladi) yagona ro'yxat yo'li, eng yangi e'lon tepada: `id, kun, soat, maydon, kerak, qoshilgan, menQoshilganman, tasdiqlagan, menTasdiqlaganman, menTasdiqlayOlaman, navbatda, menNavbatdaman, menTashkilotchiman` | `200` |
-| `GET /men` | kirgan o'yinchining holati (13-Modul 4-dars): `{ pro, proGacha, oxirgiTolov }` — `pro` = `pro_gacha` hozirdan keyin; `oxirgiTolov` (5-dars) — `{ tolovRaqami, holat: 'tolandi' \| 'rad' \| 'kutilmoqda' }` yoki `null` | `200` · `401` tokensiz |
+| `GET /men` | kirgan o'yinchining holati (13-Modul 4-dars): `{ pro, proGacha, oxirgiTolov }` — `pro` = `pro_gacha` hozirdan keyin; `oxirgiTolov` (5-dars) — `{ tolovRaqami, holat: 'tolandi' \| 'rad' \| 'kutilmoqda' }` yoki `null`; `telegram` (8-dars) — Telegram ulanganmi (chat raqamisiz) | `200` · `401` tokensiz |
 | `POST /oyinlar` `{ kun, soat, maydon, kerak, doimiy? }` | e'lon; tashkilotchi — token egasi; `doimiy: true` («Har hafta takrorlansin») — faqat Pro'dagi tashkilotchidan | `201` · `400` «Yozilmagan: …» · `403` «Doimiy o'yin» — faqat Pro'da |
 | `POST /oyinlar/:id/qoshilish` | `qoshildi` | `201` · `409` «O'yin to'ldi» / «Siz bu o'yinga qo'shilgansiz» |
 | `POST /oyinlar/:id/tasdiq` | `keladi` — faqat o'yin kuni (Toshkent vaqti) va qo'shilgan o'yinchiga | `201` · `403` «Tasdiq faqat o'yin kuni» / «Siz bu o'yinga qo'shilmagansiz» |
@@ -287,6 +311,8 @@ Bitta istisno — mehmon ko'rinishi (12-Modul 8-dars): `GET /oyinlar` tokensiz h
 | `POST /oyinlar/:id/chiqish` | `chiqdi`; qo'shilgan chiqsa — navbatdagi birinchi `qoshildi` | `201` · `409` |
 | `POST /tolov/webhook` `{ tolovRaqami, holat, summa, oyinchiId }` · sarlavha `X-Imzo` | to'lov xabari (13-Modul 3-dars): imzo — HMAC SHA-256 (xom tana, `TOLOV_KALITI`) → maydonlar (4-darsdan hisob va summa `boshlangan_tolovlar` dagi raqam yozuviga mos) → takror → `tolovlar` ga yozuv (`rad` ham); `tolandi` — `pro_gacha` + 30 kun; token kerak emas | `200 { ok: true }` · `200 { takror: true }` · `400` · `401` imzo yo'q yoki mos emas |
 | `POST /tolov/boshlash` | (token bilan, 4-dars) yangi to'lov raqami — `boshlangan_tolovlar` ga; summa — `PRO_NARX` | `201 { tolovRaqami, havola }` · `401` |
+| `POST /telegram/kod` | (token bilan, 8-dars) yangi bir martalik kod, 10 daqiqa | `201 { havola: 'https://t.me/<bot>?start=<kod>' }` · `503` bot sozlanmagan |
+| `POST /telegram/webhook` · sarlavha `X-Telegram-Bot-Api-Secret-Token` | Telegram yuboradi: faqat shaxsiy chatdagi `/start <kod>` — kod amal qilsa chat raqami yoziladi, kod o'chadi; bot javobi; takror `update_id` — qayta ishlanmaydi | `200` · `401` kalit `TELEGRAM_SIR` ga teng emas |
 | `GET /tolov-mashq?raqam=…` | «Mashq to'lov» sahifasi (HTML; test rejim); raqamsiz yoki noma'lum — «To'lov topilmadi.» | `200` |
 | `POST /tolov-mashq/yubor` `{ tur: 'tolash' \| 'rad' \| 'ikki' \| 'imzosiz' \| 'kech' \| 'notogriImzo', raqam }` | xabarni Backend'da yasaydi (hisob va summa — raqamdan), imzolaydi va o'z `POST /tolov/webhook` iga yuboradi | `200 { tolovRaqami, javoblar: [{ holat, tana }] }` · `400` |
 
@@ -380,6 +406,8 @@ Qiymatlar repo'ga yozilmaydi — faqat nomlari. Laptopda — `backend/.env` va `
 | `WEB_ORIGIN` | `backend/.env` · Render | brauzerdan so'rov va ulanishga ruxsat (CORS), bir nechta manzil — vergul bilan: web-trekda — sayt manzili; mobil trekda — ilovaning brauzer ko'rinishi (7-dars) va lending (sanoq sahifasi, 8-dars) |
 | `SANOQ_KALITI` | `backend/.env` · Render | sanoq sahifasining maxfiy kaliti (12-Modul 8-dars) — maxfiy; yo'q bo'lsa sanoq hech kimga ochilmaydi |
 | `TOLOV_KALITI` | `backend/.env` · Render | to'lov xabarining imzo kaliti (13-Modul 3-dars) — maxfiy, tasodifiy 64 belgi (`node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`); bo'sh bo'lsa hech bir to'lov xabari qabul qilinmaydi |
+| `TELEGRAM_BOT_TOKEN` | `backend/.env` · Render | Telegram bot tokeni (13-Modul 8-dars, yangi bot — @BotFather) — maxfiy; bo'sh bo'lsa Telegram qismi o'chiq, Backend ishlayveradi |
+| `TELEGRAM_SIR` | `backend/.env` · Render | Telegram webhook maxfiy kaliti (`setWebhook` `secret_token`) — maxfiy, tasodifiy 64 belgi |
 | `EXPO_PUBLIC_API_URL` | `mobil/.env` | Backend manzili — maxfiy emas: `EXPO_PUBLIC_` qiymati ilova ichida ochiq ko'rinadi |
 
 Web-trekda sayt Backend manzilini `VITE_API_URL` dan oladi (sayt papkasidagi `.env`; bu repo'dagi `prototip/` Backend'ga ulanmagan — mobil trek namunasi).
@@ -403,7 +431,7 @@ Avval `git push` — Render kodni GitHub'dagi repo'dan oladi va har push'dan key
 
 Port — `PORT` o'zgaruvchisidan (Render o'zi beradi), u bo'lmasa — 3000.
 Tekshirish: `https://….onrender.com/hodisalar/sanoq` → `401` — Backend internetda, kalitsiz yopiq; `…/oyinlar` — mehmon javobi (ism, login va `men…` yo'q).
-Environment ga `SANOQ_KALITI` ham (8-dars), `TOLOV_KALITI` (13-Modul 3-dars); brauzer ko'rinishi va lending bo'lsa — `WEB_ORIGIN` (vergul bilan).
+Environment ga `SANOQ_KALITI` ham (8-dars), `TOLOV_KALITI` (13-Modul 3-dars), `TELEGRAM_BOT_TOKEN` va `TELEGRAM_SIR` (13-Modul 8-dars); brauzer ko'rinishi va lending bo'lsa — `WEB_ORIGIN` (vergul bilan).
 Bepul Backend 15 daqiqa so'rovsiz qolsa uxlaydi — keyingi birinchi javob bir daqiqagacha kechikishi mumkin. Render bepul xizmatni prod uchun tavsiya qilmaydi.
 
 Backend manzili: `https://maydon-jamoa-….onrender.com` (manzil — ochiq qiymat; ilovada — `mobil/.env` dagi `EXPO_PUBLIC_API_URL`).

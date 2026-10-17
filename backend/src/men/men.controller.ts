@@ -19,7 +19,7 @@ export class MenController {
   // GET /men — kirgan o'yinchining o'z holati (token bilan; tokensiz 401):
   // { pro: pro_gacha hozirdan keyinmi, proGacha: '2026-11-06T…Z' | null, oxirgiTolov }. Ilova Pro holatini shundan o'qiydi.
   // oxirgiTolov (5-dars) — shu o'yinchining eng oxirgi boshlangan to'lovi: { tolovRaqami, holat } — holat tolovlar dagi
-  // tolandi yoki rad; to'lov xabari hali kelmagan bo'lsa — kutilmoqda. To'lov boshlanmagan bo'lsa — null.
+  // tolandi yoki rad; to'lov xabari hali kelmagan bo'lsa — kutilmoqda. To'lov boshlanmagan bo'lsa — null. telegram — 8-dars.
   @Get()
   async men(@Req() sorov: Sorov) {
     const men = await this.oyinchilar.findOneByOrFail({ id: sorov.oyinchiId! });
@@ -32,6 +32,12 @@ export class MenController {
       const tolov = await this.tolovlar.findOneBy({ tolov_raqami: boshlangan.tolov_raqami });
       oxirgiTolov = { tolovRaqami: boshlangan.tolov_raqami, holat: tolov?.holat ?? 'kutilmoqda' };
     }
-    return { pro: proBormi(men.pro_gacha), proGacha: men.pro_gacha ? men.pro_gacha.toISOString() : null, oxirgiTolov };
+    return {
+      pro: proBormi(men.pro_gacha),
+      proGacha: men.pro_gacha ? men.pro_gacha.toISOString() : null,
+      oxirgiTolov,
+      // Telegram ulanganmi (8-dars) — chat raqamining o'zi ilovaga yuborilmaydi
+      telegram: men.telegram_chat_id !== null,
+    };
   }
 }

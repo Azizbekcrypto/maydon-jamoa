@@ -1,13 +1,13 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, AppState, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { sora, tokenOchir, tokenOl } from '@/api';
 import { BosiladiganKarta } from '@/components/bosiladigan-karta';
 import { ESLATMA_BOR, eslatmalarniYoq, eslatmalarYoqiqmi, hammasiniBekor, ruxsatBormi } from '@/eslatma';
 import { kunNomi } from '@/kun';
-import { menniUnut } from '@/men';
+import { menniOl, menniUnut, useMen } from '@/men';
 import { oyinlarniOl, useOyinlar, type Oyin } from '@/oyin';
 import { R } from '@/ranglar';
 import { tasdiqSora } from '@/tasdiq';
@@ -44,6 +44,8 @@ export default function Oyinlar() {
     setMehmon(!token);
     // Ulanish — faqat kirganlarga; bor bo'lsa qayta ochilmaydi (ekran necha marta ochilsa ham bitta)
     if (token) ulan();
+    // Telegram holati (8-dars) — GET /men
+    if (token) menniOl().catch(() => {});
     try {
       await oyinlarniOl();
       setXato('');
@@ -106,6 +108,7 @@ export default function Oyinlar() {
         )}
       </View>
       {!mehmon && ESLATMA_BOR && <EslatmalarOchirgichi oyinlar={oyinlar} />}
+      {!mehmon && <TelegramQatori />}
       <ScrollView
         contentContainerStyle={s.ichi}
         refreshControl={<RefreshControl refreshing={tortildi} onRefresh={tort} tintColor={R.yashil} colors={[R.yashil]} />}>
@@ -181,6 +184,51 @@ function EslatmalarOchirgichi({ oyinlar }: { oyinlar: Oyin[] | null }) {
   );
 }
 
+// «Telegram'da xabar olish» (13-Modul 8-dars) — sozlama qatori, «Hisobdan chiqish» yonida.
+// Bosilganda POST /telegram/kod dan bir martalik havola (t.me/<bot>?start=<kod>) olinadi va Telegram'da ochiladi —
+// o'yinchi botda «Start»ni o'zi bosadi. Ulangan bo'lsa — «Telegram ulangan». Ilovaga qaytganda holat GET /men dan qayta so'raladi.
+function TelegramQatori() {
+  const men = useMen();
+  const [xato, setXato] = useState('');
+
+  useFocusEffect(
+    useCallback(() => {
+      const obuna = AppState.addEventListener('change', (h) => {
+        if (h === 'active') menniOl().catch(() => {});
+      });
+      return () => obuna.remove();
+    }, []),
+  );
+
+  async function ulash() {
+    setXato('');
+    try {
+      const { havola } = await sora<{ havola: string }>('/telegram/kod', { method: 'POST' });
+      await Linking.openURL(havola);
+    } catch (e) {
+      setXato((e as Error).message);
+    }
+  }
+
+  return (
+    <View style={s.sozlamaJoy}>
+      {men?.telegram ? (
+        <View style={s.sozlama}>
+          <Text style={s.sozlamaMatn}>Telegram ulangan</Text>
+        </View>
+      ) : (
+        <Pressable onPress={ulash} style={s.telegramTugma}>
+          <Text style={s.telegramMatn}>Telegram'da xabar olish</Text>
+          <Text style={s.telegramIzoh}>
+            Siz qatnashgan «Doimiy o'yin» yana e'lon qilinsa — Telegram'da xabar; haftasiga ko'pi bilan ikkita
+          </Text>
+        </Pressable>
+      )}
+      {!!xato && <Text style={s.ruxsat}>{xato}</Text>}
+    </View>
+  );
+}
+
 // Ulanish holatlari (README «Ulanish holatlari»): ulangan — o'zgarishlar o'zi ko'rinadi;
 // ulanmoqda — ro'yxat ekranda qoladi, lekin eskirgan bo'lishi mumkin; ulanmagan — pastga tortib yangilash ishlaydi
 function UlanishIzohi() {
@@ -212,6 +260,9 @@ const s = StyleSheet.create({
   sozlama: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   sozlamaMatn: { fontSize: 15, color: R.matn },
   ruxsat: { fontSize: 13, color: '#C0392B', paddingBottom: 6 },
+  telegramTugma: { paddingVertical: 8, gap: 2 },
+  telegramMatn: { fontSize: 15, fontWeight: '600', color: R.yashil },
+  telegramIzoh: { fontSize: 13, color: R.kulrang },
   chiqish: { fontSize: 14, color: R.kulrang },
   kirish: { fontSize: 16, fontWeight: '600', color: R.yashil },
   ochirish: { fontSize: 14, color: '#C0392B' },

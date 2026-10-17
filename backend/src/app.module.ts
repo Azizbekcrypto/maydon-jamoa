@@ -17,6 +17,9 @@ import { Oyin } from './oyin.entity.js';
 import { Oyinchi } from './oyinchi.entity.js';
 import { OyinlarController } from './oyinlar.controller.js';
 import { RoyxatController } from './royxat.controller.js';
+import { TelegramYangilanish } from './telegram/telegram-yangilanish.entity.js';
+import { TelegramController } from './telegram/telegram.controller.js';
+import { TelegramXizmati } from './telegram/telegram.service.js';
 import { TokenGuard } from './token.guard.js';
 import { BoshlanganTolov } from './tolov/boshlangan-tolov.entity.js';
 import { MashqTolovController } from './tolov/mashq.controller.js';
@@ -31,7 +34,7 @@ import { Tolov } from './tolov/tolov.entity.js';
       useFactory: () => ({
         type: 'postgres',
         url: process.env.DATABASE_URL,
-        entities: [Oyinchi, Oyin, Ishtirokchi, Hodisa, Tolov, BoshlanganTolov],
+        entities: [Oyinchi, Oyin, Ishtirokchi, Hodisa, Tolov, BoshlanganTolov, TelegramYangilanish],
         // Jadvallar entity'lardan o'zi yaratiladi (README'dagi arxitektura bo'yicha)
         synchronize: true,
       }),
@@ -41,7 +44,7 @@ import { Tolov } from './tolov/tolov.entity.js';
         return new DataSource(options!).initialize();
       },
     }),
-    TypeOrmModule.forFeature([Oyinchi, Oyin, Ishtirokchi, Hodisa, Tolov, BoshlanganTolov]),
+    TypeOrmModule.forFeature([Oyinchi, Oyin, Ishtirokchi, Hodisa, Tolov, BoshlanganTolov, TelegramYangilanish]),
     // Token backend/.env dagi JWT_SECRET bilan imzolanadi, 30 kun amal qiladi.
     // Kalit faqat .env dan: kodda zaxira qiymat yo'q, kalit bo'lmasa Backend ishga tushmaydi.
     JwtModule.registerAsync({
@@ -62,7 +65,8 @@ import { Tolov } from './tolov/tolov.entity.js';
     TolovController,
     MashqTolovController,
     MenController,
+    TelegramController,
   ],
-  providers: [NamunaMalumot, TokenGuard, OyinlarGateway, HodisalarTozalash],
+  providers: [NamunaMalumot, TokenGuard, OyinlarGateway, HodisalarTozalash, TelegramXizmati],
 })
 export class AppModule {}

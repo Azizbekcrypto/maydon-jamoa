@@ -9,6 +9,8 @@ export type Men = {
   proGacha: string | null;
   // eng oxirgi boshlangan to'lov (5-dars): tolandi · rad · kutilmoqda (to'lov xabari hali kelmagan); to'lov boshlanmagan — null
   oxirgiTolov: { tolovRaqami: string; holat: 'tolandi' | 'rad' | 'kutilmoqda' } | null;
+  // Telegram ulanganmi (8-dars) — chat raqamining o'zi ilovaga kelmaydi
+  telegram: boolean;
 };
 
 // Oxirgi javob — ilovada bitta: «E'lon berish» va to'lov taklifi ekrani shundan o'qiydi (oyin.ts dagidek)
