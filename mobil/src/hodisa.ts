@@ -1,10 +1,9 @@
-import * as SecureStore from 'expo-secure-store';
-
 import { API } from '@/api';
+import { ol, saqla } from '@/saqlash';
 
 // Qadamlar sanog'i (12-Modul 7-dars): ochdi → royxatdan-otdi → qoshildi → tasdiqladi.
 // Har qadam — POST /hodisalar { nom, qurilma_id }. Faqat qadam nomi va qurilma ID: ism, login va token yuborilmaydi.
-// Qurilma ID — birinchi ochilishda yaratiladigan tasodifiy harf va raqamlar, telefonda saqlanadi:
+// Qurilma ID — birinchi ochilishda yaratiladigan tasodifiy harf va raqamlar, telefonda saqlanadi (brauzer ko'rinishida — brauzerda):
 // bitta qurilmadagi ilovani ajratadi, odamning ismini ham, loginini ham bildirmaydi.
 export type Qadam = 'ochdi' | 'royxatdan-otdi' | 'qoshildi' | 'tasdiqladi';
 
@@ -18,10 +17,10 @@ function tasodifiyId(): string {
 
 async function qurilmaIdOl(): Promise<string> {
   if (qurilmaId) return qurilmaId;
-  qurilmaId = await SecureStore.getItemAsync(KALIT);
+  qurilmaId = await ol(KALIT);
   if (!qurilmaId) {
     qurilmaId = tasodifiyId();
-    await SecureStore.setItemAsync(KALIT, qurilmaId);
+    await saqla(KALIT, qurilmaId);
   }
   return qurilmaId;
 }

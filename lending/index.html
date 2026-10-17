@@ -59,11 +59,24 @@
       </div>
     </section>
 
+    <!-- «Qanday qo'shilaman» (7-dars): ikki havola. Manzillar — NAMUNA, o'zingiznikiga almashtiring:
+         Android — EAS bergan APK havolasi (eas build -p android --profile preview);
+         iPhone — ilovaning brauzer ko'rinishi (npx expo export -p web → netlify deploy --prod --dir dist).
+         APK o'zi yangilanmaydi: ilova o'zgarsa — yangi fayl va bu yerda yangi havola. -->
     <section class="qanday" id="qanday">
       <h2>Qanday qo'shilaman</h2>
-      <p>Hozircha o'rnatish havolasi yo'q.</p>
+      <div class="havolalar">
+        <a class="tugma" href="https://expo.dev/artifacts/eas/NAMUNA.apk">Android: ilovani o'rnatish</a>
+        <a class="tugma ikkinchi" href="https://maydon-jamoa-ilova-namuna.netlify.app">iPhone: brauzerda ochish</a>
+      </div>
+      <p class="kulrang">Android o'rnatishda ogohlantirish ko'rsatadi — ilova do'kondan emas, to'g'ridan-to'g'ri o'rnatiladi.</p>
+      <p class="kulrang">iPhone'da eslatma hozircha yo'q.</p>
     </section>
   </main>
+
+  <footer class="past">
+    <a href="maxfiylik.html">Maxfiylik siyosati</a>
+  </footer>
 
   <!-- Kanal belgisi (6-dars): havola oxiridagi belgi — tashrif qaysi kanaldan kelgani, odam emas.
        Masalan: …/?kanal=guruh · ?kanal=sinf · ?kanal=instagram. Belgi bo'lmasa — "belgisiz".

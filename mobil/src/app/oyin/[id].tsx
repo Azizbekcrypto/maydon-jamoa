@@ -21,9 +21,14 @@ import { oyinniOch, oyinniYop, useKorayotganlar } from '@/ulanish';
 // ilova ochiq paytga to'g'ri kelsa ham ko'rinadi (setNotificationHandler). Ruxsat berilmasa — ilova ishlayveradi, eslatma qo'yilmaydi.
 const ESLATMA_OLDIN_MS = 60 * 60 * 1000; // o'yindan bir soat oldin
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: false }),
-});
+// Brauzer ko'rinishida eslatma yo'q (expo-notifications web'da ishlamaydi) — u yerda qo'yilmaydi, ilova ishlayveradi
+const ESLATMA_BOR = Platform.OS !== 'web';
+
+if (ESLATMA_BOR) {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: false }),
+  });
+}
 
 // O'yin boshlanish vaqti: kun va soat — Toshkent vaqti (UTC+5)
 function oyinVaqti(o: Oyin): Date {
@@ -44,6 +49,7 @@ async function eslatmagaRuxsat(): Promise<boolean> {
 }
 
 async function eslatmaQoy(o: Oyin) {
+  if (!ESLATMA_BOR) return;
   const vaqt = oyinVaqti(o).getTime() - ESLATMA_OLDIN_MS;
   if (vaqt <= Date.now()) return; // o'yinga bir soatdan kam qolgan
   if (!(await eslatmagaRuxsat())) return;
@@ -55,7 +61,9 @@ async function eslatmaQoy(o: Oyin) {
   });
 }
 
-const eslatmaBekor = (oyinId: number) => Notifications.cancelScheduledNotificationAsync(`oyin-${oyinId}`);
+async function eslatmaBekor(oyinId: number) {
+  if (ESLATMA_BOR) await Notifications.cancelScheduledNotificationAsync(`oyin-${oyinId}`);
+}
 
 // O'yin: bitta fayl har o'yinni ochadi — id manzildan keladi (/oyin/2 → id = '2').
 // Ma'lumot GET /oyinlar dan (alohida yo'l yo'q): «8 / 10», qo'shilganlar va tugma.

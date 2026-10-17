@@ -151,6 +151,48 @@ h1 {
 .qanday h2 { margin: 0 0 8px; }
 .qanday p { margin: 0; }
 
+/* «Qanday qo'shilaman»: ikki havola va kulrang qatorlar */
+.havolalar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 12px 0 16px;
+}
+
+.tugma.ikkinchi {
+  background: var(--fon);
+  color: var(--yashil);
+  border: 2px solid var(--yashil);
+}
+
+.kulrang {
+  color: var(--kulrang);
+  font-size: 15px;
+}
+
+.qanday .kulrang + .kulrang { margin-top: 4px; }
+
+.past {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 0 24px 40px;
+}
+
+.past a,
+a.nom {
+  color: var(--yashil);
+  text-decoration: none;
+}
+
+.past a { text-decoration: underline; }
+
+/* Maxfiylik sahifasi */
+.siyosat { max-width: 720px; }
+.siyosat h1 { font-size: 32px; }
+.siyosat section { margin-top: 24px; }
+.siyosat h2 { font-size: 20px; margin: 0 0 6px; }
+.siyosat p { margin: 0; }
+
 /* Telefon kengligida — bitta ustun */
 @media (max-width: 760px) {
   .bosh,
@@ -161,4 +203,5 @@ h1 {
   h1 { font-size: 32px; }
   .osti { font-size: 18px; }
   .tugma { display: block; text-align: center; }
+  .havolalar { flex-direction: column; }
 }

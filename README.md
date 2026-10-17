@@ -40,8 +40,10 @@ Saqlanadigan ma'lumotlar: o'yinchilar · o'yinlar · kim qaysi o'yinga qo'shilga
 |---|---|
 | `id` | o'yinchi raqami (Database o'zi to'ldiradi) |
 | `ism` | ismi |
-| `telefon` | telefon raqami — kirishda ishlatiladi, bitta telefon bir marta |
+| `login` | kirish uchun o'zi tanlagan nom (3–20 belgi, harf va raqam; kichik harfda; takrorlanmaydi) — boshqa o'yinchilar ko'rmaydi. 12-Modul 7-darsgacha bu yerda `telefon` edi |
 | `parol_hash` | hash — paroldan yasalgan satr: undan parolni qaytarib bo'lmaydi (parolning o'zi saqlanmaydi) |
+| `namuna` | `true` — namuna va tekshiruv akkauntlari (sanoqqa kirmaydi); ro'yxatdan o'tish formasi har doim `false` yozadi |
+| `yaratilgan` | ro'yxatdan o'tgan vaqt (Database o'zi to'ldiradi) |
 
 **`oyinlar`** — e'lon qilingan o'yinlar
 
@@ -52,7 +54,7 @@ Saqlanadigan ma'lumotlar: o'yinchilar · o'yinlar · kim qaysi o'yinga qo'shilga
 | `soat` | boshlanish soati, masalan `18:00` |
 | `maydon` | maydon nomi, masalan «Mahalla maydoni» |
 | `kerak` | nechta odam kerak — «8 / 10» dagi 10 |
-| `tashkilotchi_id` | o'yinni kim e'lon qilgani → `oyinchilar.id` |
+| `tashkilotchi_id` | o'yinni kim e'lon qilgani → `oyinchilar.id`; tashkilotchi hisobini o'chirsa — bo'sh (`null`), o'yin qoladi |
 | `yaratilgan` | e'lon qachon berilgani (Database o'zi to'ldiradi) |
 
 **`ishtirokchilar`** — kim qaysi o'yinda; har qo'shilish — bitta qator
@@ -63,6 +65,15 @@ Saqlanadigan ma'lumotlar: o'yinchilar · o'yinlar · kim qaysi o'yinga qo'shilga
 | `oyinchi_id` | qaysi o'yinchi → `oyinchilar.id` |
 | `holat` | `qoshildi` · `keladi` (o'yin kuni «Kelaman» bosgan) · `navbatda` · `chiqdi` |
 | `yaratilgan` | qator qachon yozilgani — navbat tartibi shundan (Database o'zi to'ldiradi) |
+
+**`hodisalar`** — qadamlar sanog'i (12-Modul 7-dars): har yozuv — bitta qurilmadagi bitta qadam; ism, login va token yozilmaydi; 60 kundan eskilari o'chiriladi
+
+| Ustun | Nima saqlaydi |
+|---|---|
+| `id` | yozuv raqami (Database o'zi to'ldiradi) |
+| `nom` | qadam: `ochdi` · `royxatdan-otdi` · `qoshildi` · `tasdiqladi` |
+| `qurilma_id` | qurilma ID — ilova birinchi ochilganda yaratgan tasodifiy harf va raqamlar: odamning ismini ham, loginini ham bildirmaydi |
+| `yaratilgan` | yozuv vaqti (Database o'zi to'ldiradi) |
 
 Bog'lovchi ustunlar — boshqa jadvaldagi qatorni ko'rsatadigan ustun: `oyinlar.tashkilotchi_id` → `oyinchilar` ·
 `ishtirokchilar.oyin_id` → `oyinlar` · `ishtirokchilar.oyinchi_id` → `oyinchilar`.
@@ -148,18 +159,37 @@ Topilgan uch muammo tuzatilgan: qayta ulanganda ro'yxat qayta so'raladi · `oyin
 
 ## Backend yo'llari
 
-Yopiq yo'llar (`/oyinlar` bilan boshlanganlari) — faqat token bilan (`Authorization: Bearer <token>`), tokensiz `401`.
+Yopiq yo'llar (`/oyinlar` va `/hisob`) — faqat token bilan (`Authorization: Bearer <token>`), tokensiz `401`.
 
 | Yo'l | Nima qiladi | Javoblar |
 |---|---|---|
-| `POST /royxat` `{ ism, telefon, parol }` | o'yinchi `oyinchilar` ga, parol — faqat hash (`parol_hash`) | `201` · `400` bo'sh · `409` «Bu telefon ro'yxatdan o'tgan» |
-| `POST /kirish` `{ telefon, parol }` | token (30 kun) | `200 { token }` · `401` «Telefon yoki parol noto'g'ri» |
+| `POST /royxat` `{ ism, login, parol }` | o'yinchi `oyinchilar` ga (`namuna = false`), parol — faqat hash (`parol_hash`); telefon so'ralmaydi | `201` · `400` bo'sh yoki login qoidaga mos emas · `409` «Bu login band» |
+| `POST /kirish` `{ login, parol }` | token (30 kun) | `200 { token }` · `401` «Login yoki parol noto'g'ri» |
+| `DELETE /hisob` | «Hisobni o'chirish»: akkaunt va uning `ishtirokchilar` dagi yozuvlari o'chadi; e'lon qilgan o'yinlari qoladi (tashkilotchisi bo'sh); qo'shilgan o'yinlarida navbatdagi kiradi | `200` |
+| `POST /hodisalar` `{ nom, qurilma_id }` | qadamlar sanog'i; token kerak emas (yuborilmaydi) | `201` · `400` nom to'rt qadamdan biri emas |
 | `GET /oyinlar` | yagona ro'yxat yo'li, eng yangi e'lon tepada: `id, kun, soat, maydon, kerak, qoshilgan, menQoshilganman, tasdiqlagan, menTasdiqlaganman, menTasdiqlayOlaman, navbatda, menNavbatdaman, menTashkilotchiman` | `200` |
 | `POST /oyinlar` `{ kun, soat, maydon, kerak }` | e'lon; tashkilotchi — token egasi | `201` · `400` «Yozilmagan: …» |
 | `POST /oyinlar/:id/qoshilish` | `qoshildi` | `201` · `409` «O'yin to'ldi» / «Siz bu o'yinga qo'shilgansiz» |
 | `POST /oyinlar/:id/tasdiq` | `keladi` — faqat o'yin kuni (Toshkent vaqti) va qo'shilgan o'yinchiga | `201` · `403` «Tasdiq faqat o'yin kuni» / «Siz bu o'yinga qo'shilmagansiz» |
 | `POST /oyinlar/:id/navbat` | `navbatda` — faqat to'lgan o'yinga | `201` · `409` |
 | `POST /oyinlar/:id/chiqish` | `chiqdi`; qo'shilgan chiqsa — navbatdagi birinchi `qoshildi` | `201` · `409` |
+
+## Sanoq — Neon SQL Editor (12-Modul 7-dars)
+
+Namuna va tekshiruv akkauntlari sanalmaydi (`namuna = false`). Sinfdoshlar sanaladi, lekin alohida aytiladi — Database ularni ajratmaydi.
+
+```sql
+-- ro'yxatdan o'tganlar (hozirgacha)
+SELECT COUNT(*) FROM oyinchilar WHERE namuna = false;
+
+-- asosiy harakatni qilganlar: hozir kamida bitta o'yinda qatnashayotgan yoki o'yin e'lon qilgan
+SELECT COUNT(*) FROM oyinchilar o WHERE o.namuna = false AND (EXISTS (SELECT 1 FROM ishtirokchilar i WHERE i.oyinchi_id = o.id AND i.holat IN ('qoshildi', 'keladi')) OR EXISTS (SELECT 1 FROM oyinlar g WHERE g.tashkilotchi_id = o.id));
+
+-- qadamlar: har qadamda turli qurilmalar soni
+SELECT nom, COUNT(DISTINCT qurilma_id) FROM hodisalar GROUP BY nom;
+```
+
+Tekshiruv yozuvlari (o'z qurilmangiz) — faqat `WHERE` bilan: `DELETE FROM hodisalar WHERE qurilma_id = '{qurilma ID}';`.
 
 ## Ishga tushirish
 
@@ -177,7 +207,7 @@ npm run start:dev
 
 `localhost:3000` → «Maydon Jamoa Backend ishlayapti»; `localhost:3000/oyinlar` → `401` (tokensiz yopiq).
 Birinchi ishga tushganda jadvallar o'zi yaratiladi va namuna qo'shiladi (bor bo'lsa — qayta qo'shilmaydi):
-namuna tashkilotchi (`+998 90 000 00 00`) va to'rt o'yin — keyingi shanba va yakshanba (Toshkent vaqti):
+namuna tashkilotchi (login `namunatashkilotchi`) va to'rt o'yin — keyingi shanba va yakshanba (Toshkent vaqti):
 Shanba 18:00 · Mahalla maydoni · 10 kishi · Shanba 20:00 · Maktab maydoni · 10 · Yakshanba 10:00 · Park maydoni · 8 · Yakshanba 17:00 · Mahalla maydoni · 10.
 
 2-terminal — ilova (mobil trek) — telefonda Expo Go kerak (iPhone'da — kompyuterdagi bilan bitta Expo akkaunti: `npx expo login`):
@@ -191,9 +221,10 @@ npx expo start
 Terminaldagi QR'ni skanerlang: Android'da — Expo Go'dagi «Scan QR code», iPhone'da — kamera ilovasi.
 QR odatda telefon va kompyuter bitta Wi-Fi'da bo'lsa ochiladi; ochilmasa — `npm i -g @expo/ngrok`, keyin `npx expo start --tunnel` (sekinroq).
 Expo Go'dagi ilova kodi kompyuterdagi `npx expo start` dan keladi: u to'xtasa, telefonda ham ochilmaydi; o'yinlar esa `EXPO_PUBLIC_API_URL` dagi Backend'dan.
-Ilovada: «Ro'yxatdan o'tish» (namuna ism va namuna telefon, masalan `Ali` · `+998 90 000 00 01` — o'z raqamingizni yozmang) → «Kirish» → «O'yinlar».
+Ilovada: «Ro'yxatdan o'tish» (Ism · Login · Parol, masalan `Ali` · `ali`; telefon so'ralmaydi) → «Kirish» (login va parol) → «O'yinlar».
 «O'yinlar» sarlavhasi yonida — ulanish belgisi: «Ulangan» (Backend'ga doimiy ulangan) · «Ulanmoqda…» (ulanish yo'q, ilova o'zi urinmoqda — masalan, uchish rejimida) · «Ulanmagan» (ilova urinmayapti — token yaroqsiz yoki hisobdan chiqilgan).
-Ikkinchi o'yinchini tekshirish: «Hisobdan chiqish» → boshqa namuna telefon bilan ro'yxatdan o'ting (masalan `+998 90 000 00 02`; telefon takrorlansa — `409`).
+Ikkinchi o'yinchini tekshirish: «Hisobdan chiqish» → boshqa login bilan ro'yxatdan o'ting (masalan `ali2`; login band bo'lsa — «Bu login band»).
+Tekshiruv akkauntini o'chirish — ilovadagi «Hisobni o'chirish» («Rostdan o'chirasizmi?»).
 «Kelaman» faqat o'yin kuni chiqadi: bugun o'yin bo'lmasa — bugungi sana bilan yangi e'lon bering va unga ikkinchi akkaunt bilan qo'shiling.
 
 Prototip (brauzerda; web-trek namunasi) — telefon ko'rinishi: F12, keyin Ctrl+Shift+M:
@@ -215,11 +246,12 @@ Qiymatlar repo'ga yozilmaydi — faqat nomlari. Laptopda — `backend/.env` va `
 | `DATABASE_URL` | `backend/.env` · Render | Database ulanish qatori (Neon) — maxfiy |
 | `JWT_SECRET` | `backend/.env` · Render | tokenni imzolaydigan uzun tasodifiy satr — maxfiy; yo'q bo'lsa Backend ishga tushmaydi |
 | `PORT` | `backend/.env` | port; bo'lmasa 3000 (Render o'zi beradi) |
-| `WEB_ORIGIN` | `backend/.env` · Render | faqat web-trek: saytning internetdagi manzili (CORS); mobil trekda bo'sh |
+| `WEB_ORIGIN` | `backend/.env` · Render | brauzerdan so'rov va ulanishga ruxsat (CORS): web-trekda — sayt manzili, mobil trekda — ilovaning brauzer ko'rinishi manzili (7-dars) |
 | `EXPO_PUBLIC_API_URL` | `mobil/.env` | Backend manzili — maxfiy emas: `EXPO_PUBLIC_` qiymati ilova ichida ochiq ko'rinadi |
 
 Web-trekda sayt Backend manzilini `VITE_API_URL` dan oladi (sayt papkasidagi `.env`; bu repo'dagi `prototip/` Backend'ga ulanmagan — mobil trek namunasi).
-Token telefonda `expo-secure-store` da (qiymatni shifrlab saqlaydi); web-trekda — `localStorage`.
+Token telefonda `expo-secure-store` da (qiymatni shifrlab saqlaydi); web-trekda va ilovaning brauzer ko'rinishida — `localStorage` (`mobil/src/saqlash.ts`).
+Lending manzili ilovada — `mobil/src/lending.ts` (ochiq qiymat; namuna — o'zingiznikiga almashtiring): «Maxfiylik siyosati» havolasi shundan.
 
 ## Internetga chiqarish
 
@@ -241,6 +273,21 @@ Tekshirish: `https://….onrender.com/oyinlar` → `401` — Backend internetda,
 Bepul Backend 15 daqiqa so'rovsiz qolsa uxlaydi — keyingi birinchi javob bir daqiqagacha kechikishi mumkin. Render bepul xizmatni prod uchun tavsiya qilmaydi.
 
 Backend manzili: `https://maydon-jamoa-….onrender.com` (manzil — ochiq qiymat; ilovada — `mobil/.env` dagi `EXPO_PUBLIC_API_URL`).
+
+## Ilovaning brauzer ko'rinishi (mobil trek, 12-Modul 7-dars)
+
+iPhone'ga do'konsiz o'rnatish pullik Apple akkauntini talab qiladi — iPhone'li foydalanuvchi ilovaning brauzer ko'rinishini ochadi.
+Unda token `localStorage` da, rejalashtirilgan eslatma yo'q (lendingda: «iPhone'da eslatma hozircha yo'q.»). `app.json` da `web.output` — `single` (bitta sahifali ilova),
+`mobil/public/_redirects` — `/*    /index.html   200` (Netlify har manzilda ilovani ochadi).
+
+```
+cd mobil
+npx expo export -p web
+netlify deploy --prod --dir dist
+```
+
+`--prod` siz — sinov manzili chiqadi. Push'dan keyin o'zi yangilanmaydi — har yangi versiyada shu ikki buyruq.
+Backend'da shu manzilga ruxsat: `WEB_ORIGIN` (HTTP so'rovlar ham, socket.io ulanishi ham).
 
 ## O'rnatish fayli — APK (mobil trek, 12-Modul 6–7-darslar)
 
@@ -291,6 +338,10 @@ Laptopda: `lending/index.html` ni brauzerda oching. Netlify'da — alohida sayt 
 
 Havola — `https://maydon-jamoa-….netlify.app`; push'dan keyin sayt odatda o'zi yangilanadi.
 
+7-darsdan: `lending/maxfiylik.html` — maxfiylik siyosati (qaysi ma'lumot · nima uchun · kim ko'radi · qancha saqlanadi; yuridik hujjat emas, har gap koddan tekshirilgan),
+sahifa pastida «Maxfiylik siyosati» havolasi. «Qanday qo'shilaman» — ikki havola: «Android: ilovani o'rnatish» (APK) va «iPhone: brauzerda ochish» (brauzer ko'rinishi);
+repo'dagi manzillar — namuna, o'zingiznikiga almashtiring. Ostida: «Android o'rnatishda ogohlantirish ko'rsatadi — ilova do'kondan emas, to'g'ridan-to'g'ri o'rnatiladi.» · «iPhone'da eslatma hozircha yo'q.»
+
 O'lchov — Umami (1-dars uyga vazifasi): `<head>` dagi skript sahifa ochilishini sanaydi, tugma bosilishi — hodisa `qoshilmoqchiman`
 (`data-umami-event`). `data-website-id` — namuna: cloud.umami.is → «Websites» → «Add website» (Domain — lending manzili) → «Edit» → «Tracking code» dagi ID bilan almashtiring.
 Reklama to'sgichi yoqilgan brauzerda Umami yozmasligi mumkin.
@@ -334,6 +385,7 @@ Repo'ga yoziladigan darslar: 1–10; 11 va 12 (pitch) — repo'ga yozmaydi, tegi
 | `m12-dars-05-start` | 5 · boshlanish | `m12-dars-04-done` + `README.md` «Real vaqt» da eslatma: «bu holatda uch muammo bor — 5-darsda topiladi». Kod — agent «bajardim» deganidan keyingi holat (chekka holatlar tekshirilmagan) |
 | `m12-dars-05-done` | 5 · buzamiz va tuzatamiz | uch muammo tuzatilgan (`mobil/src/ulanish.ts`, `src/app/oyin/[id].tsx`): qayta ulanganda ro'yxat qayta so'raladi · `oyin-ozgardi` tinglovchisi bir marta, `connect` dan tashqarida · qayta ulanganda ochiq o'yin xonasiga qayta kiradi. `BUZISH.md` — uch urinish (buzildi · buzilmadi · buzildi), tuzatish va qayta tekshiruv natijasi; README eslatmasi o'rnida — tuzatilganlar |
 | `m12-dars-06-done` | 6 · kanallar va birinchi post | `lending/index.html`: havoladagi kanal belgisi (`?kanal=guruh` · `sinf` · `instagram`; `URLSearchParams`) o'qiladi — Umami'ga `tashrif` hodisasi `{ kanal }`, belgi bo'lmasa `belgisiz`. Uyga vazifadan (mobil trek): `mobil/eas.json` — `preview` profili (Android `buildType: apk`, `env.EXPO_PUBLIC_API_URL` — namuna manzil); README «O'rnatish fayli — APK» |
+| `m12-dars-07-done` | 7 · 50 foydalanuvchiga reja va ishga tushirish | `oyinchilar`: `telefon` → `login` (3–20 harf va raqam, «Bu login band»), `namuna`, `yaratilgan`; bir martalik migratsiya (`backend/src/migratsiya.ts`: mavjud akkauntlar ismidan namuna login oladi, `namuna = true`, `telefon` ustuni olib tashlanadi); `POST /royxat { ism, login, parol }`, `POST /kirish { login, parol }`; `DELETE /hisob` — «Hisobni o'chirish» («Rostdan o'chirasizmi?»; e'lon qilgan o'yinlar qoladi — tashkilotchisi bo'sh; «Hisobdan chiqish» va «Hisobni o'chirish»da eslatmalar bekor); `hodisalar` jadvali, `POST /hodisalar`, `hodisaYoz` to'rt joyda (qurilma ID; 60 kun). Forma ostida gap va «Maxfiylik siyosati». `lending/maxfiylik.html` (to'rt savol), lendingda ikki havola (manzillar — namuna). Brauzer ko'rinishi: token `localStorage` da, eslatma yo'q, `app.json` `web.output: single`, `public/_redirects`; socket.io ham `WEB_ORIGIN` ga ruxsat. README — sanoq SQL |
 
 ## Ortda qoldingizmi
 

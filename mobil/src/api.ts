@@ -1,14 +1,15 @@
 import { router } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
+
+import { ochir, ol, saqla } from '@/saqlash';
 
 // Backend manzili — mobil/.env dagi EXPO_PUBLIC_API_URL (maxfiy emas: ilovada ochiq ko'rinadi)
 export const API = (process.env.EXPO_PUBLIC_API_URL ?? '').replace(/\/+$/, '');
 
-// Token telefonda expo-secure-store da — qiymatni shifrlab saqlaydi
+// Token telefonda expo-secure-store da — qiymatni shifrlab saqlaydi; brauzer ko'rinishida — localStorage (saqlash.ts)
 const KALIT = 'token';
-export const tokenOl = () => SecureStore.getItemAsync(KALIT);
-export const tokenSaqla = (token: string) => SecureStore.setItemAsync(KALIT, token);
-export const tokenOchir = () => SecureStore.deleteItemAsync(KALIT);
+export const tokenOl = () => ol(KALIT);
+export const tokenSaqla = (token: string) => saqla(KALIT, token);
+export const tokenOchir = () => ochir(KALIT);
 
 export class SorovXatosi extends Error {
   constructor(
