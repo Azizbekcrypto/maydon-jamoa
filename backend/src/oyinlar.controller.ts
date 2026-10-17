@@ -21,6 +21,7 @@ import { Oyin } from './oyin.entity.js';
 import { Oyinchi } from './oyinchi.entity.js';
 import { OyinlarGateway } from './oyinlar.gateway.js';
 import { bugunToshkent, sanaTogrimi } from './sana.js';
+import { YanaElonXabari } from './telegram/yana-elon.service.js';
 import { MehmonUchunOchiq, TokenGuard, type Sorov } from './token.guard.js';
 
 // «8 / 10» dagi 8 — shu o'yinda holati qoshildi yoki keladi bo'lgan qatorlar (navbatda, chiqdi sanalmaydi)
@@ -41,6 +42,7 @@ export class OyinlarController {
     @InjectRepository(Oyinchi) private readonly oyinchilar: Repository<Oyinchi>,
     // Real vaqt: o'zgarish Database'ga yozib tugatilgach — oyin-ozgardi { oyinId, sabab } hamma ulangan ilovaga
     private readonly ulanishlar: OyinlarGateway,
+    private readonly yanaElon: YanaElonXabari,
   ) {}
 
   // GET /oyinlar — yagona ro'yxat yo'li: «O'yin» ekrani ham shundan o'qiydi.
@@ -55,11 +57,15 @@ export class OyinlarController {
   // menTasdiqlayOlaman — POST …/tasdiq dagi o'sha qoida (o'yin kuni, qo'shilgan) va hali tasdiqlamagan:
   // «Kelaman» faqat shunda chiqadi, ilova sanani o'zi solishtirmaydi.
   // «Doimiy o'yin» (13-Modul 4-dars): ro'yxatdan oldin vaqti o'tgan doimiy o'yinlarning keyingi haftadagi o'yini yaratiladi (doimiy.ts).
+  // Har yangi o'yin uchun (8-dars) — o'tgan o'yin qatnashchilariga Telegram xabari; javob xabarlar yuborilgach qaytadi
+  // (bepul Backend javobdan keyin uxlab qolsa, xabar yo'qolmasin).
   @Get()
   @MehmonUchunOchiq()
   async royxat(@Req() sorov: Sorov) {
     const men = sorov.oyinchiId;
-    await keyingiDoimiylarniYarat(this.oyinlar);
+    for (const { eski, yangi } of await keyingiDoimiylarniYarat(this.oyinlar)) {
+      await this.yanaElon.yubor(eski.id, yangi);
+    }
     const oyinlar = await this.oyinlar.find({
       select: { id: true, kun: true, soat: true, maydon: true, kerak: true, tashkilotchi_id: true },
       order: { yaratilgan: 'DESC', id: 'DESC' },

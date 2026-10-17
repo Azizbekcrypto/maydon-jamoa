@@ -286,6 +286,14 @@ Bot — **yangi bot** (@BotFather: `/newbot`): botda bitta webhook, 7-Moduldagi 
 - **Shaxsiy ma'lumot:** Telegram so'rovidan faqat chat raqami olinadi; ism, Telegram nomi va xabar matni saqlanmaydi va logga yozilmaydi. Telegram'ga javob — `200` (`401` dan tashqari);
   bir xil `update_id` ikkinchi marta kelsa — qayta ishlanmaydi (`telegram_yangilanishlar`).
 
+- **Xabar (bitta tur):** o'yinchi qatnashgan (`qoshildi` yoki `keladi`) «Doimiy o'yin»ning keyingi haftadagi o'yini `GET /oyinlar` da yaratilganda — Telegram'ni ulagan qatnashchilarga:
+  «Shanba, 18:00 o'yini yana e'lon qilindi · Mahalla maydoni», ostida havola — ilovaning brauzer ko'rinishi `?kanal=telegram` bilan (`backend/src/telegram/manzil.ts` — namuna manzil).
+  Son yozilmaydi (xabar keyin o'zgarmaydi, son eskiradi); bosim, qo'rqitish va to'lov taklifi yo'q. Telegram'ni ulamagan o'yinchiga hech narsa ketmaydi.
+- **Haftalik chegara:** bir o'yinchiga haftasiga (dushanbadan yakshanbagacha, `Asia/Tashkent`) ko'pi bilan ikkita Telegram xabari; bitta o'yin haqida bitta o'yinchiga bir marta —
+  `telegram_xabarlar` (`id` · `oyinchi_id` · `oyin_id` · `yuborilgan`; (`oyinchi_id`, `oyin_id`) noyob; matn va chat raqami yozilmaydi). Avval chegara sanaladi va yozuv qo'shiladi —
+  bitta Database ishida (o'yinchi qatori qulflanadi), faqat yozuv qo'shilgan bo'lsa — xabar; Telegram qabul qilmasa (botni to'xtatgan) — yozuv o'chiriladi, chat raqami qoladi.
+  `GET /oyinlar` javobi xabarlar yuborilgach qaytadi; bitta chatga sekundiga bittadan ko'p xabar yuborilmaydi. Ilova eslatmalari (telefonda) bu sanoqqa kirmaydi.
+
 Tekshirish: Neon'da `SELECT id, telegram_chat_id IS NOT NULL AS ulangan FROM oyinchilar WHERE id = {hisob raqami};` (chat raqamining o'zi chiqmaydi) ·
 `git grep -n "TELEGRAM_"` — faqat nomlar.
 

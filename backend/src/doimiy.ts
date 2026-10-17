@@ -8,7 +8,7 @@ import { kunQosh } from './sana.js';
 // va tashkilotchi bilan yangi o'yin; doimiy belgisi yangisiga o'tadi, eskisida o'chadi — bitta o'yindan keyingisi bir marta yaratiladi.
 // Yangi o'yin «0 / N» dan boshlanadi (qo'shilganlar ko'chirilmaydi).
 // Pro muddati ichida (5-dars): tashkilotchining Pro'si tugagan bo'lsa — keyingi o'yin o'zi e'lon qilinmaydi, e'lon qilinganlar qoladi.
-export async function keyingiDoimiylarniYarat(oyinlar: Repository<Oyin>): Promise<Oyin[]> {
+export async function keyingiDoimiylarniYarat(oyinlar: Repository<Oyin>): Promise<{ eski: Oyin; yangi: Oyin }[]> {
   const otganlar = await oyinlar
     .createQueryBuilder('o')
     .innerJoin('oyinchilar', 't', 't.id = o.tashkilotchi_id')
@@ -17,7 +17,7 @@ export async function keyingiDoimiylarniYarat(oyinlar: Repository<Oyin>): Promis
     .andWhere(`(o.kun + o.soat::time) < (now() AT TIME ZONE 'Asia/Tashkent')`)
     .getMany();
 
-  const yaratilganlar: Oyin[] = [];
+  const yaratilganlar: { eski: Oyin; yangi: Oyin }[] = [];
   for (const eski of otganlar) {
     const yangi = await oyinlar.manager.transaction(async (m) => {
       const jadval = m.getRepository(Oyin);
@@ -32,7 +32,7 @@ export async function keyingiDoimiylarniYarat(oyinlar: Repository<Oyin>): Promis
       await jadval.update({ id: eski.id }, { doimiy: false });
       return o;
     });
-    yaratilganlar.push(yangi);
+    yaratilganlar.push({ eski, yangi });
   }
   return yaratilganlar;
 }

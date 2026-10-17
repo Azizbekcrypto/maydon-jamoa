@@ -19,6 +19,12 @@ export function keyingiShanbaYakshanba(hozir = new Date()): { shanba: string; ya
   return { shanba, yakshanba: kunQosh(shanba, 1) };
 }
 
+// '2026-10-17' → «Shanba» (Telegram xabari matni, 13-Modul 8-dars)
+const KUN_NOMLARI = ['Yakshanba', 'Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba'];
+export function kunNomi(kun: string): string {
+  return KUN_NOMLARI[new Date(`${kun}T00:00:00Z`).getUTCDay()] ?? kun;
+}
+
 // '2026-10-11' — haqiqiy sanami
 export function sanaTogrimi(kun: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(kun)) return false;
