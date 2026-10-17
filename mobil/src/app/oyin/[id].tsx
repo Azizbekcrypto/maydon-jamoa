@@ -1,6 +1,7 @@
+import * as Notifications from 'expo-notifications';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { sora } from '@/api';
@@ -10,6 +11,49 @@ import { kunNomi } from '@/kun';
 import { oyinlarniOl, useOyinlar, type Oyin } from '@/oyin';
 import { R } from '@/ranglar';
 import { useKorayotganlar, xabarYubor } from '@/ulanish';
+
+// Eslatma (rejalashtirilgan, expo-notifications): «Qo'shilaman» muvaffaqiyatli bo'lganda ilova eslatmani
+// o'yindan bir soat oldinga qo'yadi — sarlavha «Maydon Jamoa», matn «Bugun, 18:00 · Mahalla maydoni».
+// O'yinga bir soatdan kam qolgan bo'lsa — qo'yilmaydi. «O'yindan chiqish» — shu o'yinning eslatmasi bekor.
+// Bitta o'yinga bitta eslatma (identifier — oyin-{id}: qayta qo'yilsa eskisi bekor). Ilova yopiq bo'lsa ham chiqadi;
+// ilova ochiq paytga to'g'ri kelsa ham ko'rinadi (setNotificationHandler). Ruxsat berilmasa — ilova ishlayveradi, eslatma qo'yilmaydi.
+const ESLATMA_OLDIN_MS = 60 * 60 * 1000; // o'yindan bir soat oldin
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: false }),
+});
+
+// O'yin boshlanish vaqti: kun va soat — Toshkent vaqti (UTC+5)
+function oyinVaqti(o: Oyin): Date {
+  return new Date(`${o.kun}T${o.soat}:00+05:00`);
+}
+
+// Ruxsatni birinchi marta so'raydi (Android'da avval eslatma kanali yaratiladi — ruxsat oynasi shundan keyin chiqadi)
+async function eslatmagaRuxsat(): Promise<boolean> {
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('default', {
+      name: 'Maydon Jamoa',
+      importance: Notifications.AndroidImportance.DEFAULT,
+    });
+  }
+  const bor = await Notifications.getPermissionsAsync();
+  if (bor.granted) return true;
+  return (await Notifications.requestPermissionsAsync()).granted;
+}
+
+async function eslatmaQoy(o: Oyin) {
+  const vaqt = oyinVaqti(o).getTime() - ESLATMA_OLDIN_MS;
+  if (vaqt <= Date.now()) return; // o'yinga bir soatdan kam qolgan
+  if (!(await eslatmagaRuxsat())) return;
+  await Notifications.cancelScheduledNotificationAsync(`oyin-${o.id}`);
+  await Notifications.scheduleNotificationAsync({
+    identifier: `oyin-${o.id}`,
+    content: { title: 'Maydon Jamoa', body: `Bugun, ${o.soat} · ${o.maydon}` },
+    trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: new Date(vaqt) },
+  });
+}
+
+const eslatmaBekor = (oyinId: number) => Notifications.cancelScheduledNotificationAsync(`oyin-${oyinId}`);
 
 // O'yin: bitta fayl har o'yinni ochadi — id manzildan keladi (/oyin/2 → id = '2').
 // Ma'lumot GET /oyinlar dan (alohida yo'l yo'q): «8 / 10», qo'shilganlar va tugma.
@@ -60,6 +104,9 @@ export default function OyinEkrani() {
     setKutish(true);
     try {
       await sora(`/oyinlar/${id}/${yol}`, { method: 'POST' });
+      // Eslatma — Backend javobi muvaffaqiyatli bo'lgandan keyin; eslatma xatosi asosiy ishni buzmaydi
+      if (yol === 'qoshilish' && oyin) eslatmaQoy(oyin).catch(() => {});
+      if (yol === 'chiqish') eslatmaBekor(Number(id)).catch(() => {});
     } catch (e) {
       setXabar((e as Error).message);
     } finally {

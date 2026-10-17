@@ -98,6 +98,7 @@ Real vaqt nuqtasi — ekran ochiq turganda boshqa odam tufayli ma'lumoti o'zgari
 | ilova | Expo (React Native), telefonda Expo Go orqali |
 | Backend | NestJS va TypeORM, Render |
 | real vaqt | socket.io — doimiy ulanish (imkon bo'lsa WebSocket orqali): Backend'da NestJS gateway (`@nestjs/websockets`, `@nestjs/platform-socket.io`), ilovada `socket.io-client` |
+| eslatma | `expo-notifications` — rejalashtirilgan eslatma (ilova o'zi oldindan qo'yadi; Expo Go'da ham ishlaydi) |
 | Database | Neon (PostgreSQL) |
 
 ## Real vaqt
@@ -125,6 +126,23 @@ Backend hodisani o'zgarish Database'ga yozib tugatilgandan keyin yuboradi (tranz
 2) Bitta o'zgarish ekranni bir marta yangilasin — ulanish qayta tiklangandan keyin ham.
 3) Ilova boshqa ekranda yoki fonda turganda o'zgarish bo'lsa — «O'yinlar»ga qaytganda yangi holat ko'rinsin.
 
+### Xona, «Hozir ko'ryapti», jonli xabar va eslatma
+
+| Hodisa | Kim yuboradi → kim oladi | Ma'lumot |
+|---|---|---|
+| `oyin-ozgardi` | Backend → hamma ulangan ilova | `{ oyinId, sabab }` |
+| `oyin-ochildi` · `oyin-yopildi` | ilova («O'yin» ekrani ochildi / yopildi) → Backend | `{ oyinId }` |
+| `korayotganlar-ozgardi` | Backend → xona `oyin-{id}` | `{ oyinId, soni }` |
+
+- **Xona** — Backend'dagi ulanishlar guruhi: hodisa faqat shu guruhdagilarga boradi; har o'yinning o'z xonasi `oyin-{id}`.
+  **«Hozir ko'ryapti: N»** — «O'yin» ekranini hozir ochib turgan ulanishlar (o'zingiz ham sanalasiz; ism yo'q). Bu son Database'da yo'q — shuning uchun hodisa sonning o'zini olib keladi.
+- **Jonli xabar** — ilova ochiq turganda ekran tepasida bir necha soniya: faqat o'zingizga tegishli o'yin uchun (qo'shilgan, navbatda yoki o'zingiz e'lon qilgan), o'z harakatingiz uchun emas, ismsiz.
+  Qaysi xabar — hodisadan keyingi `GET /oyinlar` javobi oldingisi bilan solishtirib: «Shanba, 18:00 — yana bir o'yinchi qo'shildi: 9 / 10» · «… — o'yin to'ldi: 10 / 10» · «… — joy bo'shadi: 8 / 10» ·
+  «… — kelishini tasdiqladi: 8 / 9» (faqat tashkilotchiga) · «Navbatdan o'yinga o'tdingiz: Shanba, 18:00».
+- **Eslatma** — rejalashtirilgan: «Qo'shilaman» bosilganda ilova o'yindan bir soat oldinga qo'yadi («Maydon Jamoa» · «Bugun, 18:00 · Mahalla maydoni»), bir soatdan kam qolgan bo'lsa — qo'yilmaydi;
+  «O'yindan chiqish» — bekor. Faqat shu telefonda: boshqa telefondan kirilsa — u yerda eslatma yo'q; telefonda eslatmalar o'chirilgan bo'lsa — chiqmaydi.
+  Yopiq ilovada boshqa odamning o'zgarishi («joy bo'shadi») ko'rinmaydi. Backend yuboradigan eslatma (push notification) — qurilmagan: Google yoki Apple xizmati va alohida sozlash kerak, Expo Go'da ishlamaydi.
+
 ## Backend yo'llari
 
 Yopiq yo'llar (`/oyinlar` bilan boshlanganlari) — faqat token bilan (`Authorization: Bearer <token>`), tokensiz `401`.
@@ -133,7 +151,7 @@ Yopiq yo'llar (`/oyinlar` bilan boshlanganlari) — faqat token bilan (`Authoriz
 |---|---|---|
 | `POST /royxat` `{ ism, telefon, parol }` | o'yinchi `oyinchilar` ga, parol — faqat hash (`parol_hash`) | `201` · `400` bo'sh · `409` «Bu telefon ro'yxatdan o'tgan» |
 | `POST /kirish` `{ telefon, parol }` | token (30 kun) | `200 { token }` · `401` «Telefon yoki parol noto'g'ri» |
-| `GET /oyinlar` | yagona ro'yxat yo'li, eng yangi e'lon tepada: `id, kun, soat, maydon, kerak, qoshilgan, menQoshilganman, tasdiqlagan, menTasdiqlaganman, menTasdiqlayOlaman, navbatda, menNavbatdaman` | `200` |
+| `GET /oyinlar` | yagona ro'yxat yo'li, eng yangi e'lon tepada: `id, kun, soat, maydon, kerak, qoshilgan, menQoshilganman, tasdiqlagan, menTasdiqlaganman, menTasdiqlayOlaman, navbatda, menNavbatdaman, menTashkilotchiman` | `200` |
 | `POST /oyinlar` `{ kun, soat, maydon, kerak }` | e'lon; tashkilotchi — token egasi | `201` · `400` «Yozilmagan: …» |
 | `POST /oyinlar/:id/qoshilish` | `qoshildi` | `201` · `409` «O'yin to'ldi» / «Siz bu o'yinga qo'shilgansiz» |
 | `POST /oyinlar/:id/tasdiq` | `keladi` — faqat o'yin kuni (Toshkent vaqti) va qo'shilgan o'yinchiga | `201` · `403` «Tasdiq faqat o'yin kuni» / «Siz bu o'yinga qo'shilmagansiz» |
@@ -289,6 +307,7 @@ Repo'ga yoziladigan darslar: 1–10; 11 va 12 (pitch) — repo'ga yozmaydi, tegi
 | `m12-dars-01-done` | 1 · lending | `lending/index.html`, `lending/style.css` — sarlavha, sarlavha osti, uch foyda (foyda va funksiya qatori), asosiy tugma «Qo'shilmoqchiman» → «Qanday qo'shilaman» («Hozircha o'rnatish havolasi yo'q.»), telefon maketi (HTML va CSS), adaptiv — telefonda bitta ustun; forma yo'q. Uyga vazifadan: Umami skripti (`data-website-id` — namuna, o'z sayt ID'ingiz bilan almashtiriladi) va tugma hodisasi `qoshilmoqchiman`. Netlify: Base — bo'sh, Build — bo'sh, Publish — `lending` |
 | `m12-dars-02-done` | 2 · WebSocket: doimiy ulanish | `backend/src/oyinlar.gateway.ts` — `OyinlarGateway` (`@nestjs/websockets`, `@nestjs/platform-socket.io`; HTTP bilan bitta port): token ulanish ochilayotganda tekshiriladi (`handshake.auth.token`), yo'q yoki yaroqsiz — ulanish yopiladi. `mobil/src/ulanish.ts` (`socket.io-client`): ilova token o'qilgach bir marta ulanadi (`auth: { token }`, manzil — `EXPO_PUBLIC_API_URL`), «Hisobdan chiqish»da yopiladi, qayta kirilganda yangi token bilan; «O'yinlar» tepasida belgi «Ulangan» · «Ulanmoqda…» · «Ulanmagan». `README.md` — «Real vaqt» (real vaqt oqimi sxemasi: besh qator, `oyin-ozgardi` · `{ oyinId, sabab }`), «Stek»: socket.io. Hodisalar hali yuborilmaydi |
 | `m12-dars-03-done` | 3 · real vaqt talabi | Backend besh o'zgarishdan keyin (e'lon, qo'shilish, tasdiq, chiqish, navbat) — yozuv tugagach `oyin-ozgardi` `{ oyinId, sabab }` hamma ulangan ilovaga; ilova tinglaydi va `GET /oyinlar` ni bir marta qayta so'raydi — «O'yinlar» va «O'yin» bitta javobdan (`mobil/src/oyin.ts`), pastga tortmasdan; fondan qaytganda ham qayta so'raladi. «O'yinlar»da uch ulanish holati (belgi va kulrang qator). `README.md` «Real vaqt» — «Ulanish holatlari» va «Chekka holatlar» (uchta). Agent «uchala chekka holatni bajardim» degan — tekshirilmagan: buzib tekshirish 5-darsda |
+| `m12-dars-04-done` | 4 · loyiha kuni: jonli xabar va eslatma | xona `oyin-{id}`: «O'yin» ochilganda `oyin-ochildi`, yopilganda `oyin-yopildi`; Backend xonaga `korayotganlar-ozgardi` `{ oyinId, soni }` (uzilganda ham) — «O'yin» ekranida «Hozir ko'ryapti: N». Jonli xabarlar (`mobil/src/ulanish.ts`, ko'rinishi `_layout.tsx`): hodisadan keyingi javob oldingisi bilan solishtiriladi; faqat o'ziga tegishli o'yin (`GET /oyinlar` ga `menTashkilotchiman`), o'z harakati uchun emas, ismsiz. Eslatma (`expo-notifications`, `oyin/[id].tsx`): «Qo'shilaman» → o'yindan bir soat oldin, chiqilganda bekor, bitta o'yinga bitta. Qayta ulanish maxsus boshqarilmaydi |
 
 ## Ortda qoldingizmi
 
