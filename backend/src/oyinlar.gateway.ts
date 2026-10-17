@@ -7,7 +7,11 @@ import type { Server, Socket } from 'socket.io';
 // Ilova bir marta ulanadi va ulanayotganda tokenni yuboradi: io(manzil, { auth: { token } }).
 // Token ulanish ochilayotganda tekshiriladi: yo'q yoki yaroqsiz bo'lsa — ulanish yopiladi
 // (Backend yopgan ulanishga ilova o'zi qayta ulanmaydi — belgi «Ulanmagan»).
-// Hozircha hech qanday hodisa yuborilmaydi va tinglanmaydi — faqat ulanish.
+// Hodisa `oyin-ozgardi` — { oyinId, sabab }: faqat qaysi o'yin o'zgargani va nega; yangi holatni ilova GET /oyinlar dan qayta so'raydi.
+
+// Real vaqt oqimi sxemasidagi besh sabab (README «Real vaqt»)
+export type OyinSababi = 'qoshildi' | 'chiqdi' | 'tasdiqladi' | 'navbatga-yozildi' | 'elon-berildi';
+
 @WebSocketGateway()
 export class OyinlarGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly log = new Logger('Ulanish');
@@ -27,6 +31,11 @@ export class OyinlarGateway implements OnGatewayConnection, OnGatewayDisconnect 
     // Token egasi — keyingi darslarda kerak bo'ladi (xona, o'z harakati)
     ulanish.data.oyinchiId = oyinchiId;
     this.log.log(`ulandi: o'yinchi ${oyinchiId}`);
+  }
+
+  // Database'dagi o'zgarish tugagandan keyin chaqiriladi (tranzaksiya bo'lsa — u tugagach). Oladi — hamma ulangan ilova.
+  oyinOzgardi(oyinId: number, sabab: OyinSababi) {
+    this.server.emit('oyin-ozgardi', { oyinId, sabab });
   }
 
   handleDisconnect(ulanish: Socket) {

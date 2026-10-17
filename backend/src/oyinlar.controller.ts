@@ -16,6 +16,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Ishtirokchi } from './ishtirokchi.entity.js';
 import { Oyin } from './oyin.entity.js';
+import { OyinlarGateway } from './oyinlar.gateway.js';
 import { bugunToshkent, sanaTogrimi } from './sana.js';
 import { TokenGuard, type Sorov } from './token.guard.js';
 
@@ -34,6 +35,8 @@ export class OyinlarController {
   constructor(
     @InjectRepository(Oyin) private readonly oyinlar: Repository<Oyin>,
     @InjectRepository(Ishtirokchi) private readonly ishtirokchilar: Repository<Ishtirokchi>,
+    // Real vaqt: o'zgarish Database'ga yozib tugatilgach — oyin-ozgardi { oyinId, sabab } hamma ulangan ilovaga
+    private readonly ulanishlar: OyinlarGateway,
   ) {}
 
   // GET /oyinlar — faqat token bilan (tokensiz 401). Yagona ro'yxat yo'li: «O'yin» ekrani ham shundan o'qiydi.
@@ -103,6 +106,7 @@ export class OyinlarController {
     if (!Number.isInteger(kerak) || kerak < 1) throw new BadRequestException("Nechta odam — butun son bo'lsin");
 
     const oyin = await this.oyinlar.save({ kun, soat, maydon, kerak, tashkilotchi_id: sorov.oyinchiId! });
+    this.ulanishlar.oyinOzgardi(oyin.id, 'elon-berildi');
     return { id: oyin.id, kun: oyin.kun, soat: oyin.soat, maydon: oyin.maydon, kerak: oyin.kerak };
   }
 
@@ -124,7 +128,7 @@ export class OyinlarController {
   @Post(':id/qoshilish')
   async qoshilish(@Req() sorov: Sorov, @Param('id', ParseIntPipe) id: number) {
     const men = sorov.oyinchiId!;
-    return this.bittaIsh(id, async (jadval, oyin) => {
+    const javob = await this.bittaIsh(id, async (jadval, oyin) => {
       const qator = await jadval.findOneBy({ oyin_id: id, oyinchi_id: men });
       if (qator && QOSHILGAN.includes(qator.holat)) throw new ConflictException("Siz bu o'yinga qo'shilgansiz");
 
@@ -134,6 +138,9 @@ export class OyinlarController {
       await this.yoz(jadval, id, men, 'qoshildi', !!qator);
       return { holat: 'qoshildi' };
     });
+    // Tranzaksiya tugagach (yozuv Database'da) — hodisa
+    this.ulanishlar.oyinOzgardi(id, 'qoshildi');
+    return javob;
   }
 
   // POST /oyinlar/:id/navbat → 201 { holat: 'navbatda' } — faqat to'lgan o'yinga (to'lmagan bo'lsa — 409).
@@ -141,7 +148,7 @@ export class OyinlarController {
   @Post(':id/navbat')
   async navbat(@Req() sorov: Sorov, @Param('id', ParseIntPipe) id: number) {
     const men = sorov.oyinchiId!;
-    return this.bittaIsh(id, async (jadval, oyin) => {
+    const javob = await this.bittaIsh(id, async (jadval, oyin) => {
       const qator = await jadval.findOneBy({ oyin_id: id, oyinchi_id: men });
       if (qator && QOSHILGAN.includes(qator.holat)) throw new ConflictException("Siz bu o'yinga qo'shilgansiz");
       if (qator?.holat === 'navbatda') throw new ConflictException('Siz navbatdasiz');
@@ -152,6 +159,8 @@ export class OyinlarController {
       await this.yoz(jadval, id, men, 'navbatda', !!qator);
       return { holat: 'navbatda' };
     });
+    this.ulanishlar.oyinOzgardi(id, 'navbatga-yozildi');
+    return javob;
   }
 
   // POST /oyinlar/:id/chiqish → 201 { holat: 'chiqdi' } — qo'shilgan yoki navbatdagi o'yinchi chiqadi.
@@ -160,7 +169,7 @@ export class OyinlarController {
   @Post(':id/chiqish')
   async chiqish(@Req() sorov: Sorov, @Param('id', ParseIntPipe) id: number) {
     const men = sorov.oyinchiId!;
-    return this.bittaIsh(id, async (jadval) => {
+    const javob = await this.bittaIsh(id, async (jadval) => {
       const qator = await jadval.findOneBy({ oyin_id: id, oyinchi_id: men });
       if (!qator || qator.holat === 'chiqdi') throw new ConflictException("Siz bu o'yinda yo'qsiz");
 
@@ -176,6 +185,9 @@ export class OyinlarController {
       }
       return { holat: 'chiqdi' };
     });
+    // Navbatdagi o'yinga o'tgan bo'lsa ham — shu bitta hodisa (sabab chiqdi)
+    this.ulanishlar.oyinOzgardi(id, 'chiqdi');
+    return javob;
   }
 
   // Qator yozish: shu o'yinda bu o'yinchining qatori bo'lsa — holati va vaqti yangilanadi (bitta qator), bo'lmasa — yangi qator.
@@ -211,6 +223,7 @@ export class OyinlarController {
     }
 
     await this.ishtirokchilar.update({ oyin_id: id, oyinchi_id: men }, { holat: 'keladi' });
+    this.ulanishlar.oyinOzgardi(id, 'tasdiqladi');
     return { holat: 'keladi' };
   }
 }
