@@ -9,7 +9,8 @@ import { hodisaYoz } from '@/hodisa';
 import { MAXFIYLIK } from '@/lending';
 import { R } from '@/ranglar';
 
-// Ro'yxatdan o'tish: POST /royxat { ism, login, parol } → keyin «Kirish» ochiladi (token bu yerda berilmaydi).
+// Ro'yxatdan o'tish: POST /royxat { ism, login, parol, taklifKodi } → keyin «Kirish» ochiladi (token bu yerda berilmaydi).
+// «Taklif kodi (bo'lsa)» (13-Modul 10-dars) — topilmasa Backend xabari maydonlar ostida chiqadi, hisob ochilmaydi.
 // Telefon raqami so'ralmaydi — mahsulotga kerak emas (SMS yuborilmaydi). Login — o'zi tanlagan nom, band bo'lsa «Bu login band».
 // Muvaffaqiyatli bo'lsa — qadam royxatdan-otdi.
 export default function Royxat() {
@@ -17,6 +18,8 @@ export default function Royxat() {
   const [ism, setIsm] = useState('');
   const [login, setLogin] = useState('');
   const [parol, setParol] = useState('');
+  // Taklif kodi (13-Modul 10-dars) — majburiy emas; APK havoladagi kodni olmaydi, shuning uchun qo'lda yoziladi
+  const [taklifKodi, setTaklifKodi] = useState('');
   const [xabar, setXabar] = useState('');
   const [kutish, setKutish] = useState(false);
 
@@ -24,7 +27,7 @@ export default function Royxat() {
     setXabar('');
     setKutish(true);
     try {
-      await sora('/royxat', { method: 'POST', body: { ism, login, parol } });
+      await sora('/royxat', { method: 'POST', body: { ism, login, parol, taklifKodi } });
       hodisaYoz('royxatdan-otdi');
       router.replace('/kirish');
     } catch (e) {
@@ -49,6 +52,14 @@ export default function Royxat() {
           autoCorrect={false}
         />
         <Maydoncha nom="Parol" value={parol} onChangeText={setParol} secureTextEntry />
+        <Maydoncha
+          nom="Taklif kodi (bo'lsa)"
+          value={taklifKodi}
+          onChangeText={setTaklifKodi}
+          placeholder="AB12CD"
+          autoCapitalize="characters"
+          autoCorrect={false}
+        />
         <Text style={s.gap}>Ism — o'yinchilar ko'radigan nom, familiya shart emas. Loginni boshqa o'yinchilar ko'rmaydi.</Text>
         <Pressable onPress={() => Linking.openURL(MAXFIYLIK)}>
           <Text style={s.siyosat}>Maxfiylik siyosati</Text>

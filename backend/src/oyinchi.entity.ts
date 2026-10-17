@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 // Ro'yxatdan o'tgan odam. Parolning o'zi saqlanmaydi — faqat hash'i. Telefon raqami so'ralmaydi (12-Modul 7-dars).
 @Entity('oyinchilar')
@@ -42,6 +42,15 @@ export class Oyinchi {
   // Taklif kodi (13-Modul 10-dars): 6 belgi, katta harf va raqam, noyob — taklif havolasi …/?taklif=<kod>&kanal=taklif
   @Column({ type: 'varchar', length: 6, nullable: true, unique: true })
   taklif_kodi: string | null;
+
+  // Kim taklif qilgani (10-dars) → oyinchilar.id: ro'yxatdan o'tishda «Taklif kodi (bo'lsa)» yozilgan bo'lsa.
+  // Taklif qilgan hisobini o'chirsa — bo'sh (null), bu hisob qoladi
+  @Column({ type: 'int', nullable: true })
+  taklif_qilgan_id: number | null;
+
+  @ManyToOne(() => Oyinchi, { onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'taklif_qilgan_id' })
+  taklif_qilgan: Oyinchi | null;
 
   // Ro'yxatdan o'tgan vaqt (Database o'zi to'ldiradi)
   @CreateDateColumn({ type: 'timestamptz' })

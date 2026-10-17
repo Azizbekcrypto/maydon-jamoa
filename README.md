@@ -46,6 +46,7 @@ Saqlanadigan ma'lumotlar: o'yinchilar · o'yinlar · kim qaysi o'yinga qo'shilga
 | `telegram_chat_id` | Telegram chat raqami (13-Modul 8-dars) — faqat xabar yuborish uchun; botda «Start» bosilganda yoziladi, «Telegram xabarlarini o'chirish»da o'chadi; ilovaga yuborilmaydi |
 | `telegram_kod` · `telegram_kod_gacha` | bir martalik kod (16 harf-raqam) va muddati (10 daqiqa) — `t.me/<bot>?start=<kod>`; ishlatilgach o'chadi |
 | `taklif_kodi` | taklif kodi (13-Modul 10-dars) — 6 belgi, katta harf va raqam, noyob; yangi hisobga ro'yxatdan o'tishda, mavjudlarga bir marta (Backend ishga tushganda) |
+| `taklif_qilgan_id` | kim taklif qilgani → `oyinchilar.id` (10-dars): ro'yxatdan o'tishda taklif kodi yozilgan bo'lsa; taklif qilgan hisobini o'chirsa — bo'sh |
 | `pro_gacha` | Pro muddati (13-Modul 4-dars) — shu vaqtgacha Pro; bo'sh — Pro yo'q. Muddat tugagach Pro o'zi to'xtaydi, avtomatik to'lov yo'q |
 | `yaratilgan` | ro'yxatdan o'tgan vaqt (Database o'zi to'ldiradi) |
 
@@ -314,6 +315,19 @@ Umami'ga `tashrif` — faqat `kanal` bilan (taklif kodi yuborilmaydi).
 
 Tekshirish: `SELECT COUNT(*) FROM oyinchilar WHERE taklif_kodi IS NULL;` → `0` · `SELECT taklif_kodi FROM oyinchilar WHERE login = '{login}';`.
 
+**Formadagi kod:** «Ro'yxatdan o'tish»da «Parol» ostida **«Taklif kodi (bo'lsa)»** — majburiy emas; APK o'rnatilganda havoladagi kod ilovaga o'tmaydi, shuning uchun qo'lda yoziladi.
+Kod bo'shliqsiz va katta harfga o'tkazilib solishtiriladi (`ab12cd` ham `AB12CD`); topilmasa — hisob ochilmaydi: «Bunday taklif kodi topilmadi — tekshiring yoki maydonni bo'sh qoldiring.»;
+topilsa — `oyinchilar.taklif_qilgan_id`. Bo'sh qolsa — hisob avvalgidek ochiladi.
+
+```sql
+-- taklif kodi bilan ochilgan hisoblar
+SELECT COUNT(*) FROM oyinchilar WHERE namuna = false AND taklif_qilgan_id IS NOT NULL;
+-- ulardan asosiy harakat qilgani (hozir kamida bitta o'yinda qatnashayotgan yoki o'yin e'lon qilgan)
+SELECT COUNT(*) FROM oyinchilar o WHERE o.namuna = false AND o.taklif_qilgan_id IS NOT NULL AND (EXISTS (SELECT 1 FROM ishtirokchilar i WHERE i.oyinchi_id = o.id AND i.holat IN ('qoshildi', 'keladi')) OR EXISTS (SELECT 1 FROM oyinlar g WHERE g.tashkilotchi_id = o.id));
+```
+
+Lendingga taklif havolasi bilan tashriflar — Umami'da `tashrif`, kanal `taklif` (tashrifni sanaydi, qurilmani emas).
+
 ## Backend yo'llari
 
 Yopiq yo'llar (`/oyinlar` va `/hisob`) — faqat token bilan (`Authorization: Bearer <token>`), tokensiz `401`.
@@ -322,7 +336,7 @@ Bitta istisno — mehmon ko'rinishi (12-Modul 8-dars): `GET /oyinlar` tokensiz h
 
 | Yo'l | Nima qiladi | Javoblar |
 |---|---|---|
-| `POST /royxat` `{ ism, login, parol }` | o'yinchi `oyinchilar` ga (`namuna = false`), parol — faqat hash (`parol_hash`); telefon so'ralmaydi | `201` · `400` bo'sh yoki login qoidaga mos emas · `409` «Bu login band» |
+| `POST /royxat` `{ ism, login, parol, taklifKodi? }` | o'yinchi `oyinchilar` ga (`namuna = false`), parol — faqat hash (`parol_hash`); telefon so'ralmaydi; yangi `taklif_kodi`; `taklifKodi` (10-dars) — bo'shliqsiz, katta harfga o'tkazilib qidiriladi → `taklif_qilgan_id` | `201` · `400` bo'sh, login qoidaga mos emas yoki «Bunday taklif kodi topilmadi — …» · `409` «Bu login band» |
 | `POST /kirish` `{ login, parol }` | token (30 kun) | `200 { token }` · `401` «Login yoki parol noto'g'ri» |
 | `DELETE /hisob` | «Hisobni o'chirish»: akkaunt va uning `ishtirokchilar` dagi yozuvlari o'chadi (13-Modul: Telegram chat raqami, `telegram_xabarlar`, mashq to'lov yozuvlari ham); e'lon qilgan o'yinlari qoladi (tashkilotchisi bo'sh); qo'shilgan o'yinlarida navbatdagi kiradi | `200` |
 | `POST /hodisalar` `{ nom, qurilma_id }` | qadamlar sanog'i (va 9-darsdan sanoq yozuvi `eslatmadan-ochdi`, 13-Modul 8-darsdan `telegramdan-ochdi`); token kerak emas (yuborilmaydi); yozilgach sanoq sahifalariga `sanoq-ozgardi` | `201` · `400` nom ruxsat etilganlardan emas |

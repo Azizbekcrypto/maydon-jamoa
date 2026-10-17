@@ -14,10 +14,12 @@ function matn(q: unknown): string {
 export class RoyxatController {
   constructor(@InjectRepository(Oyinchi) private readonly oyinchilar: Repository<Oyinchi>) {}
 
-  // POST /royxat { ism, login, parol } → 201 { id, ism } · token bermaydi — ilova «Kirish»ni ochadi.
+  // POST /royxat { ism, login, parol, taklifKodi? } → 201 { id, ism } · token bermaydi — ilova «Kirish»ni ochadi.
   // Telefon raqami so'ralmaydi. Login — o'zi tanlagan nom: 3–20 belgi, harf va raqam (kichik harfda saqlanadi:
   // «Ali» va «ali» — bitta login); band bo'lsa — 409 «Bu login band».
   // Parol jadvalga yozilmaydi — faqat hash'i (parol_hash). Forma orqali o'tgan har akkaunt — namuna = false.
+  // taklifKodi (13-Modul 10-dars, «Taklif kodi (bo'lsa)», majburiy emas): bo'shliqlari olib tashlanib katta harfga o'tkaziladi
+  // (ab12cd ham AB12CD) va shu taklif_kodi li hisob topiladi → taklif_qilgan_id. Topilmasa — 400, hisob ochilmaydi.
   @Post()
   async royxat(@Body() body: Record<string, unknown>) {
     const ism = matn(body?.ism);
@@ -33,11 +35,27 @@ export class RoyxatController {
     if (await this.oyinchilar.existsBy({ login })) {
       throw new ConflictException('Bu login band');
     }
+    const taklifKodi = typeof body?.taklifKodi === 'string' ? body.taklifKodi.replace(/\s+/g, '').toUpperCase() : '';
+    let taklif_qilgan_id: number | null = null;
+    if (taklifKodi) {
+      const taklifQilgan = await this.oyinchilar.findOne({ where: { taklif_kodi: taklifKodi }, select: { id: true } });
+      if (!taklifQilgan) {
+        throw new BadRequestException("Bunday taklif kodi topilmadi — tekshiring yoki maydonni bo'sh qoldiring.");
+      }
+      taklif_qilgan_id = taklifQilgan.id;
+    }
     const parol_hash = await hash(parol, 10);
     // Yangi hisobga taklif kodi (13-Modul 10-dars); kod to'qnashsa — yangi kod bilan qayta yoziladi
     for (;;) {
       try {
-        const oyinchi = await this.oyinchilar.save({ ism, login, parol_hash, namuna: false, taklif_kodi: yangiTaklifKodi() });
+        const oyinchi = await this.oyinchilar.save({
+          ism,
+          login,
+          parol_hash,
+          namuna: false,
+          taklif_kodi: yangiTaklifKodi(),
+          taklif_qilgan_id,
+        });
         return { id: oyinchi.id, ism: oyinchi.ism };
       } catch (e) {
         if (taklifKodiToqnashdi(e)) continue;
