@@ -156,6 +156,11 @@ Topilgan uch muammo tuzatilgan: qayta ulanganda ro'yxat qayta so'raladi · `oyin
 - **Eslatma** — rejalashtirilgan: «Qo'shilaman» bosilganda ilova o'yindan bir soat oldinga qo'yadi («Maydon Jamoa» · «Bugun, 18:00 · Mahalla maydoni»), bir soatdan kam qolgan bo'lsa — qo'yilmaydi;
   «O'yindan chiqish» — bekor. Faqat shu telefonda: boshqa telefondan kirilsa — u yerda eslatma yo'q; telefonda eslatmalar o'chirilgan bo'lsa — chiqmaydi.
   Yopiq ilovada boshqa odamning o'zgarishi («joy bo'shadi») ko'rinmaydi. Backend yuboradigan eslatma (push notification) — qurilmagan: Google yoki Apple xizmati va alohida sozlash kerak, Expo Go'da ishlamaydi.
+- **«N joy qoldi»** (9-dars) — o'zingiz qo'shilmagan o'yinda bir yoki ikki joy qolganda: «Shanba, 18:00 — 2 joy qoldi» (yangi hodisa yo'q — son qayta so'ralgan javobdan; ilova ochiq davrda bir o'yinda bir xil son uchun bir marta).
+- **Uch kunlik eslatma** (9-dars, `mobil/src/eslatma.ts`) — ilova har ochilganda oldingisi bekor, yangisi uch kundan keyin 17:00 ga: «Hafta oxiriga o'yin bormi? E'lonlarni ko'ring» —
+  ilovani uch kun ochmagan odamga chiqadi (yopiq ilova yangi e'lonni bilmaydi — matn taklif qiladi); faqat hisobga kirgan foydalanuvchiga, «Hisobdan chiqish»da bekor.
+  Haftalik chegara: o'sha haftada (dushanbadan yakshanbagacha) ilovaning ikkita eslatmasi bo'lsa (o'yin eslatmasi ham sanaladi) — qo'yilmaydi; qo'yilgan eslatmalar vaqti telefonda saqlanadi.
+  Haftalik chegara kodda bor, telefonda tekshirilmagan (bir hafta kerak).
 
 ## Backend yo'llari
 

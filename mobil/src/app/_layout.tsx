@@ -1,9 +1,11 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { AppState, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { tokenOl } from '@/api';
+import { uchKunlikniQoy } from '@/eslatma';
 import { hodisaYoz } from '@/hodisa';
 import { R } from '@/ranglar';
 import { useJonliXabarlar } from '@/ulanish';
@@ -12,13 +14,27 @@ import { useJonliXabarlar } from '@/ulanish';
 // Sarlavhani har ekran o'zi chizadi, shuning uchun Stack sarlavhasi yashirilgan.
 // Hamma ekranlar tepasida — jonli xabarlar (ulanish.ts): bir necha soniya turadi va o'zi yo'qoladi.
 // Qadamlar sanog'i: ilova ochilganda — ochdi (bitta ochilishga bitta).
+// Uch kunlik eslatma (eslatma.ts): ilova ochilganda va fondan qaytganda — oldingisi bekor, yangisi uch kundan keyin 17:00 ga
+// (faqat hisobga kirgan foydalanuvchiga).
 let ochdiYozildi = false;
+
+async function uchKunlikniYangila() {
+  if (await tokenOl()) await uchKunlikniQoy();
+}
 
 export default function Layout() {
   useEffect(() => {
-    if (ochdiYozildi) return;
-    ochdiYozildi = true;
-    hodisaYoz('ochdi');
+    if (!ochdiYozildi) {
+      ochdiYozildi = true;
+      hodisaYoz('ochdi');
+    }
+    uchKunlikniYangila().catch(() => {});
+    let oldingi: string | null | undefined = AppState.currentState;
+    const obuna = AppState.addEventListener('change', (yangi) => {
+      if (oldingi === 'background' && yangi === 'active') uchKunlikniYangila().catch(() => {});
+      oldingi = yangi;
+    });
+    return () => obuna.remove();
   }, []);
 
   return (

@@ -1,11 +1,11 @@
-import * as Notifications from 'expo-notifications';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { sora, tokenOchir, tokenOl } from '@/api';
 import { BosiladiganKarta } from '@/components/bosiladigan-karta';
+import { hammasiniBekor } from '@/eslatma';
 import { kunNomi } from '@/kun';
 import { oyinlarniOl, useOyinlar, type Oyin } from '@/oyin';
 import { R } from '@/ranglar';
@@ -66,7 +66,7 @@ export default function Oyinlar() {
   // «Hisobdan chiqish»: ulanish yopiladi, token o'chadi, shu telefondagi rejalashtirilgan eslatmalar bekor bo'ladi
   async function hisobdanChiq() {
     uzil();
-    if (Platform.OS !== 'web') await Notifications.cancelAllScheduledNotificationsAsync().catch(() => {});
+    await hammasiniBekor().catch(() => {});
     await tokenOchir();
     router.replace('/kirish');
   }

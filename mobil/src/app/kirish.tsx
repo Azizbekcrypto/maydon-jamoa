@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { sora, tokenSaqla } from '@/api';
 import { Maydoncha, Tugma } from '@/components/forma';
+import { uchKunlikniQoy } from '@/eslatma';
 import { R } from '@/ranglar';
 
 // Kirish: POST /kirish { login, parol } → token telefonda expo-secure-store ga saqlanadi → «O'yinlar»
@@ -21,6 +22,7 @@ export default function Kirish() {
     try {
       const { token } = await sora<{ token: string }>('/kirish', { method: 'POST', body: { login, parol } });
       await tokenSaqla(token);
+      uchKunlikniQoy().catch(() => {});
       router.replace('/');
     } catch (e) {
       setXabar((e as Error).message);

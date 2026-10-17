@@ -1,69 +1,18 @@
-import * as Notifications from 'expo-notifications';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { sora, tokenOl } from '@/api';
 import { Tugma } from '@/components/forma';
 import { Son } from '@/components/son';
+import { oyinEslatmasiniBekor, oyinEslatmasiniQoy, uchKunlikniQoy } from '@/eslatma';
 import { hodisaYoz } from '@/hodisa';
 import { kunNomi } from '@/kun';
 import { oyinlarniOl, useOyinlar, type Oyin } from '@/oyin';
 import { R } from '@/ranglar';
 import { tasdiqSora } from '@/tasdiq';
 import { oyinniOch, oyinniYop, ulan, useKorayotganlar } from '@/ulanish';
-
-// Eslatma (rejalashtirilgan, expo-notifications): «Qo'shilaman» muvaffaqiyatli bo'lganda ilova eslatmani
-// o'yindan bir soat oldinga qo'yadi — sarlavha «Maydon Jamoa», matn «Bugun, 18:00 · Mahalla maydoni».
-// O'yinga bir soatdan kam qolgan bo'lsa — qo'yilmaydi. «O'yindan chiqish» — shu o'yinning eslatmasi bekor.
-// Bitta o'yinga bitta eslatma (identifier — oyin-{id}: qayta qo'yilsa eskisi bekor). Ilova yopiq bo'lsa ham chiqadi;
-// ilova ochiq paytga to'g'ri kelsa ham ko'rinadi (setNotificationHandler). Ruxsat berilmasa — ilova ishlayveradi, eslatma qo'yilmaydi.
-const ESLATMA_OLDIN_MS = 60 * 60 * 1000; // o'yindan bir soat oldin
-
-// Brauzer ko'rinishida eslatma yo'q (expo-notifications web'da ishlamaydi) — u yerda qo'yilmaydi, ilova ishlayveradi
-const ESLATMA_BOR = Platform.OS !== 'web';
-
-if (ESLATMA_BOR) {
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: false }),
-  });
-}
-
-// O'yin boshlanish vaqti: kun va soat — Toshkent vaqti (UTC+5)
-function oyinVaqti(o: Oyin): Date {
-  return new Date(`${o.kun}T${o.soat}:00+05:00`);
-}
-
-// Ruxsatni birinchi marta so'raydi (Android'da avval eslatma kanali yaratiladi — ruxsat oynasi shundan keyin chiqadi)
-async function eslatmagaRuxsat(): Promise<boolean> {
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('default', {
-      name: 'Maydon Jamoa',
-      importance: Notifications.AndroidImportance.DEFAULT,
-    });
-  }
-  const bor = await Notifications.getPermissionsAsync();
-  if (bor.granted) return true;
-  return (await Notifications.requestPermissionsAsync()).granted;
-}
-
-async function eslatmaQoy(o: Oyin) {
-  if (!ESLATMA_BOR) return;
-  const vaqt = oyinVaqti(o).getTime() - ESLATMA_OLDIN_MS;
-  if (vaqt <= Date.now()) return; // o'yinga bir soatdan kam qolgan
-  if (!(await eslatmagaRuxsat())) return;
-  await Notifications.cancelScheduledNotificationAsync(`oyin-${o.id}`);
-  await Notifications.scheduleNotificationAsync({
-    identifier: `oyin-${o.id}`,
-    content: { title: 'Maydon Jamoa', body: `Bugun, ${o.soat} · ${o.maydon}` },
-    trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: new Date(vaqt) },
-  });
-}
-
-async function eslatmaBekor(oyinId: number) {
-  if (ESLATMA_BOR) await Notifications.cancelScheduledNotificationAsync(`oyin-${oyinId}`);
-}
 
 // O'yin: bitta fayl har o'yinni ochadi — id manzildan keladi (/oyin/2 → id = '2').
 // Ma'lumot GET /oyinlar dan (alohida yo'l yo'q): «8 / 10», qo'shilganlar va tugma.
@@ -121,11 +70,15 @@ export default function OyinEkrani() {
     setKutish(true);
     try {
       await sora(`/oyinlar/${id}/${yol}`, { method: 'POST' });
-      // Eslatma — Backend javobi muvaffaqiyatli bo'lgandan keyin; eslatma xatosi asosiy ishni buzmaydi
-      if (yol === 'qoshilish' && oyin) eslatmaQoy(oyin).catch(() => {});
       // Qadamlar sanog'i: «Qo'shilaman» muvaffaqiyatli bo'lganda — qoshildi
       if (yol === 'qoshilish') hodisaYoz('qoshildi');
-      if (yol === 'chiqish') eslatmaBekor(Number(id)).catch(() => {});
+      // Eslatma (eslatma.ts) — Backend javobi muvaffaqiyatli bo'lgandan keyin; eslatma xatosi asosiy ishni buzmaydi.
+      // «Qo'shilaman» → o'yindan bir soat oldin; «O'yindan chiqish» → bekor; keyin uch kunlik eslatma qayta hisoblanadi
+      (async () => {
+        if (yol === 'qoshilish' && oyin) await oyinEslatmasiniQoy(oyin);
+        if (yol === 'chiqish') await oyinEslatmasiniBekor(Number(id));
+        if (yol !== 'navbat') await uchKunlikniQoy();
+      })().catch(() => {});
     } catch (e) {
       setXabar((e as Error).message);
     } finally {
