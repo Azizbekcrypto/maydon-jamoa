@@ -1,0 +1,164 @@
+/* «Maydon Jamoa» lendingi — ranglar ilovadagidek (mobil/src/ranglar.ts) */
+:root {
+  --yashil: #2e9e4f;
+  --matn: #1d2329;
+  --kulrang: #6b7580;
+  --chiziq: #d9dee3;
+  --fon: #ffffff;
+  --yengil: #f3f8f4;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--matn);
+  background: var(--fon);
+  line-height: 1.5;
+}
+
+.tepa {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 20px 24px;
+}
+
+.nom {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--yashil);
+}
+
+main {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 0 24px 48px;
+}
+
+/* Bosh qism: chapda matn va tugma, o'ngda telefon maketi */
+.bosh {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 40px;
+  align-items: center;
+  padding: 24px 0 48px;
+}
+
+h1 {
+  font-size: 44px;
+  line-height: 1.15;
+  margin: 0 0 16px;
+}
+
+.osti {
+  font-size: 20px;
+  color: var(--kulrang);
+  margin: 0 0 28px;
+}
+
+.tugma {
+  display: inline-block;
+  padding: 16px 28px;
+  border-radius: 12px;
+  background: var(--yashil);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.tugma:hover { filter: brightness(1.05); }
+
+/* Telefon maketi */
+.telefon {
+  width: 280px;
+  justify-self: center;
+  padding: 14px;
+  border-radius: 36px;
+  background: var(--matn);
+}
+
+.ekran {
+  border-radius: 24px;
+  background: var(--fon);
+  padding: 20px 16px 28px;
+  min-height: 460px;
+}
+
+.ekran p { margin: 0; }
+
+.t-nom { font-size: 15px; font-weight: 700; color: var(--yashil); }
+.t-sarlavha { font-size: 22px; font-weight: 700; margin-top: 12px !important; }
+.t-kun { font-size: 15px; font-weight: 700; margin-top: 14px !important; }
+
+.t-karta {
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid var(--chiziq);
+  border-radius: 12px;
+}
+
+.t-vaqt { font-weight: 600; }
+.t-maydon { font-size: 14px; color: var(--kulrang); }
+.t-hisob { font-weight: 700; color: var(--yashil); margin-top: 4px !important; }
+
+.t-tugma {
+  display: block;
+  margin-top: 10px;
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--yashil);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Uch foyda: katta yozuv — foyda, ostida bitta qator — funksiya */
+.foydalar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.foyda {
+  padding: 20px;
+  border: 1px solid var(--chiziq);
+  border-radius: 14px;
+}
+
+.foyda h2 {
+  font-size: 21px;
+  line-height: 1.25;
+  margin: 0 0 8px;
+}
+
+.foyda p {
+  margin: 0;
+  color: var(--kulrang);
+}
+
+.qanday {
+  margin-top: 48px;
+  padding: 28px;
+  border-radius: 14px;
+  background: var(--yengil);
+}
+
+.qanday h2 { margin: 0 0 8px; }
+.qanday p { margin: 0; }
+
+/* Telefon kengligida — bitta ustun */
+@media (max-width: 760px) {
+  .bosh,
+  .foydalar {
+    grid-template-columns: 1fr;
+  }
+
+  h1 { font-size: 32px; }
+  .osti { font-size: 18px; }
+  .tugma { display: block; text-align: center; }
+}
