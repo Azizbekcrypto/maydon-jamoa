@@ -85,8 +85,11 @@ function qaytaSora(): Promise<Oyin[] | null> {
 // Jonli xabar — ilova ochiq turganda ekran tepasida bir necha soniya chiqadigan qisqa xabar (_layout.tsx ko'rsatadi).
 // Qaysi xabar — sababga qarab emas: hodisadan keyingi javob oldingisi bilan solishtiriladi.
 // Faqat o'ziga tegishli o'yin uchun (qo'shilgan, navbatda yoki o'zi e'lon qilgan); o'z harakati uchun chiqmaydi; ism yo'q.
+// Bitta istisno (9-dars): o'zi qo'shilmagan o'yinda «N joy qoldi» — foydalanuvchi qo'shilishga ulgurishi uchun.
 // O'z harakati — javobdagi o'z maydonlarim (menQoshilganman, menNavbatdaman, menTasdiqlaganman) o'zgargan
 // (navbatdan o'yinga o'tish bundan mustasno). Hodisaga yangi maydon qo'shilmagan.
+const joyQoldiAytilgan = new Set<string>();
+
 export function jonliXabarlar(oldingi: Oyin[], yangi: Oyin[]): string[] {
   const xabarlar: string[] = [];
   for (const y of yangi) {
@@ -102,7 +105,19 @@ export function jonliXabarlar(oldingi: Oyin[], yangi: Oyin[]): string[] {
       o.menQoshilganman !== y.menQoshilganman ||
       o.menNavbatdaman !== y.menNavbatdaman ||
       o.menTasdiqlaganman !== y.menTasdiqlaganman;
-    if (!tegishli || ozim) continue;
+    if (ozim) continue;
+    if (!tegishli) {
+      // 9-dars: o'zi qo'shilmagan o'yinda bir yoki ikki joy qolsa — «Shanba, 18:00 — 2 joy qoldi».
+      // Joy = kerak − qo'shilganlar, qayta so'ralgan javobdan (yangi hodisa yo'q). Ilova ochiq turgan davrda bir o'yinda
+      // bir xil son uchun bir marta.
+      const joy = y.kerak - y.qoshilgan;
+      const kalit = `${y.id}:${joy}`;
+      if (y.qoshilgan !== o.qoshilgan && (joy === 1 || joy === 2) && !joyQoldiAytilgan.has(kalit)) {
+        joyQoldiAytilgan.add(kalit);
+        xabarlar.push(`${nom} — ${joy} joy qoldi`);
+      }
+      continue;
+    }
     if (y.qoshilgan > o.qoshilgan) {
       xabarlar.push(
         y.qoshilgan >= y.kerak
