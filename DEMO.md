@@ -28,3 +28,10 @@ Keyin: O'yindan chiqaman — yana «8 / 10»
 - Login esdan chiqdi — Demodan oldin ikkala qurilmada namuna akkaunt bilan kirib qo'yaman.
 - Ro'yxat bo'sh — Demo namuna o'yinda: «Shanba, 18:00» ro'yxatda turadi.
 - Ikki marta bosish — 4-darsdagi bosish javobi bor: «Qo'shilaman» bir bosishda holatini o'zgartiradi.
+
+## B reja
+
+- Video: laptopda, 60 soniya, repo'da emas
+- Gap: Internet uzildi — shu demoning 60 soniyalik videosini ko'rsataman.
+- Uyg'otish: navbatdan bir necha daqiqa oldin, demo yo'lini ochib
+- Namuna akkaunt: laptop va telefonda oldindan kirilgan
